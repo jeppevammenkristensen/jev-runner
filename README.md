@@ -59,6 +59,11 @@ var response = await runner.Execute(request);
 Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ```
 
+## Samples
+
+See the [samples and run instructions](Samples/README.md) for runnable examples,
+starting with the interactive AnimalQuiz console game.
+
 ## Generated queries
 
 Alternatively you can mark a partial class or record class with `[JevQuery]` and supply readable `State`
