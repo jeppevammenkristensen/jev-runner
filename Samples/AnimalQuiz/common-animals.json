@@ -1,0 +1,402 @@
+[
+  {
+    "english": "Ant",
+    "danish": "Myre"
+  },
+  {
+    "english": "Anteater",
+    "danish": "Myresluger"
+  },
+  {
+    "english": "Antelope",
+    "danish": "Antilope"
+  },
+  {
+    "english": "Armadillo",
+    "danish": "Bæltedyr"
+  },
+  {
+    "english": "Baboon",
+    "danish": "Bavian"
+  },
+  {
+    "english": "Badger",
+    "danish": "Grævling"
+  },
+  {
+    "english": "Bat",
+    "danish": "Flagermus"
+  },
+  {
+    "english": "Bear",
+    "danish": "Bjørn"
+  },
+  {
+    "english": "Beaver",
+    "danish": "Bæver"
+  },
+  {
+    "english": "Bee",
+    "danish": "Bi"
+  },
+  {
+    "english": "Beetle",
+    "danish": "Bille"
+  },
+  {
+    "english": "Bison",
+    "danish": "Bison"
+  },
+  {
+    "english": "Buffalo",
+    "danish": "Bøffel"
+  },
+  {
+    "english": "Butterfly",
+    "danish": "Sommerfugl"
+  },
+  {
+    "english": "Camel",
+    "danish": "Kamel"
+  },
+  {
+    "english": "Cat",
+    "danish": "Kat"
+  },
+  {
+    "english": "Caterpillar",
+    "danish": "Sommerfuglelarve"
+  },
+  {
+    "english": "Chameleon",
+    "danish": "Kamæleon"
+  },
+  {
+    "english": "Cheetah",
+    "danish": "Gepard"
+  },
+  {
+    "english": "Chicken",
+    "danish": "Høne"
+  },
+  {
+    "english": "Chimpanzee",
+    "danish": "Chimpanse"
+  },
+  {
+    "english": "Clownfish",
+    "danish": "Klovnfisk"
+  },
+  {
+    "english": "Cockroach",
+    "danish": "Kakerlak"
+  },
+  {
+    "english": "Cow",
+    "danish": "Ko"
+  },
+  {
+    "english": "Coyote",
+    "danish": "Prærieulv"
+  },
+  {
+    "english": "Crab",
+    "danish": "Krabbe"
+  },
+  {
+    "english": "Cricket",
+    "danish": "Fårekylling"
+  },
+  {
+    "english": "Crocodile",
+    "danish": "Krokodille"
+  },
+  {
+    "english": "Deer",
+    "danish": "Hjort"
+  },
+  {
+    "english": "Dog",
+    "danish": "Hund"
+  },
+  {
+    "english": "Dolphin",
+    "danish": "Delfin"
+  },
+  {
+    "english": "Donkey",
+    "danish": "Æsel"
+  },
+  {
+    "english": "Dragonfly",
+    "danish": "Guldsmed"
+  },
+  {
+    "english": "Duck",
+    "danish": "And"
+  },
+  {
+    "english": "Eagle",
+    "danish": "Ørn"
+  },
+  {
+    "english": "Elephant",
+    "danish": "Elefant"
+  },
+  {
+    "english": "Emu",
+    "danish": "Emu"
+  },
+  {
+    "english": "Ferret",
+    "danish": "Fritte"
+  },
+  {
+    "english": "Flamingo",
+    "danish": "Flamingo"
+  },
+  {
+    "english": "Fly",
+    "danish": "Flue"
+  },
+  {
+    "english": "Fox",
+    "danish": "Ræv"
+  },
+  {
+    "english": "Frog",
+    "danish": "Frø"
+  },
+  {
+    "english": "Giraffe",
+    "danish": "Giraf"
+  },
+  {
+    "english": "Goat",
+    "danish": "Ged"
+  },
+  {
+    "english": "Goldfish",
+    "danish": "Guldfisk"
+  },
+  {
+    "english": "Goose",
+    "danish": "Gås"
+  },
+  {
+    "english": "Gorilla",
+    "danish": "Gorilla"
+  },
+  {
+    "english": "Grasshopper",
+    "danish": "Græshoppe"
+  },
+  {
+    "english": "Guinea pig",
+    "danish": "Marsvin"
+  },
+  {
+    "english": "Hamster",
+    "danish": "Hamster"
+  },
+  {
+    "english": "Hedgehog",
+    "danish": "Pindsvin"
+  },
+  {
+    "english": "Hippopotamus",
+    "danish": "Flodhest"
+  },
+  {
+    "english": "Horse",
+    "danish": "Hest"
+  },
+  {
+    "english": "Hummingbird",
+    "danish": "Kolibri"
+  },
+  {
+    "english": "Hyena",
+    "danish": "Hyæne"
+  },
+  {
+    "english": "Iguana",
+    "danish": "Leguan"
+  },
+  {
+    "english": "Jaguar",
+    "danish": "Jaguar"
+  },
+  {
+    "english": "Jellyfish",
+    "danish": "Vandmand"
+  },
+  {
+    "english": "Kangaroo",
+    "danish": "Kænguru"
+  },
+  {
+    "english": "Koala",
+    "danish": "Koala"
+  },
+  {
+    "english": "Ladybug",
+    "danish": "Mariehøne"
+  },
+  {
+    "english": "Lemur",
+    "danish": "Lemur"
+  },
+  {
+    "english": "Leopard",
+    "danish": "Leopard"
+  },
+  {
+    "english": "Lion",
+    "danish": "Løve"
+  },
+  {
+    "english": "Lizard",
+    "danish": "Firben"
+  },
+  {
+    "english": "Llama",
+    "danish": "Lama"
+  },
+  {
+    "english": "Lobster",
+    "danish": "Hummer"
+  },
+  {
+    "english": "Meerkat",
+    "danish": "Surikat"
+  },
+  {
+    "english": "Mole",
+    "danish": "Muldvarp"
+  },
+  {
+    "english": "Monkey",
+    "danish": "Abe"
+  },
+  {
+    "english": "Moose",
+    "danish": "Elg"
+  },
+  {
+    "english": "Mosquito",
+    "danish": "Myg"
+  },
+  {
+    "english": "Moth",
+    "danish": "Natsværmer"
+  },
+  {
+    "english": "Mouse",
+    "danish": "Mus"
+  },
+  {
+    "english": "Octopus",
+    "danish": "Ottearmet blæksprutte"
+  },
+  {
+    "english": "Orangutan",
+    "danish": "Orangutang"
+  },
+  {
+    "english": "Ostrich",
+    "danish": "Struds"
+  },
+  {
+    "english": "Otter",
+    "danish": "Odder"
+  },
+  {
+    "english": "Owl",
+    "danish": "Ugle"
+  },
+  {
+    "english": "Panda",
+    "danish": "Panda"
+  },
+  {
+    "english": "Parrot",
+    "danish": "Papegøje"
+  },
+  {
+    "english": "Peacock",
+    "danish": "Påfugl"
+  },
+  {
+    "english": "Pelican",
+    "danish": "Pelikan"
+  },
+  {
+    "english": "Penguin",
+    "danish": "Pingvin"
+  },
+  {
+    "english": "Pig",
+    "danish": "Gris"
+  },
+  {
+    "english": "Pigeon",
+    "danish": "Due"
+  },
+  {
+    "english": "Polar bear",
+    "danish": "Isbjørn"
+  },
+  {
+    "english": "Porcupine",
+    "danish": "Hulepindsvin"
+  },
+  {
+    "english": "Rabbit",
+    "danish": "Kanin"
+  },
+  {
+    "english": "Raccoon",
+    "danish": "Vaskebjørn"
+  },
+  {
+    "english": "Rat",
+    "danish": "Rotte"
+  },
+  {
+    "english": "Rhinoceros",
+    "danish": "Næsehorn"
+  },
+  {
+    "english": "Seal",
+    "danish": "Sæl"
+  },
+  {
+    "english": "Shark",
+    "danish": "Haj"
+  },
+  {
+    "english": "Sheep",
+    "danish": "Får"
+  },
+  {
+    "english": "Snake",
+    "danish": "Slange"
+  },
+  {
+    "english": "Spider",
+    "danish": "Edderkop"
+  },
+  {
+    "english": "Squirrel",
+    "danish": "Egern"
+  },
+  {
+    "english": "Tiger",
+    "danish": "Tiger"
+  },
+  {
+    "english": "Zebra",
+    "danish": "Zebra"
+  }
+]

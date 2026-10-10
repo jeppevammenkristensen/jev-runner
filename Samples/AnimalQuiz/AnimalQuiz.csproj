@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackAsTool>true</PackAsTool>
+    <UserSecretsId>animal-quiz-baa02ed1c3bdd08c1718c5f93e75887dd9bd942dea52af3269cf0c4661e152f2</UserSecretsId>
+    <PublishAot>false</PublishAot>
+    <RootNamespace>AnimalQuiz</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FileBasedApp.Toolkit" Version="1.1.2" />
+    <PackageReference Include="JRK.JevRunner" Version="0.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="common-animals.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
