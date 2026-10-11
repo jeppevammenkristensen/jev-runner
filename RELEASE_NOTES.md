@@ -7,6 +7,12 @@ When publishing a release, replace `Unreleased` with its version and release dat
 then add a new `Unreleased` section at the top. Remove empty categories from
 published release notes.
 
+## 0.3.1
+
+## Changed
+
+- Removed unnecesarry Jetbrains.Annotation dependency
+
 ## 0.3.0
 
 ### Added
