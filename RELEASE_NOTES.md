@@ -7,7 +7,7 @@ When publishing a release, replace `Unreleased` with its version and release dat
 then add a new `Unreleased` section at the top. Remove empty categories from
 published release notes.
 
-## Unreleased
+## 0.3.0
 
 ### Added
 
