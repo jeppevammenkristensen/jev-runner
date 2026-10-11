@@ -1,6 +1,20 @@
 ﻿using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace JRK.JevRunner.Infrastructure;
+
+internal class ThrowHelper
+{
+    public static void ThrowIfEmpty<T>(IReadOnlyCollection<T> argument,
+        [CallerArgumentExpression(nameof(argument))] string? argumentName = null)
+    {
+        if (argument.Count == 0)
+        {
+            throw new ArgumentException("The collection cannot be empty", argumentName);
+        }
+    }
+    
+}
 
 internal class ExceptionTranslator
 {

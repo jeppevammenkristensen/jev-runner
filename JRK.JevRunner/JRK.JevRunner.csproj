@@ -12,7 +12,7 @@
     <Description>Unofficial .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Add support for using source generators to generate Requests and Answers in a partial class</PackageReleaseNotes>
+    <PackageReleaseNotes>Add support for using source generators to generate Requests and Answers in a partial class. Add missing XML summaries for annotation classes and constructors, and inherited documentation for their public properties.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -30,6 +30,10 @@
     <None Include="..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Update="assets\Runner-Icon.png" Pack="true" PackagePath="Runner-Icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
   </ItemGroup>
 
   <!-- Resolve the generator's actual output path, including custom output configurations.
