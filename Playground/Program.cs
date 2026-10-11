@@ -7,19 +7,17 @@ using Spectre.Console;
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-
 var jevQuery = new JevQuery(new FileData("Some.txt", "bla bla bla"));
 var response = await jevQuery.Execute(jevRunner);
-var wrapper = new JevQueryResponseWrapper(response);
 
-AnsiConsole.MarkupLineInterpolated($"[green]{jevQuery.GetDangerZoneAnswer(response)}[/]");
+AnsiConsole.MarkupLineInterpolated($"[green]{response.DangerZone}[/]");
 
 
 public record FileData(string File, string Data);
 
 
 /// <summary>Provides instructions and optional yes/no criteria for evaluating file content.</summary>
-public partial class QuestionDefinition : INoulQuestionDefinition<string[]>
+public class QuestionDefinition : INoulQuestionDefinition<string[]>
 {
     public QuestionDefinition(string[] instructions)
     {

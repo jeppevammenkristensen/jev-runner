@@ -22,7 +22,7 @@ internal static class JevQuerySourceCodeGenerator
         // Reopen outer types, but emit a new class instead of reopening the query itself.
         AppendContainingDeclarations(source, containers.Take(containers.Count - 1).ToArray());
 
-        var wrapperName = Identifier(type.Name + "ResponseWrapper");
+        var wrapperName = GenerateWrapperName(type);
         var typeParameters = type.TypeParameters.Length == 0
             ? string.Empty
             : "<" + string.Join(", ", type.TypeParameters.Select(parameter => Identifier(parameter.Name))) + ">";
@@ -56,6 +56,11 @@ internal static class JevQuerySourceCodeGenerator
         return source.ToString();
     }
 
+    private static string GenerateWrapperName(INamedTypeSymbol type)
+    {
+        return Identifier(type.Name + "ResponseWrapper");
+    }
+
     /// <summary>
     /// Reopens namespaces and generic containing classes and emits documented ordinary methods.
     /// </summary>
@@ -74,7 +79,10 @@ internal static class JevQuerySourceCodeGenerator
             .Select(parameter => parameter.Name), StringComparer.Ordinal);
         AppendRequestMethod(source, questions, localNames);
 
-        AppendExecuteMethod(source, localNames);
+        var wrapperType = GenerateWrapperName(type);
+        if (type.TypeParameters.Length != 0)
+            wrapperType += "<" + string.Join(", ", type.TypeParameters.Select(parameter => Identifier(parameter.Name))) + ">";
+        AppendExecuteMethod(source, wrapperType, localNames);
 
         AppendAnswerAccessors(source, questions, localNames);
 
@@ -154,17 +162,20 @@ internal static class JevQuerySourceCodeGenerator
     /// <summary>
     /// Emits asynchronous query execution that forwards the generated request and cancellation token to the runner.
     /// </summary>
-    internal static void AppendExecuteMethod(StringBuilder source, HashSet<string> localNames)
+    internal static void AppendExecuteMethod(StringBuilder source, string wrapperName, HashSet<string> localNames)
     {
+        var response = LocalName("response", localNames);
+
         source.AppendLine(
             "/// <summary>Creates this query's request and asynchronously executes it using the supplied runner.</summary>");
         source.AppendLine("/// <param name=\"runner\">The runner used to execute the request.</param>");
         source.AppendLine(
             "/// <param name=\"cancellationToken\">The cancellation token forwarded to the runner.</param>");
-        source.AppendLine("/// <returns>A task whose result is the response returned by the runner.</returns>");
+        source.AppendLine("/// <returns>A task whose result wraps the runner's response and exposes typed answers.</returns>");
         source.AppendLine(
-            "public async global::System.Threading.Tasks.Task<global::JRK.JevRunner.Response> Execute(global::JRK.JevRunner.JevRunner runner, global::System.Threading.CancellationToken cancellationToken = default) {");
-        source.AppendLine($"   return await runner.Execute(GetRequest(), cancellationToken);");
+            $"public async global::System.Threading.Tasks.Task<{wrapperName}> Execute(global::JRK.JevRunner.JevRunner runner, global::System.Threading.CancellationToken cancellationToken = default) {{");
+        source.AppendLine($"var {response} = await runner.Execute(GetRequest(), cancellationToken);");
+        source.AppendLine($"return new {wrapperName}({response});");
         source.AppendLine("}");
     }
 

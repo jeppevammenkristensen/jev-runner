@@ -12,7 +12,9 @@ published release notes.
 ### Added
 
 - Generated `Execute` methods for annotated queries, forwarding the generated
-  request and cancellation token to `JevRunner` and returning its `Response`.
+  request and optional cancellation token to `JevRunner` and returning
+  `Task<{QueryName}ResponseWrapper>` with typed question properties and the original
+  `.Response`.
 - Generated `{QueryName}ResponseWrapper` classes that expose the original
   `Response` and getter-only, typed answer properties for each supported question.
   These properties reuse the query's required-answer lookup logic, including
@@ -24,11 +26,16 @@ published release notes.
 
 ### Changed
 
-<!-- Changes to existing behavior or APIs. Note breaking changes explicitly. -->
+- Generated `query.Execute(runner, cancellationToken)` now returns a response
+  wrapper instead of a raw `Response`. After awaiting it, use the wrapper's named
+  question properties for typed answers, or `.Response` where a raw `Response`
+  is required, including calls to existing `Get{QuestionName}Answer(Response)`
+  accessors. `GetRequest()` remains available for manual execution.
 
 ### Fixed
 
-<!-- Bug fixes. -->
+- Generated wrapper-returning `Execute` methods preserve generic query type
+  arguments and avoid naming their response local after a containing type parameter.
 
 ### Removed
 

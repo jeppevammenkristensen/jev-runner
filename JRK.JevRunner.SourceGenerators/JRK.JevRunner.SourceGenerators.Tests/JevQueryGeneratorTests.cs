@@ -133,14 +133,14 @@ public class JevQueryGeneratorTests
         var generated = AssertSuccessful(result, output);
         Assert.Contains("nameof(this.@Budget)", generated);
         Assert.Contains("global::JRK.JevRunner.Request GetRequest()", generated);
-        Assert.Contains("global::System.Threading.Tasks.Task<global::JRK.JevRunner.Response> Execute(", generated);
+        Assert.Contains("global::System.Threading.Tasks.Task<@TravelQueryResponseWrapper> Execute(", generated);
         Assert.Contains("global::JRK.JevRunner.Responses.NoulAnswer @GetBudgetAnswer", generated);
         Assert.Contains("/// <summary>", generated);
         AssertConsumerSucceeds(output);
     }
 
     [Fact]
-    public void ExecuteForwardsQueryRequestAndCancellationTokenAndReturnsRunnerResponse()
+    public void ExecuteForwardsQueryRequestAndCancellationTokenAndWrapsRunnerResponse()
     {
         var (result, output) = Generate(QuerySource() + """
                                                         public static class Consumer
@@ -149,10 +149,15 @@ public class JevQueryGeneratorTests
                                                             {
                                                                 var query = new TestNamespace.TravelQuery();
                                                                 var runner = new JRK.JevRunner.JevRunner();
+                                                                var expected = new JRK.JevRunner.Responses.NoulAnswer();
+                                                                runner.Response.Answers.Add("Budget", expected);
                                                                 using var cancellation = new System.Threading.CancellationTokenSource();
-                                                                var response = query.Execute(runner, cancellation.Token).GetAwaiter().GetResult();
+                                                                TestNamespace.TravelQueryResponseWrapper response =
+                                                                    query.Execute(runner, cancellation.Token).GetAwaiter().GetResult();
                                                                 var request = runner.LastRequest;
-                                                                if (!object.ReferenceEquals(response, runner.Response)
+                                                                if (!object.ReferenceEquals(response.Response, runner.Response)
+                                                                    || !object.ReferenceEquals(response.Budget, expected)
+                                                                    || !object.ReferenceEquals(query.GetBudgetAnswer(response.Response), response.Budget)
                                                                     || runner.LastCancellationToken != cancellation.Token
                                                                     || request.State != query.State || request.Model != query.JevModel
                                                                     || request.Questions.Count != 1
@@ -160,7 +165,9 @@ public class JevQueryGeneratorTests
                                                                     || request.Questions[0].Instructions != query.Budget.Instructions) return false;
 
                                                                 var defaultResponse = query.Execute(runner).GetAwaiter().GetResult();
-                                                                return object.ReferenceEquals(defaultResponse, runner.Response)
+                                                                return object.ReferenceEquals(defaultResponse.Response, runner.Response)
+                                                                    && object.ReferenceEquals(defaultResponse.Budget, expected)
+                                                                    && !object.ReferenceEquals(response, defaultResponse)
                                                                     && runner.LastCancellationToken == default(System.Threading.CancellationToken)
                                                                     && !object.ReferenceEquals(request, runner.LastRequest);
                                                             }
@@ -174,7 +181,7 @@ public class JevQueryGeneratorTests
         Assert.Contains("/// <param name=\"runner\">The runner used to execute the request.</param>", generated);
         Assert.Contains("/// <param name=\"cancellationToken\">The cancellation token forwarded to the runner.</param>",
             generated);
-        Assert.Contains("/// <returns>A task whose result is the response returned by the runner.</returns>",
+        Assert.Contains("/// <returns>A task whose result wraps the runner's response and exposes typed answers.</returns>",
             generated);
         AssertConsumerSucceeds(output);
     }
@@ -578,23 +585,50 @@ public class JevQueryGeneratorTests
     }
 
     [Theory]
-    [InlineData("Noul")]
-    [InlineData("Choice")]
-    [InlineData("Score")]
-    public void GenericQuestionConstrainedToDefinitionInterfaceIsSupported(string kind)
+    [InlineData("Noul", "T")]
+    [InlineData("Choice", "T")]
+    [InlineData("Score", "T")]
+    [InlineData("Noul", "response")]
+    public void GenericQuestionConstrainedToDefinitionInterfaceIsSupported(string kind, string typeParameter)
     {
         var (result, output) = Generate($$"""
                                           [JRK.JevRunner.Annotation.JevQuery]
-                                          public partial class Query<T> where T : JRK.JevRunner.Annotation.I{{kind}}QuestionDefinition<string>
+                                          public partial class Query<{{typeParameter}}> where {{typeParameter}} : JRK.JevRunner.Annotation.I{{kind}}QuestionDefinition<string>
                                           {
                                               public string State => "state";
                                               public string JevModel => "model";
-                                              public T Budget { get; set; }
+                                              public {{typeParameter}} Budget { get; set; }
+                                          }
+
+                                          public class Question : JRK.JevRunner.Annotation.I{{kind}}QuestionDefinition<string>
+                                          {
+                                              public string Instructions => "instructions";
+                                              public string Yes => null;
+                                              public string No => null;
+                                              public JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];
+                                              public string[] Criterias => new string[0];
+                                          }
+
+                                          public static class Consumer
+                                          {
+                                              public static bool Verify()
+                                              {
+                                                  var query = new Query<Question> { Budget = new Question() };
+                                                  var runner = new JRK.JevRunner.JevRunner();
+                                                  var expected = new JRK.JevRunner.Responses.{{kind}}Answer();
+                                                  runner.Response.Answers.Add("Budget", expected);
+                                                  QueryResponseWrapper<Question> wrapper = query.Execute(runner).GetAwaiter().GetResult();
+                                                  return object.ReferenceEquals(wrapper.Response, runner.Response)
+                                                      && object.ReferenceEquals(wrapper.Budget, expected)
+                                                      && runner.LastRequest.Questions.Count == 1;
+                                              }
                                           }
                                           """);
 
         var generated = AssertSuccessful(result, output);
         Assert.Contains($"global::JRK.JevRunner.Responses.{kind}Answer @GetBudgetAnswer", generated);
+        Assert.Contains($"Task<@QueryResponseWrapper<@{typeParameter}>> Execute(", generated);
+        AssertConsumerSucceeds(output);
     }
 
     [Fact]

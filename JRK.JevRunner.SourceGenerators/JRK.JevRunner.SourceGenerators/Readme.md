@@ -1,6 +1,7 @@
 ﻿# Jev query source generator
 
-`JevQueryGenerator` generates request construction and typed answer accessors for
+`JevQueryGenerator` generates request construction, execution, response wrappers,
+and typed answer accessors for
 classes and record classes annotated with `JRK.JevRunner.Annotation.JevQueryAttribute`.
 
 ## Query contract
@@ -51,16 +52,41 @@ produce JEV002. Invalid interface implementations also produce ordinary C# compi
 errors (for example, a wrongly typed collection). Incompatible instruction types or
 runtime API signatures produce JEV004 through binding of the emitted code.
 
+### Generated execution and answers
+
+`Execute(runner, cancellationToken)` builds the query's request, forwards it and
+the optional cancellation token to `JevRunner`, and returns
+`Task<{QueryName}ResponseWrapper>`. The wrapper exposes the original `Response`
+through `.Response` and a getter-only typed answer property for each question,
+using the same name as the query property.
+
+For example, given an annotated `BudgetQuery` with a choice question named `Budget`:
+
+```csharp
+var result = await query.Execute(runner, cancellationToken);
+var budgetAnswer = result.Budget; // ChoiceAnswer on BudgetQueryResponseWrapper.
+var response = result.Response; // Original Response.
+```
+
+`GetRequest()` and named answer accessors remain available for manual execution:
+
+```csharp
+var response = await runner.Execute(query.GetRequest(), cancellationToken);
+var budgetAnswer = query.GetBudgetAnswer(response);
+```
+
 For a question property named `Budget`, the generated `GetRequest()` adds a
-question named `Budget`, and `GetBudgetAnswer(Response)` retrieves that named
-typed answer. Choice and score accessors return the full `ChoiceAnswer` and
-`ScoreAnswer` objects, including probabilities and confidence, rather than just a
-selected string or numeric score. Question names come from property identifiers, not their types.
+question named `Budget`, and both the wrapper's `Budget` property and
+`GetBudgetAnswer(Response)` retrieve that named typed answer. Wrapper properties
+perform the required-answer lookup on each access and throw if the answer is
+missing or has a mismatched type. Noul, choice, and score properties return
+`NoulAnswer`, `ChoiceAnswer`, and `ScoreAnswer`, respectively. Choice and score
+answers are full objects, including probabilities and confidence, rather than
+just a selected string or numeric score. Question names come from property identifiers, not their types.
 Existing members must not collide with these generated method names.
 
 See [Examples.cs](../JRK.JevRunner.SourceGenerators.Sample/Examples.cs) for a
-complete mixed noul, choice, and score example that constructs a request and consumes
-all three typed answer accessors against the actual runtime API.
+complete mixed noul, choice, and score query against the actual runtime API.
 
 ## Diagnostics
 
