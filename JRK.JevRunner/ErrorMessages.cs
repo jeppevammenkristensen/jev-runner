@@ -5,7 +5,7 @@ namespace JRK.JevRunner;
 /// <summary>
 /// Provides range validation shared by probability and confidence value types.
 /// </summary>
-public static class ErrorMessages
+internal static class ErrorMessages
 {
     /// <summary>
     /// Throws when the supplied value is not finite or lies outside the inclusive range from zero to one.

@@ -1,4 +1,5 @@
-﻿using JRK.JevRunner.Infrastructure;
+﻿using JetBrains.Annotations;
+using JRK.JevRunner.Infrastructure;
 
 namespace JRK.JevRunner.Annotation;
 
@@ -6,6 +7,7 @@ namespace JRK.JevRunner.Annotation;
 /// Defines a score question with instructions and scoring criteria without requiring a dedicated definition class.
 /// </summary>
 /// <typeparam name="TInstruction">The type of the instructions.</typeparam>
+[UsedImplicitly]
 public class GenericScoreQuestionDefinition<TInstruction> : IScoreQuestionDefinition<TInstruction>
 {
     /// <summary>
