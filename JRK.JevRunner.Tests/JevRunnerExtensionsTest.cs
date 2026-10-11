@@ -1,6 +1,5 @@
 using System;
 using JetBrains.Annotations;
-using JRK.JevRunner;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
