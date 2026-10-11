@@ -70,8 +70,10 @@ Alternatively you can mark a partial class or record class with `[JevQuery]` and
 and `JevModel` properties. Note that State can be a string, array or any object.  Question properties implement one of
 `INoulQuestionDefinition<TInstruction>`, `IChoiceQuestionDefinition<TInstruction>`,
 or `IScoreQuestionDefinition<TInstruction>` from `JRK.JevRunner.Annotation`.
-The generator adds `GetRequest()` and named typed answer accessors such as
-`GetBudgetAnswer(Response)`.
+The generator adds `GetRequest()`, `Execute(runner, cancellationToken)`, and named
+typed answer accessors such as `GetBudgetAnswer(Response)`. Generated `Execute`
+returns `Task<{QueryName}ResponseWrapper>`. The wrapper exposes getter-only typed
+answer properties named after the query's questions and the original `.Response`.
 
 For example, using the `runner` initialized in the quick start:
 
@@ -80,8 +82,9 @@ using JRK.JevRunner.Annotation;
 using JRK.JevRunner.Requests;
 
 var query = new AnimalQuery();
-var response = await runner.Execute(query.GetRequest());
-Console.WriteLine(query.GetDogJumpedOverAnswer(response));
+var result = await query.Execute(runner);
+Console.WriteLine(result.DogJumpedOver);
+var response = result.Response; // Original Response for direct runtime API access.
 
 [JevQuery]
 public partial class AnimalQuery
@@ -99,7 +102,12 @@ public class JumpQuestion : INoulQuestionDefinition<string>
 }
 ```
 
-`GetRequest()` and `GetDogJumpedOverAnswer(Response)` are generated automatically.
+`Execute(runner, cancellationToken)` builds the request and forwards the optional
+cancellation token to the runner. In this example it returns an
+`AnimalQueryResponseWrapper` with a `NoulAnswer` property named `DogJumpedOver`.
+`GetRequest()` and `GetDogJumpedOverAnswer(Response)` remain available for manual
+execution and answer lookup. Wrapper answer properties throw if an answer is
+missing or has a mismatched type.
 Criteria are generated only when both `Yes` and `No` are non-null; otherwise
 criteria remain unset.
 
