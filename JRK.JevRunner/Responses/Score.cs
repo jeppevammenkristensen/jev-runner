@@ -1,8 +1,11 @@
+using JetBrains.Annotations;
+
 namespace JRK.JevRunner.Responses;
 
 /// <summary>
 /// Wraps a score value, rejecting values below zero.
 /// </summary>
+[UsedImplicitly]
 public readonly record struct Score
 {
     /// <summary>
