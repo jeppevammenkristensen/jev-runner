@@ -10,7 +10,9 @@ var jevRunner = connector.GetRunner();
 
 
 var jevQuery = new JevQuery(new FileData("Some.txt", "bla bla bla"));
-var response = await jevQuery.GetRequest().Execute(jevRunner);
+var response = await jevQuery.Execute(jevRunner);
+var wrapper = new JevQueryResponseWrapper(response);
+
 AnsiConsole.MarkupLineInterpolated($"[green]{jevQuery.GetDangerZoneAnswer(response)}[/]");
 
 

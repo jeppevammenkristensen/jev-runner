@@ -12,7 +12,103 @@ namespace JRK.JevRunner.SourceGenerators.Tests;
 public class JevQueryGeneratorTests
 {
     [Fact]
-    public void NoulQueryGeneratesCompilableRequestAndTypedAnswerAccessor()
+    public void ResponseWrapperExposesOriginalResponseAndAllTypedAnswers()
+    {
+        var (result, output) = Generate(QuerySource() + """
+                                                        namespace TestNamespace
+                                                        {
+                                                            public partial class TravelQuery
+                                                            {
+                                                                public JRK.JevRunner.Annotation.IChoiceQuestionDefinition<string> @event => null;
+                                                                public JRK.JevRunner.Annotation.IScoreQuestionDefinition<string> Comfort => null;
+                                                            }
+                                                        }
+
+                                                        public static class Consumer
+                                                        {
+                                                            public static bool Verify()
+                                                            {
+                                                                var response = new JRK.JevRunner.Response();
+                                                                var budget = new JRK.JevRunner.Responses.NoulAnswer();
+                                                                var destination = new JRK.JevRunner.Responses.ChoiceAnswer();
+                                                                var comfort = new JRK.JevRunner.Responses.ScoreAnswer();
+                                                                response.Answers.Add("Budget", budget);
+                                                                response.Answers.Add("event", destination);
+                                                                response.Answers.Add("Comfort", comfort);
+
+                                                                var wrapper = new TestNamespace.TravelQueryResponseWrapper(response);
+                                                                if (!object.ReferenceEquals(response, wrapper.Response)
+                                                                    || !object.ReferenceEquals(budget, wrapper.Budget)
+                                                                    || !object.ReferenceEquals(destination, wrapper.@event)
+                                                                    || !object.ReferenceEquals(comfort, wrapper.Comfort)) return false;
+
+                                                                // Getters perform a fresh lookup rather than caching the original answer.
+                                                                var replacement = new JRK.JevRunner.Responses.NoulAnswer();
+                                                                response.Answers["Budget"] = replacement;
+                                                                if (!object.ReferenceEquals(replacement, wrapper.Budget)) return false;
+
+                                                                response.Answers.Remove("Budget");
+                                                                try { _ = wrapper.Budget; return false; }
+                                                                catch (System.Collections.Generic.KeyNotFoundException) { }
+
+                                                                response.Answers.Add("Budget", destination);
+                                                                try { _ = wrapper.Budget; return false; }
+                                                                catch (System.InvalidCastException) { return true; }
+                                                            }
+                                                        }
+                                                        """);
+
+        var generated = AssertSuccessful(result, output);
+        Assert.Contains("public class @TravelQueryResponseWrapper", generated);
+        Assert.Contains("public global::JRK.JevRunner.Response Response { get; }", generated);
+        Assert.Contains("@Budget => this.Response.@GetRequiredNoulAnswer(nameof(this.@Budget))", generated);
+        Assert.Contains("@event => this.Response.@GetRequiredChoiceAnswer(nameof(this.@event))", generated);
+        Assert.Contains("@Comfort => this.Response.@GetRequiredScoreAnswer(nameof(this.@Comfort))", generated);
+        AssertConsumerSucceeds(output);
+    }
+
+    [Theory]
+    [InlineData("class")]
+    [InlineData("record class")]
+    public void ResponseWrapperSupportsNestedGenericQueries(string declaration)
+    {
+        var (result, output) = Generate($$"""
+                                          namespace TestNamespace
+                                          {
+                                              public static partial class Container<T> where T : class
+                                              {
+                                                  [JRK.JevRunner.Annotation.JevQuery]
+                                                  public partial {{declaration}} Query<TQuestion>
+                                                      where TQuestion : JRK.JevRunner.Annotation.INoulQuestionDefinition<string>
+                                                  {
+                                                      public string State => "state";
+                                                      public string JevModel => "model";
+                                                      public TQuestion Budget => default;
+                                                  }
+                                              }
+                                          }
+
+                                          public static class Consumer
+                                          {
+                                              public static bool Verify()
+                                              {
+                                                  var response = new JRK.JevRunner.Response();
+                                                  var answer = new JRK.JevRunner.Responses.NoulAnswer();
+                                                  response.Answers.Add("Budget", answer);
+                                                  var wrapper = new TestNamespace.Container<string>.QueryResponseWrapper<
+                                                      JRK.JevRunner.Annotation.INoulQuestionDefinition<string>>(response);
+                                                  return object.ReferenceEquals(answer, wrapper.Budget);
+                                              }
+                                          }
+                                          """);
+
+        var generated = AssertSuccessful(result, output);
+        Assert.Contains("public class @QueryResponseWrapper<@TQuestion>", generated);
+        AssertConsumerSucceeds(output);
+    }
+
+    [Fact]
+    public void NoulQueryGeneratesCompilableRequestExecutionAndTypedAnswerAccessor()
     {
         var (result, output) = Generate(QuerySource() + """
 
@@ -37,8 +133,49 @@ public class JevQueryGeneratorTests
         var generated = AssertSuccessful(result, output);
         Assert.Contains("nameof(this.@Budget)", generated);
         Assert.Contains("global::JRK.JevRunner.Request GetRequest()", generated);
+        Assert.Contains("global::System.Threading.Tasks.Task<global::JRK.JevRunner.Response> Execute(", generated);
         Assert.Contains("global::JRK.JevRunner.Responses.NoulAnswer @GetBudgetAnswer", generated);
         Assert.Contains("/// <summary>", generated);
+        AssertConsumerSucceeds(output);
+    }
+
+    [Fact]
+    public void ExecuteForwardsQueryRequestAndCancellationTokenAndReturnsRunnerResponse()
+    {
+        var (result, output) = Generate(QuerySource() + """
+                                                        public static class Consumer
+                                                        {
+                                                            public static bool Verify()
+                                                            {
+                                                                var query = new TestNamespace.TravelQuery();
+                                                                var runner = new JRK.JevRunner.JevRunner();
+                                                                using var cancellation = new System.Threading.CancellationTokenSource();
+                                                                var response = query.Execute(runner, cancellation.Token).GetAwaiter().GetResult();
+                                                                var request = runner.LastRequest;
+                                                                if (!object.ReferenceEquals(response, runner.Response)
+                                                                    || runner.LastCancellationToken != cancellation.Token
+                                                                    || request.State != query.State || request.Model != query.JevModel
+                                                                    || request.Questions.Count != 1
+                                                                    || request.Questions[0].Name != "Budget"
+                                                                    || request.Questions[0].Instructions != query.Budget.Instructions) return false;
+
+                                                                var defaultResponse = query.Execute(runner).GetAwaiter().GetResult();
+                                                                return object.ReferenceEquals(defaultResponse, runner.Response)
+                                                                    && runner.LastCancellationToken == default(System.Threading.CancellationToken)
+                                                                    && !object.ReferenceEquals(request, runner.LastRequest);
+                                                            }
+                                                        }
+                                                        """);
+
+        var generated = AssertSuccessful(result, output);
+        Assert.Contains(
+            "/// <summary>Creates this query's request and asynchronously executes it using the supplied runner.</summary>",
+            generated);
+        Assert.Contains("/// <param name=\"runner\">The runner used to execute the request.</param>", generated);
+        Assert.Contains("/// <param name=\"cancellationToken\">The cancellation token forwarded to the runner.</param>",
+            generated);
+        Assert.Contains("/// <returns>A task whose result is the response returned by the runner.</returns>",
+            generated);
         AssertConsumerSucceeds(output);
     }
 
@@ -123,6 +260,7 @@ public class JevQueryGeneratorTests
         var query = output.GetTypeByMetadataName("TestNamespace.Container`1+Query");
         Assert.NotNull(query);
         Assert.Single(query.GetMembers("GetRequest"));
+        Assert.Single(query.GetMembers("Execute"));
         Assert.Single(query.GetMembers("GetBudgetAnswer"));
     }
 
@@ -335,13 +473,16 @@ public class JevQueryGeneratorTests
     [InlineData("ScoreQuestion", "Criterias", "")]
     [InlineData("ChoiceQuestion", "Choices", "public JRK.JevRunner.Requests.ChoiceCriteria[] Choices;")]
     [InlineData("ScoreQuestion", "Criterias", "public string[] Criterias;")]
-    [InlineData("ChoiceQuestion", "Choices", "public static JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];")]
+    [InlineData("ChoiceQuestion", "Choices",
+        "public static JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];")]
     [InlineData("ScoreQuestion", "Criterias", "public static string[] Criterias => new string[0];")]
     [InlineData("ChoiceQuestion", "Choices", "public JRK.JevRunner.Requests.ChoiceCriteria[] Choices { set { } }")]
     [InlineData("ScoreQuestion", "Criterias", "public string[] Criterias { set { } }")]
-    [InlineData("ChoiceQuestion", "Choices", "private JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];")]
+    [InlineData("ChoiceQuestion", "Choices",
+        "private JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];")]
     [InlineData("ScoreQuestion", "Criterias", "private string[] Criterias => new string[0];")]
-    [InlineData("ChoiceQuestion", "Choices", "public JRK.JevRunner.Requests.ChoiceCriteria[] Choices { private get; set; }")]
+    [InlineData("ChoiceQuestion", "Choices",
+        "public JRK.JevRunner.Requests.ChoiceCriteria[] Choices { private get; set; }")]
     [InlineData("ScoreQuestion", "Criterias", "public string[] Criterias { private get; set; }")]
     public void MissingOrUnreadableInterfaceImplementationReportsJev002(string kind, string property, string member)
     {
@@ -527,28 +668,28 @@ public class JevQueryGeneratorTests
     public void InheritedAmbiguousDefinitionsReportJev003()
     {
         AssertRejected(QuerySource(interfaces: "IBoth", instructions: """
-            public string Instructions => "instructions";
-            public string[] Criterias => new string[0];
-            """) + """
-            namespace TestNamespace
-            {
-                public interface IBoth : JRK.JevRunner.Annotation.INoulQuestionDefinition<string>,
-                    JRK.JevRunner.Annotation.IScoreQuestionDefinition<string> { }
-            }
-            """, "JEV003", assertCompiles: true);
+                                                                      public string Instructions => "instructions";
+                                                                      public string[] Criterias => new string[0];
+                                                                      """) + """
+                                                                             namespace TestNamespace
+                                                                             {
+                                                                                 public interface IBoth : JRK.JevRunner.Annotation.INoulQuestionDefinition<string>,
+                                                                                     JRK.JevRunner.Annotation.IScoreQuestionDefinition<string> { }
+                                                                             }
+                                                                             """, "JEV003", assertCompiles: true);
     }
 
     [Fact]
     public void DiamondInheritanceOfSameConstructionIsNotAmbiguous()
     {
         var (result, output) = Generate(QuerySource(interfaces: "IBoth") + """
-            namespace TestNamespace
-            {
-                public interface ILeft : JRK.JevRunner.Annotation.INoulQuestionDefinition<string> { }
-                public interface IRight : JRK.JevRunner.Annotation.INoulQuestionDefinition<string> { }
-                public interface IBoth : ILeft, IRight { }
-            }
-            """);
+                                                                           namespace TestNamespace
+                                                                           {
+                                                                               public interface ILeft : JRK.JevRunner.Annotation.INoulQuestionDefinition<string> { }
+                                                                               public interface IRight : JRK.JevRunner.Annotation.INoulQuestionDefinition<string> { }
+                                                                               public interface IBoth : ILeft, IRight { }
+                                                                           }
+                                                                           """);
 
         AssertSuccessful(result, output);
     }
@@ -694,6 +835,20 @@ public class JevQueryGeneratorTests
 
                                            namespace JRK.JevRunner
                                            {
+                                               public sealed class JevRunner
+                                               {
+                                                   public Request LastRequest { get; private set; }
+                                                   public System.Threading.CancellationToken LastCancellationToken { get; private set; }
+                                                   public Response Response { get; } = new();
+                                                   public System.Threading.Tasks.Task<Response> Execute(Request request,
+                                                       System.Threading.CancellationToken cancellationToken = default)
+                                                   {
+                                                       LastRequest = request;
+                                                       LastCancellationToken = cancellationToken;
+                                                       return System.Threading.Tasks.Task.FromResult(Response);
+                                                   }
+                                               }
+
                                                public sealed class Request
                                                {
                                                    public Request(string state, string model) { State = state; Model = model; }

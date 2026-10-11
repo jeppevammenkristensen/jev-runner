@@ -87,13 +87,16 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
 
         var definitions = new[]
         {
-            new QuestionDefinition(compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.INoulQuestionDefinition`1"),
+            new QuestionDefinition(
+                compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.INoulQuestionDefinition`1"),
                 "JRK.JevRunner.Requests.NoulQuestionBuilder", "JRK.JevRunner.Responses.NoulAnswer",
                 "GetRequiredNoulAnswer", ConfigurationKind.Noul),
-            new QuestionDefinition(compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IChoiceQuestionDefinition`1"),
+            new QuestionDefinition(
+                compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IChoiceQuestionDefinition`1"),
                 "JRK.JevRunner.Requests.ChoiceQuestionBuilder", "JRK.JevRunner.Responses.ChoiceAnswer",
                 "GetRequiredChoiceAnswer", ConfigurationKind.Choice),
-            new QuestionDefinition(compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IScoreQuestionDefinition`1"),
+            new QuestionDefinition(
+                compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IScoreQuestionDefinition`1"),
                 "JRK.JevRunner.Requests.ScoreQuestionBuilder", "JRK.JevRunner.Responses.ScoreAnswer",
                 "GetRequiredScoreAnswer", ConfigurationKind.Score)
         };
@@ -177,6 +180,7 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             return;
 
         var source = JevQuerySourceCodeGenerator.GenerateSourceCode(type, containers, questions);
+        source += JevQuerySourceCodeGenerator.GenerateWrappedResponse(type, containers, questions);
         var parseOptions = (CSharpParseOptions) query.TargetNode.SyntaxTree.Options;
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(source, Encoding.UTF8), parseOptions,
             cancellationToken: context.CancellationToken);
@@ -250,6 +254,10 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
     /// <summary>
     /// Describes the request and response API associated with a question definition interface.
     /// </summary>
-    private sealed record QuestionDefinition(INamedTypeSymbol? Interface, string Builder, string Answer,
-        string Accessor, ConfigurationKind Configuration);
+    private sealed record QuestionDefinition(
+        INamedTypeSymbol? Interface,
+        string Builder,
+        string Answer,
+        string Accessor,
+        ConfigurationKind Configuration);
 }
