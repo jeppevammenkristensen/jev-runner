@@ -108,7 +108,10 @@ public class RunCommand : AsyncCommand<RunCommand.Settings> // For sync only you
     }
 }
 
-
+/// <summary>
+/// File state passed as state to the JevQuery
+/// </summary>
+/// <param name="path"></param>
 public class FileState(AbsolutePath path)
 {
     private readonly IFileInfo _fileInfo = path.NewFileInfo();
@@ -128,16 +131,14 @@ public class FileState(AbsolutePath path)
 }
 
 [JevQuery]
-public partial class FileQuery
+public partial class FileQuery(FileState state)
 {
-    public FileQuery(FileState state)
-    {
-        State = state;
-    }
-
-    public FileState State { get; }
+    public FileState State { get; } = state;
     public JevModel JevModel { get; } = JevModel.Latest;
 
+    /// <summary>
+    /// The different categories.
+    /// </summary>
     public GenericChoiceQuestionDefinition<string> Groups { get; } = new(
         "Analyse the FileExtension and FileName to match the best fitting group",
         new ChoiceCriteria("Installer", "The file seems to be an installer"),
