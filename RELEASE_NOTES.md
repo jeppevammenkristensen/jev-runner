@@ -21,7 +21,7 @@ published release notes.
 
 ## Changed
 
-- Removed unnecesarry Jetbrains.Annotation dependency
+- Removed unnecessary Jetbrains.Annotation dependency
 
 ## 0.3.0
 
