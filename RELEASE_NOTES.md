@@ -7,6 +7,16 @@ When publishing a release, replace `Unreleased` with its version and release dat
 then add a new `Unreleased` section at the top. Remove empty categories from
 published release notes.
 
+## Unreleased
+
+### Added
+
+- FileGrouping command-line sample for classifying files with generated Jev
+  choice queries, moving them into category folders, and reporting token usage
+  and request counts. Files classified as `Indeterminate` are left in place.
+- FileGrouping run instructions and file-move safety guidance in the samples
+  README, with a link from the main README.
+
 ## 0.3.1
 
 ## Changed
