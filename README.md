@@ -62,7 +62,8 @@ Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ## Samples
 
 See the [samples and run instructions](Samples/README.md) for runnable examples,
-starting with the interactive AnimalQuiz console game.
+including the interactive AnimalQuiz console game and the FileGrouping command-line
+sample, which classifies files with Jev and moves them into category folders.
 
 ## Generated queries
 

@@ -2,16 +2,16 @@
 
 Runnable examples of using JRK.JevRunner with Jev and the TypeSafe System One API.
 Open [Samples.slnx](Samples.slnx) in your IDE, or run a sample from the command line.
-There is currently one sample.
+The samples include AnimalQuiz and FileGrouping.
 
 ## Prerequisites
 
 - The .NET 11 SDK (currently in preview).
-- A TypeSafe API key and internet access. The sample sends requests to the live API.
+- A TypeSafe API key and internet access. The samples send requests to the live API.
 
-The sample references the published `JRK.JevRunner` NuGet package, so you do not need
+The samples reference the published `JRK.JevRunner` NuGet package, so you do not need
 to build the client library separately. `dotnet run` restores dependencies and builds
-the sample automatically.
+the selected sample automatically.
 
 ## AnimalQuiz
 
@@ -84,3 +84,64 @@ dotnet run --project Samples/AnimalQuiz/AnimalQuiz.csproj -- --help
 - [GuessQuery.cs](AnimalQuiz/GuessQuery.cs): the generated-query definition that
   groups the judgments for each turn.
 - [GuessQueryState.cs](AnimalQuiz/GuessQueryState.cs): the shared state sent to Jev.
+
+## FileGrouping
+
+[FileGrouping](FileGrouping/) is a command-line sample that classifies files in a
+directory using their names, extensions, and timestamps as application state. Its
+choice question asks Jev to select a category such as Installer, Video, Music,
+Images, Script, Archive, Receipt, or Document based on the name and extension.
+It does not read file contents or process subdirectories recursively.
+
+**This sample moves files.** Run it on a disposable copy of a directory first.
+Files are moved into category subfolders under the supplied directory; files
+classified as `Indeterminate` stay in their original location (an empty
+`Indeterminate` folder is still created). There is no dry-run option.
+
+The sample demonstrates:
+
+- Using a `[JevQuery]` with `GenericChoiceQuestionDefinition<string>` and typed
+  choice answers to group files.
+- Executing queries in parallel and displaying progress with Spectre.Console.
+- Summing input tokens, output tokens, and request counts from response usage.
+
+### Run from the command line
+
+Run these commands **from the repository root**, replacing the path with the
+directory you want to organize. In PowerShell:
+
+```powershell
+$env:JEV_TOKEN = "<your-typesafe-api-key>"
+dotnet run --project Samples/FileGrouping/FileGrouping.csproj -- "C:\path\to\files-copy"
+```
+
+For Bash or a compatible shell:
+
+```bash
+export JEV_TOKEN="<your-typesafe-api-key>"
+dotnet run --project Samples/FileGrouping/FileGrouping.csproj -- "/path/to/files-copy"
+```
+
+FileGrouping reads **`JEV_TOKEN`**, not `TYPESAFE_API_KEY`, and does not provide an
+`--api-key` option. Do not commit your key to source control.
+
+To see the command-line help:
+
+```shell
+dotnet run --project Samples/FileGrouping/FileGrouping.csproj -- --help
+```
+
+### Run from an IDE
+
+1. Open [Samples.slnx](Samples.slnx).
+2. Select `FileGrouping` as the startup/run project.
+3. Set `JEV_TOKEN` in the run configuration's environment variables.
+4. Supply the directory path as a program argument, quoting paths with spaces.
+
+### Explore the code
+
+- [FileGrouping.cs](FileGrouping/FileGrouping.cs): command-line setup, directory
+  validation, parallel classification, file moves, usage totals, and the
+  `FileState` and `FileQuery` definitions.
+- [FileGrouping.csproj](FileGrouping/FileGrouping.csproj): the console application
+  and its published package references.
