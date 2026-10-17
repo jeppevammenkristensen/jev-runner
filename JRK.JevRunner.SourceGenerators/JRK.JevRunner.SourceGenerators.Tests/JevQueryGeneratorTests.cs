@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace JRK.JevRunner.SourceGenerators.Tests;
@@ -27,6 +28,24 @@ public class JevQueryGeneratorTests
         var (result, output) = Generate(QuerySource(state: $"public {stateType} State => default;"), contract);
 
         AssertValueTupleWarning(result, output, warns ? "State" : null);
+    }
+
+    [Theory]
+    [InlineData("{ get; set; }")]
+    [InlineData("{ get; init; }")]
+    [InlineData("{ get { return default; } set { } }")]
+    [InlineData("{\n    get { return default; }\n    set { }\n}")]
+    public void ValueTupleStateWarningHighlightsEntirePropertyIncludingAccessors(string accessors)
+    {
+        var contract = RuntimeContract.Replace("string state", "object state")
+            .Replace("string State", "object State");
+        var declaration = $"public (string Name, int Age) State {accessors}";
+        var (result, output) = Generate(QuerySource(state: declaration), contract);
+
+        AssertValueTupleWarning(result, output, "State");
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(declaration, diagnostic.Location.SourceTree!.GetText(TestContext.Current.CancellationToken)
+            .ToString(diagnostic.Location.SourceSpan));
     }
 
     [Theory]
@@ -69,8 +88,10 @@ public class JevQueryGeneratorTests
         Assert.Contains(member, diagnostic.GetMessage());
         Assert.Contains("Item1 and Item2", diagnostic.GetMessage());
         Assert.Contains("record or anonymous object", diagnostic.GetMessage());
-        Assert.Equal(member.Split('.')[0], diagnostic.Location.SourceTree!.GetText()
-            .ToString(diagnostic.Location.SourceSpan));
+        var property = Assert.Single(diagnostic.Location.SourceTree!.GetRoot(TestContext.Current.CancellationToken)
+            .DescendantNodes().OfType<PropertyDeclarationSyntax>(),
+            declaration => declaration.Identifier.ValueText == member.Split('.')[0]);
+        Assert.Equal(property.Span, diagnostic.Location.SourceSpan);
     }
 
     [Fact]

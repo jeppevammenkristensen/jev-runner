@@ -91,7 +91,8 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             else if (name == "State" && IsValueTuple(property.Type))
             {
                 context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
-                    property.Locations.FirstOrDefault() ?? location, property.Name));
+                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
+                    ?? property.Locations.FirstOrDefault() ?? location, property.Name));
             }
         }
 
@@ -142,7 +143,9 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             // ValueTuples are a little unpredictable in how they are deserialized. So we ouptut
             // a warning
             if (IsValueTuple(match.Interface.TypeArguments[0]))
-                context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage, propertyLocation,
+                context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
+                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
+                    ?? propertyLocation,
                     property.Name + ".Instructions"));
 
             // Invalid concrete implementations already produce compiler errors; report the missing
