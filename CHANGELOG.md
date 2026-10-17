@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Source generator warning `JEV006` for value-tuple `State` and question instruction types in `[JevQuery]` queries. The warning explains that tuple element names are not preserved in JSON and recommends a record or anonymous object when meaningful names are needed.
+
 ### Fixed
 
 - `JevMessage.Node` now serializes top-level value tuples using `JsonSerializerOptions.IncludeFields = true`, preserving their values instead of producing an empty JSON object (`{}`). This also applies to tuple state forwarded by generated `[JevQuery]` requests.

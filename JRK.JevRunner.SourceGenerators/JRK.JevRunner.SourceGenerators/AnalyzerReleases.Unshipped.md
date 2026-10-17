@@ -10,3 +10,4 @@ JEV002 | JevQuery | Error | Invalid query property or incomplete question defini
 JEV003 | JevQuery | Error | Ambiguous definition interfaces or missing explicit runtime mapping
 JEV004 | JevQuery | Error | Invalid generated API contract
 JEV005 | JevQuery | Error | Generated member conflict
+JEV006 | JevQuery | Warning | JevQueryGenerator
