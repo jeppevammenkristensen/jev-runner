@@ -6,13 +6,13 @@
     <Nullable>enable</Nullable>
     <RootNamespace>JRK.JevRunner</RootNamespace>
     <PackageId>JRK.JevRunner</PackageId>
-    <VersionPrefix>0.3.1</VersionPrefix>    
+    <VersionPrefix>0.4.0</VersionPrefix>    
     <Title>JRK JevRunner</Title>
     <Authors>Jeppe Roi Kristensen</Authors>
-    <Description>Unofficial .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.</Description>
-    <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet</PackageTags>
+    <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
+    <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Renoved Jetbrains.Annotations as dependency for this package</PackageReleaseNotes>
+    <PackageReleaseNotes>Tuple values are now included and serialized correctly when sent as message content or query state, instead of becoming empty JSON objects. Tuple elements appear as Item1, Item2, and so on. A new warning (JEV006) helps you spot tuple-based query state and question instructions, where a record or anonymous object would give your JSON more meaningful names.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

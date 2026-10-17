@@ -81,10 +81,10 @@ public partial class JevQuery
             "The text provides specific, useful details.");
     }
 
-    public FileData State { get; private set; }
-    public JevModel JevModel { get; private set; }
+    private FileData State { get;  }
+    private JevModel JevModel { get; }
 
-    public QuestionDefinition DangerZone { get; private set; }
-    public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; private set; }
-    public ScoreQuestionDefinition ScoreQuestionDefinition { get; private set; }
+    public QuestionDefinition DangerZone { get;  }
+    public ChoiceQuestionDefinition ChoiceQuestionDefinition { get;  }
+    public ScoreQuestionDefinition ScoreQuestionDefinition { get;  }
 }

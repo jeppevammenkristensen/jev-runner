@@ -2,7 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/JRK.JevRunner.svg)](https://www.nuget.org/packages/JRK.JevRunner)
 
-An unofficial .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
+An .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
 
 ## Requirements
 
