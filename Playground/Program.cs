@@ -62,7 +62,7 @@ public partial class JevQuery
 {
     public JevQuery(FileData state)
     {
-        State = state;
+        State2 = state;
         JevModel = JevModel.Latest;
         DangerZone = new QuestionDefinition(["Contains bla kind of text"])
         {
@@ -81,7 +81,9 @@ public partial class JevQuery
             "The text provides specific, useful details.");
     }
 
-    private FileData State { get;  }
+    private (string First, string Second) State { get; }
+    
+    private FileData State2 { get;  }
     private JevModel JevModel { get; }
 
     public QuestionDefinition DangerZone { get;  }

@@ -18,6 +18,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Runner-Icon.png</PackageIcon>
+    
+    <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev-02</VersionSuffix>
   </PropertyGroup>
 
   <ItemGroup>
