@@ -11,6 +11,68 @@ namespace JRK.JevRunner.SourceGenerators.Tests;
 
 public class JevQueryGeneratorTests
 {
+    [Theory]
+    [InlineData("(string Name, int Age)", true)]
+    [InlineData("(string, int)", true)]
+    [InlineData("System.ValueTuple<string, int>", true)]
+    [InlineData("System.ValueTuple", true)]
+    [InlineData("(string Name, int Age)?", true)]
+    [InlineData("System.Tuple<string, int>", false)]
+    [InlineData("object", false)]
+    [InlineData("string", false)]
+    public void ValueTupleStateReportsWarningWithoutBlockingGeneration(string stateType, bool warns)
+    {
+        var contract = RuntimeContract.Replace("string state", "object state")
+            .Replace("string State", "object State");
+        var (result, output) = Generate(QuerySource(state: $"public {stateType} State => default;"), contract);
+
+        AssertValueTupleWarning(result, output, warns ? "State" : null);
+    }
+
+    [Theory]
+    [InlineData("Noul")]
+    [InlineData("Choice")]
+    [InlineData("Score")]
+    public void ValueTupleInstructionsReportWarningWithoutBlockingGeneration(string kind)
+    {
+        var contract = RuntimeContract.Replace("string instructions", "object instructions")
+            .Replace("string Instructions", "object Instructions");
+        var source = QuerySource(interfaces: $"I{kind}QuestionDefinition<(string Name, int Age)>",
+            instructions: """
+                          public (string Name, int Age) Instructions => ("Alice", 42);
+                          public JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];
+                          public string[] Criterias => new string[0];
+                          """);
+        var (result, output) = Generate(source, contract);
+
+        AssertValueTupleWarning(result, output, "Budget.Instructions");
+    }
+
+    /// <summary>Checks that tuple warnings point to the query property and still allow compilable generated code.</summary>
+    private static void AssertValueTupleWarning(GeneratorDriverRunResult result, Compilation output, string? member)
+    {
+        var generatorResult = Assert.Single(result.Results);
+        Assert.Null(generatorResult.Exception);
+        Assert.Single(generatorResult.GeneratedSources);
+        Assert.Empty(output.GetDiagnostics(TestContext.Current.CancellationToken)
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        if (member == null)
+        {
+            Assert.Empty(result.Diagnostics);
+            return;
+        }
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("JEV006", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Equal("Query.cs", diagnostic.Location.SourceTree?.FilePath);
+        Assert.Contains(member, diagnostic.GetMessage());
+        Assert.Contains("Item1 and Item2", diagnostic.GetMessage());
+        Assert.Contains("record or anonymous object", diagnostic.GetMessage());
+        Assert.Equal(member.Split('.')[0], diagnostic.Location.SourceTree!.GetText()
+            .ToString(diagnostic.Location.SourceSpan));
+    }
+
     [Fact]
     public void ResponseWrapperExposesOriginalResponseAndAllTypedAnswers()
     {

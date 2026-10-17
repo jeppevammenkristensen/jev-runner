@@ -97,6 +97,12 @@ complete mixed noul, choice, and score query against the actual runtime API.
 | JEV003 | Multiple supported interface constructions or missing explicit builder/answer/accessor mapping |
 | JEV004 | Generated code cannot bind to the request/response API |
 | JEV005 | An existing member collides with a generated method name |
+| JEV006 | Warning: value-tuple state or question instructions serialize with runtime field names such as `Item1` and `Item2`, not tuple element names |
+
+JEV006 does not block generation. Use a record or anonymous object when meaningful
+JSON property names are required. It checks declared value-tuple types (including
+nullable tuples and explicit `System.ValueTuple` types), not runtime values hidden
+behind `object` or `JevMessage`, or tuples nested in other objects or collections.
 
 ## Projects and packaging
 

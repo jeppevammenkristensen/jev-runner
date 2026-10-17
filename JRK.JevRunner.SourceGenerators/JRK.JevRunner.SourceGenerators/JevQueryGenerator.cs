@@ -34,6 +34,11 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor MemberConflict = Descriptor("JEV005", "Generated member conflict",
         "Query '{0}' already declares a member named '{1}' required by the generator");
 
+    private static readonly DiagnosticDescriptor ValueTupleMessage = new DiagnosticDescriptor(
+        "JEV006", "Value tuple element names are not preserved",
+        "'{0}' uses a value tuple converted to JevMessage; JSON uses runtime field names such as Item1 and Item2, not tuple element names. Use a record or anonymous object to preserve meaningful names.",
+        "JevQuery", DiagnosticSeverity.Warning, true);
+
     /// <summary>
     /// Registers semantic discovery using the exact JevQuery attribute metadata name.
     /// </summary>
@@ -83,6 +88,11 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
                     $"'{name}' must be a readable, accessible instance property"));
                 valid = false;
             }
+            else if (name == "State" && IsValueTuple(property.Type))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
+                    property.Locations.FirstOrDefault() ?? location, property.Name));
+            }
         }
 
         var definitions = new[]
@@ -129,6 +139,12 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             }
 
             var match = matches[0];
+            // ValueTuples are a little unpredictable in how they are deserialized. So we ouptut
+            // a warning
+            if (IsValueTuple(match.Interface.TypeArguments[0]))
+                context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage, propertyLocation,
+                    property.Name + ".Instructions"));
+
             // Invalid concrete implementations already produce compiler errors; report the missing
             // interface member at the query too, without relying on concrete member names/accessibility.
             var missing = property.Type is INamedTypeSymbol concrete && concrete.TypeKind != TypeKind.Interface
@@ -224,6 +240,12 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
     private static bool Readable(IPropertySymbol property, INamedTypeSymbol within, Compilation compilation) =>
         !property.IsStatic && !property.IsIndexer && property.ExplicitInterfaceImplementations.Length == 0 &&
         property.GetMethod != null && compilation.IsSymbolAccessibleWithin(property.GetMethod, within);
+
+    /// <summary>Recognizes tuple syntax, explicit ValueTuple types, and nullable value tuples.</summary>
+    private static bool IsValueTuple(ITypeSymbol type) => type is INamedTypeSymbol named &&
+        (named.IsTupleType ||
+         (named.IsValueType && named.Name == "ValueTuple" && named.ContainingNamespace.ToDisplayString() == "System") ||
+         (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && IsValueTuple(named.TypeArguments[0])));
 
     /// <summary>Enumerates distinct interface constructions, including the type itself and generic constraints.</summary>
     private static IEnumerable<INamedTypeSymbol> QuestionInterfaces(ITypeSymbol type)
