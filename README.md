@@ -62,8 +62,15 @@ Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ## Samples
 
 See the [samples and run instructions](Samples/README.md) for runnable examples,
-including the interactive AnimalQuiz console game and the FileGrouping command-line
-sample, which classifies files with Jev and moves them into category folders.
+including:
+
+- [AnimalQuiz](Samples/README.md#animalquiz): identify a hidden animal through
+  yes-or-no questions in an interactive console game.
+- [BlackJack (Halvtolv)](Samples/BlackJack/Readme.md): play a Danish blackjack
+  variant against a Jev-controlled dealer that reasons about visible cards and
+  round history to decide whether to stop or draw.
+- [FileGrouping](Samples/README.md#filegrouping): classify files with Jev and move
+  them into category folders.
 
 ## Generated queries
 

@@ -2,7 +2,7 @@
 
 Runnable examples of using JRK.JevRunner with Jev and the TypeSafe System One API.
 Open [Samples.slnx](Samples.slnx) in your IDE, or run a sample from the command line.
-The samples include AnimalQuiz and FileGrouping.
+The samples include AnimalQuiz, BlackJack (Halvtolv), and FileGrouping.
 
 ## Prerequisites
 
@@ -84,6 +84,56 @@ dotnet run --project Samples/AnimalQuiz/AnimalQuiz.csproj -- --help
 - [GuessQuery.cs](AnimalQuiz/GuessQuery.cs): the generated-query definition that
   groups the judgments for each turn.
 - [GuessQueryState.cs](AnimalQuiz/GuessQueryState.cs): the shared state sent to Jev.
+
+## BlackJack (Halvtolv)
+
+[BlackJack](BlackJack/Readme.md) is an interactive console game of Halvtolv, a
+Danish blackjack variant where the target is **11½ points**. Play against a
+Jev-controlled dealer that chooses whether to stop or draw using the game rules,
+visible cards, and previous round statistics. Your first card is hidden from the
+dealer while it makes its decisions.
+
+The sample demonstrates:
+
+- Passing structured game state and round history to Jev.
+- Defining stop/continue choices with `GenericChoiceQuestionDefinition<string>`.
+- Using generated typed choice responses to drive the dealer's turn.
+- Making decisions with incomplete information about the player's hand.
+
+### Run from the command line
+
+Run these commands **from the repository root**. In PowerShell:
+
+```powershell
+$env:JEV_TOKEN = "<your-typesafe-api-key>"
+dotnet run --project Samples/BlackJack/BlackJack.csproj
+```
+
+For Bash or a compatible shell:
+
+```bash
+export JEV_TOKEN="<your-typesafe-api-key>"
+dotnet run --project Samples/BlackJack/BlackJack.csproj
+```
+
+BlackJack reads **`JEV_TOKEN`**, not `TYPESAFE_API_KEY`, and does not provide an
+`--api-key` option. Do not commit your key to source control.
+
+### Run from an IDE
+
+1. Open [Samples.slnx](Samples.slnx).
+2. Select `BlackJack` as the startup/run project.
+3. Set `JEV_TOKEN` in the run configuration's environment variables.
+4. Run the project in an interactive console.
+
+### Explore the code
+
+- [Program.cs](BlackJack/Program.cs): API-key configuration and starting the game.
+- [Game.cs](BlackJack/Game.cs): interactive rounds, dealer decisions, and outcomes.
+- [DealerQuery.cs](BlackJack/DealerQuery.cs): the stop/continue query definition.
+- [DealerState.cs](BlackJack/DealerState.cs): rules, round history, and current hands
+  supplied to Jev.
+- [Readme.md](BlackJack/Readme.md): game rules and background.
 
 ## FileGrouping
 
