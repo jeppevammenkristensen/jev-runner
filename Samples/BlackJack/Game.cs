@@ -7,7 +7,7 @@ using Spectre.Console;
 public class Game
 {
     private readonly JevRunner _runner;
-    List<PlayerRoundStats> roundStats = new List<PlayerRoundStats>();
+    private readonly List<PlayerRoundStats> _roundStats = new List<PlayerRoundStats>();
 
     /// <summary>Creates a game that uses the supplied Jev runner for dealer decisions.</summary>
     public Game(JevRunner runner)
@@ -43,7 +43,9 @@ public class Game
     /// <param name="cardDeck">The shared deck from which both hands draw cards.</param>
     private async Task PlayRound(PlayerDetails[] players, CardDeck cardDeck)
     {
-        AnsiConsole.Write(new Rule($"Round {roundStats.Count + 1}"));
+        AnsiConsole.Write(new Rule($"Round {_roundStats.Count + 1}"));
+        
+        AnsiConsole.MarkupLineInterpolated($"Card left [green]{cardDeck.CurrentStack.Count}[/]");
         
         var player = players[0];
         
@@ -101,7 +103,7 @@ public class Game
         { 
             // If the player display this. Update the PlayerRoundStats and continue. We will not query Jev here
             AnsiConsole.MarkupLineInterpolated($"[red]Player busted[/]");
-            roundStats.Add(new PlayerRoundStats(KnownPlayerCards: knownCards, CardsInTotal: allPlayerCards.Count, PlayerBusted: true, PlayerWon: false, GotHalvTolv: false, DealerBusted: false, DealerCards: []));
+            _roundStats.Add(new PlayerRoundStats(KnownPlayerCards: knownCards, CardsInTotal: allPlayerCards.Count, PlayerBusted: true, PlayerWon: false, GotHalvTolv: false, DealerBusted: false, DealerCards: []));
             return;
         }
         
@@ -118,7 +120,7 @@ public class Game
 
         // Create the initial dealer state to pass to the JevQuery
         DealerState state =
-            new DealerState(roundStats.ToImmutableArray(), currentPlayerHand, currentDealerHand);
+            new DealerState(_roundStats.ToImmutableArray(), currentPlayerHand, currentDealerHand);
 
         while (!dealerStopped)
         {
@@ -188,6 +190,6 @@ public class Game
                 .ToImmutableArray(), allPlayerCards.Count, false, dealerBusted, !dealerWon, madeHalvTolv,
             currentDealerHand.Cards);
 
-        roundStats.Add(playerRoundStats);
+        _roundStats.Add(playerRoundStats);
     }
 }
