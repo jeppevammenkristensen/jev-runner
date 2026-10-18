@@ -8,8 +8,9 @@ classes and record classes annotated with `JRK.JevRunner.Annotation.JevQueryAttr
 
 - The query and all containing types must be partial classes or record classes.
   The query must be non-static, and none of these types may be file-local.
-- Supply readable instance properties named `State` and `JevModel`, compatible with
-  the runtime `Request` constructor.
+- Supply a readable instance property named `State`, compatible with the runtime
+  `Request` constructor. `JevModel` is optional: omit it to use the constructor's
+  default model, or supply a readable instance property to select a model explicitly.
 - Each question property's type implements exactly one construction of a supported
   definition interface from `JRK.JevRunner.Annotation`. Discovery compares Roslyn
   original-definition symbol identities, including inherited interfaces. Interface-typed

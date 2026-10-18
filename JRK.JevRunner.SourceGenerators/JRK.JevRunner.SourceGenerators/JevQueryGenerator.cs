@@ -16,6 +16,8 @@ namespace JRK.JevRunner.SourceGenerators;
 public sealed class JevQueryGenerator : IIncrementalGenerator
 {
     private const string QueryAttribute = "JRK.JevRunner.Annotation.JevQueryAttribute";
+    private const string StatePropertyName = "State";
+    private const string JevModelPropertyName = "JevModel";
 
     private static readonly DiagnosticDescriptor InvalidType = Descriptor("JEV001", "Invalid query declaration",
         "Query '{0}' must be a non-static partial class or record class; all containing types must also be non-file-local partial classes or record classes");
@@ -79,16 +81,18 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
 
         var valid = true;
         var properties = Properties(type).ToArray();
-        foreach (var name in new[] {"State", "JevModel"})
+        foreach (var name in new[] {StatePropertyName, JevModelPropertyName})
         {
             var property = properties.FirstOrDefault(candidate => candidate.Name == name);
+            if (name == JevModelPropertyName && property == null)
+                continue;
             if (property == null || !Readable(property, type, compilation))
             {
                 context.ReportDiagnostic(Diagnostic.Create(InvalidProperty, location, type.Name,
                     $"'{name}' must be a readable, accessible instance property"));
                 valid = false;
             }
-            else if (name == "State" && IsValueTuple(property.Type))
+            else if (name == StatePropertyName && IsValueTuple(property.Type))
             {
                 context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
                     property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
@@ -202,7 +206,8 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         if (!valid)
             return;
 
-        var source = JevQuerySourceCodeGenerator.GenerateSourceCode(type, containers, questions);
+        var source = JevQuerySourceCodeGenerator.GenerateSourceCode(type, containers, questions,
+            properties.Any(property => property.Name == JevModelPropertyName));
         source += JevQuerySourceCodeGenerator.GenerateWrappedResponse(type, containers, questions);
         var parseOptions = (CSharpParseOptions) query.TargetNode.SyntaxTree.Options;
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(source, Encoding.UTF8), parseOptions,
