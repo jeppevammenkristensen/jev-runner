@@ -5,12 +5,14 @@
 ### Added
 
 - Experimental image support through request assets, with base64-encoded image data in the top-level `assets` map. Requests containing assets automatically send the `TypeSafe-Danger-Zone-Images: true` header.
+- `AssetState` stores named asset references and collects their assets when constructing a request. Its asynchronous `AddImageAsset` helper reads an image from a TruePath `AbsolutePath`, with optional `IFileSystem` support, and base64-encodes its bytes.
 - `JevKnownException.Content` exposes the API error response content through the nullable `ErrorContent` union.
 - Known-error handling for HTTP 400, 413, 415, and 529, while retaining existing 509 handling.
 
 ### Changed
 
 - Error translation now asynchronously reads the HTTP response body. Tests have been updated for the asynchronous translator and expanded status-code coverage.
+- Added XML documentation for asset state and image-file helpers, and README examples for image requests and API error handling.
 
 ## [0.4.0]
 

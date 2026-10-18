@@ -1,5 +1,7 @@
 ﻿using AutoSpectre;
+using FileBasedApp.Toolkit;
 using JRK.JevRunner.Annotation;
+using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 using Playground;
 using Spectre.Console;
@@ -7,13 +9,31 @@ using Spectre.Console;
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-var jevQuery = new JevQuery(new FileData("Some.txt", "bla bla bla"));
+var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
+
+var jevQuery = new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAsset("photo", "person_image",imagePath)));
 var response = await jevQuery.Execute(jevRunner);
 
-AnsiConsole.MarkupLineInterpolated($"[green]{response.DangerZone}[/]");
+
+var assets = new AssetState();
+AnsiConsole.MarkupLineInterpolated($"[green]Person with a beard: {response.HasBeard.Noul}[/]");
+AnsiConsole.MarkupLineInterpolated($"[dim]{response.Response.Usage}[/]");
 
 
-public record FileData(string File, string Data);
+
+return;
+
+public class FileData : AssetState
+{
+    public string File { get; }
+    public string Extension { get; }
+
+    public FileData(string file, string extension)
+    {
+        File = file;
+        Extension = extension;
+    }
+}
 
 
 /// <summary>Provides instructions and optional yes/no criteria for evaluating file content.</summary>
@@ -62,13 +82,10 @@ public partial class JevQuery
 {
     public JevQuery(FileData state)
     {
-        State2 = state;
+        State = state;
         JevModel = JevModel.Latest;
-        DangerZone = new QuestionDefinition(["Contains bla kind of text"])
-        {
-            //Yes = "The file contains filler or placeholder text such as 'bla'.",
-            //No = "The file contains meaningful text without filler or placeholder content."
-        };
+        HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null,null);
+        
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
             new ChoiceCriteria("Placeholder", "The text is filler or placeholder content, such as 'bla bla bla'."),
@@ -80,13 +97,11 @@ public partial class JevQuery
             "The text is clear and understandable.",
             "The text provides specific, useful details.");
     }
-
-    private (string First, string Second) State { get; }
     
-    private FileData State2 { get;  }
+    private FileData State { get;  }
     private JevModel JevModel { get; }
 
-    public QuestionDefinition DangerZone { get;  }
+    public INoulQuestionDefinition<string> HasBeard { get;  }
     public ChoiceQuestionDefinition ChoiceQuestionDefinition { get;  }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get;  }
 }
