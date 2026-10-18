@@ -4,6 +4,7 @@
 
 ### Added
 
+- Optional `JRK.JevRunner.Image` project with a SkiaSharp `BoxRenderer` that reads an image through TruePath and an injectable file system, draws a normalized `BoxAnswer` outline, and returns PNG bytes without modifying the source.
 - Experimental image support through request assets, with base64-encoded image data in the top-level `assets` map. Requests containing assets automatically send the `TypeSafe-Danger-Zone-Images: true` header.
 - `AssetState` stores named asset references and collects their assets when constructing a request. Its asynchronous `AddImageAsset` helper reads an image from a TruePath `AbsolutePath`, with optional `IFileSystem` support, and base64-encodes its bytes.
 - `JevKnownException.Content` exposes the API error response content through the nullable `ErrorContent` union.
