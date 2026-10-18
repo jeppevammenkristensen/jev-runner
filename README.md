@@ -59,6 +59,97 @@ var response = await runner.Execute(request);
 Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ```
 
+## Images (experimental)
+
+Jev's image API is **dreamer-ready**, not production-ready: request formats, limits,
+and accuracy may change. Images can be used with the existing Noul, Choice, and Score
+questions. Box questions are not currently supported by this client.
+
+Use `AssetState` to associate a state field with an image. `AddImageAsset` reads the
+file asynchronously, base64-encodes its bytes, and uses its extension as the image
+format. It accepts an optional `IFileSystem` for file access.
+
+Using the `runner` initialized in the quick start:
+
+```csharp
+using JRK.JevRunner;
+using JRK.JevRunner.Infrastructure;
+using JRK.JevRunner.Requests;
+using TruePath;
+
+var state = new AssetState();
+await state.AddImageAsset(
+    "photo",
+    Guid.NewGuid().ToString(),
+    AbsolutePath.Create(Path.GetFullPath("photo.jpg")));
+
+var request = new Request(state, JevModel.Latest)
+    .AddQuestion(new NoulQuestionBuilder(
+        "person_present",
+        "Is there a person in `photo`?"));
+
+var response = await runner.Execute(request);
+Console.WriteLine(response.GetRequiredNoulAnswer("person_present").Noul);
+```
+
+Populate the state **before** constructing the request: its assets are collected
+by the constructor. A generated `[JevQuery]` can likewise expose an `AssetState`
+as its `State` property; populate it before calling `GetRequest()` or `Execute()`.
+
+For manual configuration, add an `ImageAsset(reference, format, base64)` to
+`request.Assets` and place the same reference in the state, instructions, or
+criteria. Use unique references such as UUIDs to avoid accidental text matches.
+Base64 must contain only the encoded bytes, without a `data:` prefix.
+
+Requests containing assets automatically send
+`TypeSafe-Danger-Zone-Images: true`. Images are sent in the JSON `assets` map,
+not as multipart uploads. A filename or image URL alone does not upload an image.
+
+Prepare PNG or JPEG images before sending: each dimension must be 280–1568 pixels,
+each file at most 16 MiB, and the request body at most 32 MiB. Base64 increases the
+body size. Rotate the pixels upright; the API does not apply EXIF orientation.
+The helper does not resize, rotate, convert, or validate image data. Use a lowercase
+`.png`, `.jpg`, or `.jpeg` extension that matches the file contents.
+See the [TypeSafe image documentation](https://docs.typesafe.ai/images) for all limits.
+
+## API errors
+
+Known HTTP errors throw `JevKnownException` from `JRK.JevRunner.Infrastructure`.
+Its `InnerException` retains the original `HttpRequestException`, including the
+status code, and its nullable `Content` exposes the response body as an
+`ErrorContent` union (`JsonNode` or `string`). Empty or whitespace-only bodies
+produce null content.
+
+```csharp
+using JRK.JevRunner.Infrastructure;
+
+try
+{
+    var response = await runner.Execute(request);
+}
+catch (JevKnownException error)
+{
+    Console.Error.WriteLine(error.Message);
+    if (error.InnerException is HttpRequestException httpError)
+        Console.Error.WriteLine($"HTTP status: {httpError.StatusCode}");
+    if (error.Content is { } content)
+        Console.Error.WriteLine(content.Value);
+}
+```
+
+Handled status codes are **400, 401, 413, 415, 422, 429, and 529**, with **509**
+retained for compatibility. Other status codes pass through as HTTP exceptions
+when their response body can be parsed. Transport failures pass through without
+an HTTP response. The client does not automatically retry rate-limit or overload
+responses.
+
+**Current limitation:** non-empty error bodies are parsed as JSON without a
+plain-text fallback; malformed JSON or plain text throws `JsonException` instead
+of the translated HTTP error. The string union case currently receives the raw
+body when parsing yields JSON null.
+
+See the [TypeSafe error-code documentation](https://docs.typesafe.ai/api#errors).
+
 ## Samples
 
 See the [samples and run instructions](Samples/README.md) for runnable examples,

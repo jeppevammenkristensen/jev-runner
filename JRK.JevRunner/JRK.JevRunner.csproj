@@ -12,7 +12,7 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Added experimental image support through base64-encoded request assets, with automatic TypeSafe-Danger-Zone-Images opt-in. API error translation now reads response content asynchronously and exposes it through JevKnownException.Content and the nullable ErrorContent union. Added known-error handling for HTTP 400, 413, 415, and 529 while retaining 509 support, with expanded status-code tests.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added experimental image support through base64-encoded request assets, with automatic TypeSafe-Danger-Zone-Images opt-in. AssetState and its asynchronous AddImageAsset helper support loading image files through TruePath AbsolutePath with an optional IFileSystem. API error translation now reads response content asynchronously and exposes it through JevKnownException.Content and the nullable ErrorContent union. Added known-error handling for HTTP 400, 413, 415, and 529 while retaining 509 support, with expanded status-code tests. Added XML documentation and README examples for image requests and error handling.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -36,6 +36,7 @@
 
   <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2026.2.0"  PrivateAssets="all" />
+      <PackageReference Include="TruePath.TestableIO.System.IO" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
