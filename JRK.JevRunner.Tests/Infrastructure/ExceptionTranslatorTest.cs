@@ -32,6 +32,7 @@ public class ExceptionTranslatorTest
         Assert.NotNull(known.Content);
         var node = Assert.IsAssignableFrom<JsonNode>(known.Content.Value.Value);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(body), node));
+        Assert.Equal($"Bad request{Environment.NewLine}   {node.ToJsonString()}", known.Message);
     }
 
     /// <summary>Plain text, invalid JSON, HTML, and JSON null preserve the raw error body.</summary>
@@ -51,6 +52,7 @@ public class ExceptionTranslatorTest
         Assert.Same(original, known.InnerException);
         Assert.NotNull(known.Content);
         Assert.Equal(body, Assert.IsType<string>(known.Content.Value.Value));
+        Assert.Equal($"Bad request{Environment.NewLine}   {body}", known.Message);
     }
 
     /// <summary>Empty and whitespace-only error bodies are represented by absent content.</summary>
@@ -64,7 +66,9 @@ public class ExceptionTranslatorTest
         var translated = await ExceptionTranslator.TranslateRequestException(
             new HttpRequestException("HTTP failure", null, response.StatusCode), response);
 
-        Assert.Null(Assert.IsType<JevKnownException>(translated).Content);
+        var known = Assert.IsType<JevKnownException>(translated);
+        Assert.Null(known.Content);
+        Assert.Equal("Bad request", known.Message);
     }
 
     /// <summary>An unmapped status with a plain-text body still preserves the original HTTP failure.</summary>

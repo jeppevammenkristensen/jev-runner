@@ -1,10 +1,13 @@
-﻿using AutoSpectre;
+﻿using System.IO.Abstractions;
+using AutoSpectre;
 using Dumpify;
 using FileBasedApp.Toolkit;
 using JRK.JevRunner.Annotation;
+using JRK.JevRunner.Image;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 using Playground;
+using SkiaSharp;
 using Spectre.Console;
 
 var connector = new Connector().Prompt();
@@ -18,7 +21,10 @@ request.AddQuestion(new BoxQuestionBuilder("Find_Head", "Find the head in `Photo
 
 var result = await jevRunner.Execute(request);
 var requiredBoxAnswer = result.GetRequiredBoxAnswer("Find_Head");
+var rendered = new BoxRenderer().DrawBox(imagePath, requiredBoxAnswer);
 
+var outputPng = imagePath / ".." / "output.png";
+await outputPng.WriteAllBytesAsync(rendered, CancellationToken.None);
 requiredBoxAnswer.Dump();
 
 

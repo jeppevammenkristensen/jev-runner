@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JRK.JevRunner.Infrastructure;
@@ -11,16 +10,17 @@ namespace JRK.JevRunner.Infrastructure;
 public class JevKnownException(string errorMessage, HttpRequestException httpRequestException, ErrorContent? content)
     : Exception(BuildMessage(errorMessage, content), httpRequestException)
 {
-    private static string? BuildMessage(string message, ErrorContent? errorContent)
+    /// <summary>Retains the HTTP failure description and appends any returned error content.</summary>
+    private static string BuildMessage(string message, ErrorContent? errorContent)
     {
-        var builder = new StringBuilder().AppendLine();
+        var builder = new StringBuilder(message);
         if (errorContent is string stringContent)
         {
-            builder.AppendLine($"   {stringContent}");
+            builder.AppendLine().Append("   ").Append(stringContent);
         }
         else if (errorContent is JsonNode node)
         {
-            builder.AppendLine($"   {node.ToJsonString(new JsonSerializerOptions() { })}");
+            builder.AppendLine().Append("   ").Append(node.ToJsonString());
         }
         
         return builder.ToString();
