@@ -1,4 +1,6 @@
 <Solution>
     <Project Path="AnimalQuiz/AnimalQuiz.csproj" />
+    <Project Path="BlackJack.Tests/BlackJack.Tests.csproj" />
+    <Project Path="BlackJack/BlackJack.csproj" />
     <Project Path="FileGrouping/FileGrouping.csproj" />
 </Solution>
