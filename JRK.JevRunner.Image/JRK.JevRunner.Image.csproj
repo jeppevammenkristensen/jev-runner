@@ -5,7 +5,26 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <PackageId>JRK.JevRunner.Image</PackageId>
+        <Title>JRK JevRunner Image</Title>
+        <Authors>Jeppe Roi Kristensen</Authors>
+        <Description>Optional SkiaSharp image helpers for JRK.JevRunner. Render normalized Jev bounding-box answers as customizable outlines and return PNG bytes without modifying the source image.</Description>
+        <PackageTags>jev;typesafe;ai;system-one;images;bounding-box;skiasharp;dotnet</PackageTags>
+        <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>Runner-Icon.png</PackageIcon>
+        <PackageReleaseNotes>Initial image helpers with configurable bounding-box outlines, normalized-coordinate validation, injectable file access, and PNG output.</PackageReleaseNotes>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Update="README.md" Pack="true" PackagePath="\" />
+      <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+      <None Include="..\JRK.JevRunner\assets\Runner-Icon.png" Pack="true" PackagePath="Runner-Icon.png" />
+    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="SkiaSharp" Version="4.153.1" />
