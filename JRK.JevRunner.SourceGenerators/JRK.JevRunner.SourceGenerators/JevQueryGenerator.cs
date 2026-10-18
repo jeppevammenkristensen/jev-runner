@@ -109,7 +109,11 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             new QuestionDefinition(
                 compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IScoreQuestionDefinition`1"),
                 "JRK.JevRunner.Requests.ScoreQuestionBuilder", "JRK.JevRunner.Responses.ScoreAnswer",
-                "GetRequiredScoreAnswer", ConfigurationKind.Score)
+                "GetRequiredScoreAnswer", ConfigurationKind.Score),
+            new QuestionDefinition(
+                compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.IBoxQuestionDefinition`1"),
+                "JRK.JevRunner.Requests.BoxQuestionBuilder", "JRK.JevRunner.Responses.BoxAnswer",
+                "GetRequiredBoxAnswer", ConfigurationKind.Box)
         };
         var questions = new List<QuestionMapping>();
         foreach (var property in properties)

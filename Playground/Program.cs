@@ -6,6 +6,7 @@ using JRK.JevRunner.Annotation;
 using JRK.JevRunner.Image;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
+using JRK.JevRunner.Responses;
 using Playground;
 using SkiaSharp;
 using Spectre.Console;
@@ -16,14 +17,17 @@ var jevRunner = connector.GetRunner();
 var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
 
 var jevQuery = new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAsset("photo", "person_image",imagePath)));
-var request = jevQuery.GetRequest();
-request.AddQuestion(new BoxQuestionBuilder("Find_Head", "Find the head in `Photo`"));
+var response = await jevQuery.Execute(jevRunner);
+// var request = jevQuery.GetRequest();
+// request.AddQuestion(new BoxQuestionBuilder("Find_Head", "Find the head in `Photo`"));
+//
+// var result = await jevRunner.Execute(request);
+//var requiredBoxAnswer = result.GetRequiredBoxAnswer("Find_Head");
+var requiredBoxAnswer = response.FindPerson;
 
-var result = await jevRunner.Execute(request);
-var requiredBoxAnswer = result.GetRequiredBoxAnswer("Find_Head");
-var rendered = new BoxRenderer().DrawBox(imagePath, requiredBoxAnswer);
+var rendered = new BoxRenderer().DrawBox(imagePath, new List<BoxAnswer> {requiredBoxAnswer, response.FindGlasses}, SKColors.Green);
 
-var outputPng = imagePath / ".." / "output.png";
+var outputPng = imagePath / ".." / "output2.png";
 await outputPng.WriteAllBytesAsync(rendered, CancellationToken.None);
 requiredBoxAnswer.Dump();
 
@@ -92,6 +96,8 @@ public partial class JevQuery
         State = state;
         JevModel = JevModel.Preview;
         HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null,null);
+        FindPerson = new GenericBoxQuestionDefinition<string>("Find the head in the `photo`");
+        FindGlasses = new GenericBoxQuestionDefinition<string>("Find the glasses in the `photo`");
         
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
@@ -104,7 +110,11 @@ public partial class JevQuery
             "The text is clear and understandable.",
             "The text provides specific, useful details.");
     }
-    
+
+    public GenericBoxQuestionDefinition<string> FindGlasses { get; private set; }
+
+    public GenericBoxQuestionDefinition<string> FindPerson { get; private set; }
+
     private FileData State { get;  }
     private JevModel JevModel { get; }
 

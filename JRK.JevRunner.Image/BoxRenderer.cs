@@ -5,6 +5,21 @@ using TruePath;
 
 namespace JRK.JevRunner.Image;
 
+/// <summary>Supplies either one bounding-box answer or a collection of answers for image annotation.</summary>
+/// <remarks>Collections must support repeated enumeration for validation and drawing.</remarks>
+public union AppliedBox(BoxAnswer, IEnumerable<BoxAnswer>)
+{
+    /// <summary>Exposes either union case as an enumerable of bounding-box answers.</summary>
+    public IEnumerable<BoxAnswer> GetAll()
+    {
+        return this switch
+        {
+            BoxAnswer a => [a],
+            IEnumerable<BoxAnswer> a => a
+        };
+    }
+}
+
 /// <summary>Draws Jev bounding boxes on images and returns the annotated images as PNG bytes.</summary>
 public sealed class BoxRenderer
 {
@@ -23,21 +38,25 @@ public sealed class BoxRenderer
         _fileSystem = fileSystem;
     }
 
-    /// <summary>Draws an outline around the supplied bounding box without modifying the source file.</summary>
+    /// <summary>Draws outlines around the supplied bounding boxes without modifying the source file.</summary>
     /// <param name="filePath">The image whose pixel layout matches the image submitted to Jev.</param>
-    /// <param name="boxAnswer">The normalized box edges returned by Jev.</param>
+    /// <param name="boxAnswer">One normalized box answer or a repeatable collection of answers returned by Jev.</param>
     /// <param name="color">The outline color, or null to use red.</param>
     /// <param name="strokeWidth">The positive outline width in pixels.</param>
-    /// <returns>A PNG-encoded image with the original dimensions and the box outline.</returns>
+    /// <returns>A PNG-encoded image with the original dimensions and the box outlines.</returns>
     /// <remarks>No resizing or EXIF orientation correction is applied. Confidence does not affect rendering.
-    /// The stroke is centered on the box edges and clipped at the image boundary.</remarks>
-    /// <exception cref="ArgumentNullException">The box answer is null.</exception>
+    /// The stroke is centered on the box edges and clipped at the image boundary.
+    /// All boxes share the same style and are enumerated for validation before drawing.
+    /// An empty collection produces a PNG without outlines.</remarks>
     /// <exception cref="ArgumentOutOfRangeException">Edges are not finite fractions between zero and one,
     /// are not ordered, or the stroke width is not positive and finite.</exception>
     /// <exception cref="InvalidDataException">The source cannot be decoded as an image.</exception>
-    public byte[] DrawBox(AbsolutePath filePath, BoxAnswer boxAnswer, SKColor? color = null, float strokeWidth = 3f)
+    public byte[] DrawBox(AbsolutePath filePath, AppliedBox boxAnswer, SKColor? color = null, float strokeWidth = 3f)
     {
+#pragma warning disable CA2264
         ArgumentNullException.ThrowIfNull(boxAnswer);
+#pragma warning restore CA2264
+
         ValidateBox(boxAnswer);
         if (!float.IsFinite(strokeWidth) || strokeWidth <= 0)
             throw new ArgumentOutOfRangeException(nameof(strokeWidth), "Stroke width must be positive and finite.");
@@ -57,11 +76,15 @@ public sealed class BoxRenderer
                 StrokeWidth = strokeWidth,
                 IsAntialias = true
             };
-            canvas.DrawRect(new SKRect(
-                (float)(boxAnswer.Left * source.Width),
-                (float)(boxAnswer.Top * source.Height),
-                (float)(boxAnswer.Right * source.Width),
-                (float)(boxAnswer.Bottom * source.Height)), paint);
+
+            foreach (var answer in boxAnswer.GetAll())
+            {
+                canvas.DrawRect(new SKRect(
+                    (float)(answer.Left * source.Width),
+                    (float)(answer.Top * source.Height),
+                    (float)(answer.Right * source.Width),
+                    (float)(answer.Bottom * source.Height)), paint);
+            }
         }
 
         using var image = SKImage.FromBitmap(bitmap);
@@ -71,14 +94,17 @@ public sealed class BoxRenderer
     }
 
     /// <summary>Rejects non-normalized or empty boxes before accessing the source image.</summary>
-    private static void ValidateBox(BoxAnswer box)
+    private static void ValidateBox(AppliedBox boxAnswer)
     {
-        if (!IsFraction(box.Top) || !IsFraction(box.Bottom) ||
-            !IsFraction(box.Left) || !IsFraction(box.Right) ||
-            box.Top >= box.Bottom || box.Left >= box.Right)
+        foreach (var box in boxAnswer.GetAll())
         {
-            throw new ArgumentOutOfRangeException(nameof(box),
-                "Box edges must be finite values between zero and one, with top < bottom and left < right.");
+            if (!IsFraction(box.Top) || !IsFraction(box.Bottom) ||
+                !IsFraction(box.Left) || !IsFraction(box.Right) ||
+                box.Top >= box.Bottom || box.Left >= box.Right)
+            {
+                throw new ArgumentOutOfRangeException(nameof(box),
+                    "Box edges must be finite values between zero and one, with top < bottom and left < right.");
+            }
         }
     }
 

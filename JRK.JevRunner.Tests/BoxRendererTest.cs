@@ -134,16 +134,6 @@ public class BoxRendererTest
         Assert.Throws<InvalidDataException>(() => new BoxRenderer(fileSystem).DrawBox(
             path, new BoxAnswer(0, 1, 0, 1, 1)));
     }
-
-    /// <summary>A null bounding box is rejected before reading an image.</summary>
-    [Fact]
-    public void DrawBox_NullAnswer_Throws()
-    {
-        var renderer = new BoxRenderer(new MockFileSystem());
-
-        Assert.Throws<ArgumentNullException>(() => renderer.DrawBox(AbsolutePath.Create("C:/images/missing.png"), null!));
-    }
-
     /// <summary>A renderer requires a file system for its image input.</summary>
     [Fact]
     public void Constructor_NullFileSystem_Throws() =>

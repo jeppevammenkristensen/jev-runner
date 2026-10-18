@@ -7,5 +7,6 @@ internal enum ConfigurationKind
 {
     Noul,
     Choice,
-    Score
+    Score,
+    Box
 }
