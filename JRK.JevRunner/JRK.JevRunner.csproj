@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <!-- VersionPrefix and VersionSuffix is controlled in the Directory.Build.Props file -->
+  
   <PropertyGroup>
     <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>JRK.JevRunner</RootNamespace>
-    <PackageId>JRK.JevRunner</PackageId>
-    <VersionPrefix>0.4.0</VersionPrefix>    
+    <PackageId>JRK.JevRunner</PackageId>        
     <Title>JRK JevRunner</Title>
     <Authors>Jeppe Roi Kristensen</Authors>
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
@@ -17,9 +17,9 @@
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>Runner-Icon.png</PackageIcon>
+    <PackageIcon>Runner-Icon.png</PackageIcon>   
+    <IsPackable>true</IsPackable>
     
-    <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev-02</VersionSuffix>
   </PropertyGroup>
 
   <ItemGroup>
