@@ -30,27 +30,13 @@ public class CardDeckTest
         var deck = new CardDeck();
         var expected = deck.CurrentStack.Peek();
 
-        var drawn = deck.DrawCard(expected);
+        var drawn = deck.DrawCard();
 
         Assert.Equal(expected, drawn);
         Assert.Equal(51, deck.CurrentStack.Count);
         Assert.DoesNotContain(drawn, deck.CurrentStack);
         Assert.Equal(drawn, Assert.Single(deck.CurrentSession));
         Assert.Empty(deck.DrawnCards);
-    }
-
-    /// <summary>Checks that session history tracks the actual draw rather than the supplied card.</summary>
-    [Fact]
-    public void DrawCard_WithDifferentSuppliedCard_TracksReturnedCard()
-    {
-        var deck = new CardDeck();
-        var expected = deck.CurrentStack.Peek();
-        var differentCard = Card.GenerateCards().First(card => card != expected);
-
-        var drawn = deck.DrawCard(differentCard);
-
-        Assert.Equal(expected, drawn);
-        Assert.Equal(drawn, Assert.Single(deck.CurrentSession));
     }
 
     /// <summary>Checks that the initial deck can be drawn completely without repeats or reshuffling.</summary>
@@ -60,7 +46,7 @@ public class CardDeckTest
         var deck = new CardDeck();
 
         var drawn = Enumerable.Range(0, 52)
-            .Select(_ => deck.DrawCard(deck.CurrentStack.Peek())).ToArray();
+            .Select(_ => deck.DrawCard()).ToArray();
 
         Assert.Equal(52, drawn.Distinct().Count());
         Assert.All(Card.GenerateCards(), card => Assert.Contains(card, drawn));
@@ -74,8 +60,8 @@ public class CardDeckTest
     public void EndNewRound_MovesSessionToDrawnCardsAndClearsSession()
     {
         var deck = new CardDeck();
-        var first = deck.DrawCard(deck.CurrentStack.Peek());
-        var second = deck.DrawCard(deck.CurrentStack.Peek());
+        var first = deck.DrawCard();
+        var second = deck.DrawCard();
 
         deck.EndNewRound();
 
@@ -104,7 +90,7 @@ public class CardDeckTest
     public void EndNewRound_CalledTwice_DoesNotDuplicateDrawnCards()
     {
         var deck = new CardDeck();
-        var drawn = deck.DrawCard(deck.CurrentStack.Peek());
+        var drawn = deck.DrawCard();
 
         deck.EndNewRound();
         deck.EndNewRound();
@@ -117,9 +103,9 @@ public class CardDeckTest
     public void EndNewRound_AcrossRounds_PreservesDrawOrderWithoutDuplicates()
     {
         var deck = new CardDeck();
-        var first = deck.DrawCard(deck.CurrentStack.Peek());
+        var first = deck.DrawCard();
         deck.EndNewRound();
-        var second = deck.DrawCard(deck.CurrentStack.Peek());
+        var second = deck.DrawCard();
 
         deck.EndNewRound();
 
@@ -134,11 +120,11 @@ public class CardDeckTest
         var deck = new CardDeck();
         for (var i = 0; i < 52; i++)
         {
-            deck.DrawCard(deck.CurrentStack.Peek());
+            deck.DrawCard();
         }
         deck.EndNewRound();
 
-        var drawn = deck.DrawCard(new Card(Rank.Ace, Suit.Clubs));
+        var drawn = deck.DrawCard();
 
         Assert.True(deck.HasBeenReshuffled);
         Assert.Empty(deck.DrawnCards);
@@ -157,14 +143,11 @@ public class CardDeckTest
         {
             for (var i = 0; i < 52; i++)
             {
-                var suppliedCard = deck.CurrentStack.Count > 0
-                    ? deck.CurrentStack.Peek()
-                    : deck.DrawnCards[0];
-                deck.DrawCard(suppliedCard);
+                deck.DrawCard();
             }
             deck.EndNewRound();
         }
 
-        Assert.Throws<InvalidOperationException>(() => deck.DrawCard(new Card(Rank.Ace, Suit.Clubs)));
+        Assert.Throws<InvalidOperationException>(() => deck.DrawCard());
     }
 }
