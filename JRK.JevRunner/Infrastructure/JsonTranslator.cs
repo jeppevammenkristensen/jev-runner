@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using JRK.JevRunner.Requests;
 
 namespace JRK.JevRunner.Infrastructure;
 
@@ -24,9 +25,33 @@ internal class JsonTranslator
         {
             requestQuestion.AddTo(question);
         }
-
+        
         json.Add("questions", question);
+        
+        var assets = new JsonObject();
+
+        foreach (var asset in request.Assets)
+        {
+            asset.AddTo(assets);
+        }
+        
+        json.Add("assets", assets);
 
         return json;
     }
+}
+
+public class AssetState : Dictionary<string,string>
+{
+    private readonly Asset _asset;
+    internal Dictionary<string, Asset> Assets { get; set; } = [];
+
+    public AssetState AddAsset(string name, Asset asset)
+    {
+        Assets[name] = asset;
+        Add(name, asset.Name);
+        return this;
+    }
+    
+    
 }

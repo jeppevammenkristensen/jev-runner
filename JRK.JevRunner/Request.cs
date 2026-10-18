@@ -1,3 +1,5 @@
+using System.Collections;
+using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 
 namespace JRK.JevRunner;
@@ -14,6 +16,14 @@ public class Request
     {
         State = state;
         Model = model ?? JevModel.Latest;
+
+        if (State is AssetState assetState)
+        {
+            foreach (var asset in assetState.Assets)
+            {
+                Assets.Add(asset.Value);
+            }
+        }
     }
 
     /// <summary>
@@ -31,4 +41,5 @@ public class Request
     /// </summary>
     public List<Question> Questions { get; set; } = [];
 
+    public List<Asset> Assets { get; set; } = [];
 }

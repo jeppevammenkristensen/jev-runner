@@ -9,6 +9,8 @@ public static class RequestExtensions
 {
     extension(Request request)
     {
+        public bool HasAssets => request.Assets.Count > 0;
+        
         /// <summary>
         /// Appends a question to the request and returns the same request for further configuration.
         /// </summary>

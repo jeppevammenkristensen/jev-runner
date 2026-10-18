@@ -73,6 +73,11 @@ public partial class JevRunner : IJevRunner
         message.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue(
                 "Bearer", _options.ApiKey);
+
+        if (request.Assets.Count > 0)
+        {
+            message.Headers.Add("TypeSafe-Danger-Zone-Images", "true");
+        }
         
         var response = await _client.SendAsync(message, cancellationToken: cancellationToken);
 
@@ -83,7 +88,7 @@ public partial class JevRunner : IJevRunner
         catch (Exception e)
         {
             _logger.LogError(e, "Request failed");
-            throw ExceptionTranslator.TranslateRequestException(e);
+            throw (await ExceptionTranslator.TranslateRequestException(e, response));
         }
 
         try

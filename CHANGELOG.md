@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## [Unreleased]
+
+### Added
+
+- Experimental image support through request assets, with base64-encoded image data in the top-level `assets` map. Requests containing assets automatically send the `TypeSafe-Danger-Zone-Images: true` header.
+- `JevKnownException.Content` exposes the API error response content through the nullable `ErrorContent` union.
+- Known-error handling for HTTP 400, 413, 415, and 529, while retaining existing 509 handling.
+
+### Changed
+
+- Error translation now asynchronously reads the HTTP response body. Tests have been updated for the asynchronous translator and expanded status-code coverage.
+
 ## [0.4.0]
 
 ### Added

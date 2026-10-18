@@ -12,7 +12,7 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Tuple values are now included and serialized correctly when sent as message content or query state, instead of becoming empty JSON objects. Tuple elements appear as Item1, Item2, and so on. A new warning (JEV006) helps you spot tuple-based query state and question instructions, where a record or anonymous object would give your JSON more meaningful names.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added experimental image support through base64-encoded request assets, with automatic TypeSafe-Danger-Zone-Images opt-in. API error translation now reads response content asynchronously and exposes it through JevKnownException.Content and the nullable ErrorContent union. Added known-error handling for HTTP 400, 413, 415, and 529 while retaining 509 support, with expanded status-code tests.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -36,6 +36,10 @@
 
   <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2026.2.0"  PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Services\" />
   </ItemGroup>
 
   <!-- Resolve the generator's actual output path, including custom output configurations.
