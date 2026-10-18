@@ -34,10 +34,3 @@ public record NoulQuestion(string Name, JevMessage Instructions, YesNo? Criteria
         }
     }
 }
-
-/// <summary>
-/// Marker interface for a question
-/// </summary>
-public interface IQuestion
-{
-}

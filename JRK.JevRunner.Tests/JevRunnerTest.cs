@@ -20,6 +20,70 @@ namespace JRK.JevRunner.Tests;
 [TestSubject(typeof(JevRunner))]
 public class JevRunnerTest
 {
+    /// <summary>The experimental header is request-scoped and only image requests upload asset data.</summary>
+    [Fact]
+    public async Task Execute_ImageThenTextRequest_SendsImageHeaderOnlyForImageRequest()
+    {
+        var calls = 0;
+        using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
+        {
+            var body = JsonNode.Parse(await message.Content!.ReadAsStringAsync(cancellationToken))!;
+            if (calls++ == 0)
+            {
+                Assert.Equal("true", Assert.Single(message.Headers.GetValues("TypeSafe-Danger-Zone-Images")));
+                Assert.Equal("image-ref", body["state"]!["photo"]!.GetValue<string>());
+                Assert.Equal("AQID", body["assets"]!["image-ref"]!["data_base64"]!.GetValue<string>());
+            }
+            else
+            {
+                Assert.False(message.Headers.Contains("TypeSafe-Danger-Zone-Images"));
+                Assert.Empty(body["assets"]!.AsObject());
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """{"answers":{},"usage":{"input_tokens":1,"output_tokens":0}}""",
+                    Encoding.UTF8, "application/json")
+            };
+        }));
+        var runner = CreateRunner(client);
+        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", "AQID"));
+
+        await runner.Execute(new Request(state, null), TestContext.Current.CancellationToken);
+        await runner.Execute(CreateRequest(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, calls);
+    }
+
+    /// <summary>The HTTP pipeline preserves both structured and plain-text error bodies.</summary>
+    [Theory]
+    [InlineData("""{"error":"Invalid image"}""", true)]
+    [InlineData("Invalid image", false)]
+    public async Task Execute_ErrorBody_ThrowsKnownExceptionWithContent(string body, bool isJson)
+    {
+        using var httpResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent(body)
+        };
+        using var client = new HttpClient(new FakeHttpMessageHandler((_, _) => Task.FromResult(httpResponse)));
+
+        var error = await Assert.ThrowsAsync<JevKnownException>(() =>
+            CreateRunner(client).Execute(CreateRequest(), TestContext.Current.CancellationToken));
+
+        Assert.NotNull(error.Content);
+        if (isJson)
+        {
+            var node = Assert.IsAssignableFrom<JsonNode>(error.Content.Value.Value);
+            Assert.True(JsonNode.DeepEquals(JsonNode.Parse(body), node));
+        }
+        else
+        {
+            Assert.Equal(body, Assert.IsType<string>(error.Content.Value.Value));
+        }
+        Assert.Equal(HttpStatusCode.BadRequest, Assert.IsType<HttpRequestException>(error.InnerException).StatusCode);
+    }
+
     /// <summary>
     /// The injected client receives an authenticated JSON request and its successful response supplies named answers and usage.
     /// </summary>

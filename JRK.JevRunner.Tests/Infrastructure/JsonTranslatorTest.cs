@@ -9,6 +9,24 @@ namespace JRK.JevRunner.Tests.Infrastructure;
 [TestSubject(typeof(JsonTranslator))]
 public class JsonTranslatorTest
 {
+    /// <summary>Explicit assets work with references in instructions as well as state.</summary>
+    [Fact]
+    public void CreateRequestJson_ExplicitAsset_PreservesInstructionReferenceAndImageData()
+    {
+        var request = new Request("Evaluate this picture.", JevModel.Latest)
+        {
+            Assets = [new ImageAsset("image-ref", "png", "AQID")],
+            Questions = [new NoulQuestion("person", "Is there a person in image-ref?", null)]
+        };
+
+        var json = JsonTranslator.CreateRequestJson(request);
+
+        Assert.Equal("Is there a person in image-ref?",
+            json["questions"]!["person"]!["instructions"]!.GetValue<string>());
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(
+            """{"image-ref":{"type":"image","format":"png","data_base64":"AQID"}}"""), json["assets"]));
+    }
+
     /// <summary>
     /// A request without questions still contains the state, model, and empty question object.
     /// </summary>
@@ -23,7 +41,8 @@ public class JsonTranslatorTest
                                       {
                                         "state": "request state",
                                         "model": "jev-test",
-                                        "questions": {}
+                                        "questions": {},
+                                        "assets": {}
                                       }
                                       """);
         Assert.True(JsonNode.DeepEquals(expected, json));
