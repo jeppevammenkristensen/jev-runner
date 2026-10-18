@@ -52,6 +52,7 @@ public class JevQueryGeneratorTests
     [InlineData("Noul")]
     [InlineData("Choice")]
     [InlineData("Score")]
+    [InlineData("Box")]
     public void ValueTupleInstructionsReportWarningWithoutBlockingGeneration(string kind)
     {
         var contract = RuntimeContract.Replace("string instructions", "object instructions")
@@ -401,16 +402,22 @@ public class JevQueryGeneratorTests
     [InlineData("INoulQuestionDefinition<string>, IScoreQuestionDefinition<string>")]
     [InlineData("INoulQuestionDefinition<string>, INoulQuestionDefinition<object>")]
     [InlineData("IChoiceQuestionDefinition<string>, IScoreQuestionDefinition<string>")]
+    [InlineData("IBoxQuestionDefinition<string>, INoulQuestionDefinition<string>")]
+    [InlineData("IBoxQuestionDefinition<string>, IBoxQuestionDefinition<object>")]
     public void AmbiguousQuestionInterfacesReportJev003(string interfaces)
     {
         var diagnostic = AssertRejected(QuerySource(interfaces: interfaces, instructions: """
                 public string Instructions => "instructions";
+                object IBoxQuestionDefinition<object>.Instructions => "other box instructions";
                 object INoulQuestionDefinition<object>.Instructions => "other instructions";
                 public string[] Criterias => new string[0];
                 public JRK.JevRunner.Requests.ChoiceCriteria[] Choices => new JRK.JevRunner.Requests.ChoiceCriteria[0];
                 """.Replace("object INoulQuestionDefinition<object>.Instructions => \"other instructions\";",
                 interfaces.Contains("INoulQuestionDefinition<object>")
                     ? "object INoulQuestionDefinition<object>.Instructions => \"other instructions\";"
+                    : "").Replace("object IBoxQuestionDefinition<object>.Instructions => \"other box instructions\";",
+                interfaces.Contains("IBoxQuestionDefinition<object>")
+                    ? "object IBoxQuestionDefinition<object>.Instructions => \"other box instructions\";"
                     : "")),
             "JEV003", assertCompiles: true);
 
@@ -601,6 +608,7 @@ public class JevQueryGeneratorTests
     [Theory]
     [InlineData("ChoiceQuestion")]
     [InlineData("ScoreQuestion")]
+    [InlineData("BoxQuestion")]
     public void ConfiguredQuestionRequiresInstructions(string kind)
     {
         var diagnostic = AssertRejected(QuerySource(interfaces: "I" + kind + "Definition<string>", instructions: ""),
@@ -620,11 +628,16 @@ public class JevQueryGeneratorTests
     [InlineData("Score", "BudgetQuestion")]
     [InlineData("Score", "IQuestion")]
     [InlineData("Score", "JRK.JevRunner.Annotation.IScoreQuestionDefinition<string>")]
+    [InlineData("Box", "BudgetQuestion")]
+    [InlineData("Box", "BaseQuestion")]
+    [InlineData("Box", "IQuestion")]
+    [InlineData("Box", "JRK.JevRunner.Annotation.IBoxQuestionDefinition<string>")]
     public void InheritedAndInterfaceTypedDefinitionsUseExplicitMembers(string kind, string propertyType)
     {
         var contract = $"JRK.JevRunner.Annotation.I{kind}QuestionDefinition<string>";
         var configuration = kind switch
         {
+            "Box" => "",
             "Noul" => $"string {contract}.Yes => \"yes\"; string {contract}.No => \"no\";",
             "Choice" =>
                 $"JRK.JevRunner.Requests.ChoiceCriteria[] {contract}.Choices => new JRK.JevRunner.Requests.ChoiceCriteria[] {{ new(\"city\", \"Museums\") }};",
@@ -632,6 +645,7 @@ public class JevQueryGeneratorTests
         };
         var assertion = kind switch
         {
+            "Box" => "question.Criteria == null && question.Choices.Count == 0 && question.Criterias.Count == 0",
             "Noul" => "question.Criteria.TrueDefinition == \"yes\" && question.Criteria.FalseDefinition == \"no\"",
             "Choice" => "question.Choices.Count == 1 && question.Choices[0].Choice == \"city\"",
             _ => "question.Criterias.Count == 1 && question.Criterias[0] == \"comfort\""
@@ -671,6 +685,7 @@ public class JevQueryGeneratorTests
     [InlineData("Noul", "T")]
     [InlineData("Choice", "T")]
     [InlineData("Score", "T")]
+    [InlineData("Box", "T")]
     [InlineData("Noul", "response")]
     public void GenericQuestionConstrainedToDefinitionInterfaceIsSupported(string kind, string typeParameter)
     {
@@ -831,9 +846,15 @@ public class JevQueryGeneratorTests
     [InlineData("NoulQuestionBuilder", "MissingNoulBuilder")]
     [InlineData("NoulAnswer", "MissingNoulAnswer")]
     [InlineData("GetRequiredNoulAnswer", "MissingNoulAccessor")]
+    [InlineData("BoxQuestionBuilder", "MissingBoxBuilder")]
+    [InlineData("BoxAnswer", "MissingBoxAnswer")]
+    [InlineData("GetRequiredBoxAnswer", "MissingBoxAccessor")]
     public void MissingExplicitRuntimeMappingReportsJev003(string original, string replacement)
     {
-        var (result, _) = Generate(QuerySource(), RuntimeContract.Replace(original, replacement));
+        var source = QuerySource(interfaces: original.Contains("Box")
+            ? "IBoxQuestionDefinition<string>"
+            : "INoulQuestionDefinition<string>");
+        var (result, _) = Generate(source, RuntimeContract.Replace(original, replacement));
         Assert.Empty(Assert.Single(result.Results).GeneratedSources);
         Assert.Equal("JEV003", Assert.Single(result.Diagnostics).Id);
     }
@@ -948,6 +969,8 @@ public class JevQueryGeneratorTests
                                                { T Instructions { get; } Requests.ChoiceCriteria[] Choices { get; } }
                                                public interface IScoreQuestionDefinition<out T>
                                                { T Instructions { get; } string[] Criterias { get; } }
+                                               public interface IBoxQuestionDefinition<out T>
+                                               { T Instructions { get; } }
                                            }
 
                                            namespace JRK.JevRunner
@@ -980,6 +1003,7 @@ public class JevQueryGeneratorTests
                                                    public Responses.NoulAnswer GetRequiredNoulAnswer(string name) => (Responses.NoulAnswer)Answers[name];
                                                    public Responses.ChoiceAnswer GetRequiredChoiceAnswer(string name) => (Responses.ChoiceAnswer)Answers[name];
                                                    public Responses.ScoreAnswer GetRequiredScoreAnswer(string name) => (Responses.ScoreAnswer)Answers[name];
+                                                   public Responses.BoxAnswer GetRequiredBoxAnswer(string name) => (Responses.BoxAnswer)Answers[name];
                                                }
                                            }
 
@@ -1021,6 +1045,12 @@ public class JevQueryGeneratorTests
 
                                                public sealed record YesNo(string TrueDefinition, string FalseDefinition);
 
+                                               public sealed class BoxQuestionBuilder : QuestionBuilder
+                                               {
+                                                   public BoxQuestionBuilder(string name, string instructions) : base(name, instructions) { }
+                                                   public override Question Build() => new Question(Name, Instructions);
+                                               }
+
                                                public sealed class ChoiceQuestionBuilder : QuestionBuilder
                                                {
                                                    public ChoiceQuestionBuilder(string name, string instructions) : base(name, instructions) { }
@@ -1058,6 +1088,7 @@ public class JevQueryGeneratorTests
                                            namespace JRK.JevRunner.Responses
                                            {
                                                public sealed class NoulAnswer { }
+                                               public sealed class BoxAnswer { }
                                                public sealed class ChoiceAnswer
                                                {
                                                    public string Choice { get; set; }

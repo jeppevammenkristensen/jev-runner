@@ -17,7 +17,8 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
-        <PackageReleaseNotes>Initial image helpers with configurable bounding-box outlines, normalized-coordinate validation, injectable file access, and PNG output.</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial optional SkiaSharp image helpers for JRK.JevRunner. BoxRenderer.DrawBox accepts a single BoxAnswer or an enumerable through the AppliedBox union and draws normalized bounding-box outlines with shared configurable color and stroke width. Supports injectable file access through TruePath and IFileSystem, validates coordinates and stroke width, preserves image dimensions, and returns PNG bytes without modifying the source. Includes Linux native assets alongside SkiaSharp's Windows and macOS assets. Targets .NET 11 and uses preview C# union support.</PackageReleaseNotes>
+        <LangVersion>preview</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

@@ -199,7 +199,7 @@ internal static class JevQuerySourceCodeGenerator
 
         if (question.Configuration == ConfigurationKind.Noul)
             AppendNoulConfiguration(source, definition, builder, index, localNames);
-        else
+        else if (question.Configuration is ConfigurationKind.Choice or ConfigurationKind.Score)
             AppendCollectionConfiguration(source, question.Configuration, definition, builder, index, localNames);
 
         source.AppendLine($"global::JRK.JevRunner.Requests.RequestExtensions.AddQuestion({request}, {builder});");

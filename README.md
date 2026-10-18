@@ -62,8 +62,9 @@ Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ## Images (experimental)
 
 Jev's image API is **dreamer-ready**, not production-ready: request formats, limits,
-and accuracy may change. Images can be used with the existing Noul, Choice, and Score
-questions. Box questions are not currently supported by this client.
+and accuracy may change. Images can be used with Noul, Choice, Score, and Box
+questions. Box answers contain normalized `Top`, `Bottom`, `Left`, and `Right`
+edges and answer-level `Confidence`.
 
 Use `AssetState` to associate a state field with an image. `AddImageAsset` reads the
 file asynchronously, base64-encodes its bytes, and uses its extension as the image
@@ -111,6 +112,41 @@ body size. Rotate the pixels upright; the API does not apply EXIF orientation.
 The helper does not resize, rotate, convert, or validate image data. Use a lowercase
 `.png`, `.jpg`, or `.jpeg` extension that matches the file contents.
 See the [TypeSafe image documentation](https://docs.typesafe.ai/images) for all limits.
+
+### Locate objects with Box questions
+
+Using the populated `state` above:
+
+```csharp
+var request = new Request(state, JevModel.Latest)
+    .AddQuestion(new BoxQuestionBuilder("Head", "Find the head in `photo`."));
+var response = await runner.Execute(request);
+var head = response.GetRequiredBoxAnswer("Head");
+Console.WriteLine($"Top: {head.Top}, left: {head.Left}, confidence: {head.Confidence.Value}");
+```
+
+For generated queries, expose a `GenericBoxQuestionDefinition<string>` property
+or implement `IBoxQuestionDefinition<TInstruction>`. A question property named
+`Head` generates `GetHeadAnswer(response)` and a `BoxAnswer` property named `Head`
+on the response wrapper. See the [generator's Box example](JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators/Readme.md#box-questions).
+
+### Render bounding boxes
+
+The optional `JRK.JevRunner.Image` package provides a SkiaSharp `BoxRenderer`.
+The core client does not depend on it. With the original image path and a Box answer:
+
+```csharp
+using JRK.JevRunner.Image;
+
+var imagePath = AbsolutePath.Create(Path.GetFullPath("photo.jpg"));
+byte[] png = new BoxRenderer().DrawBox(imagePath, head);
+await File.WriteAllBytesAsync("annotated.png", png);
+```
+
+`DrawBox` accepts one `BoxAnswer` or an `IEnumerable<BoxAnswer>` through `AppliedBox`,
+and returns PNG bytes without modifying the source. Multiple boxes share the supplied
+color and stroke width. See the [image package documentation](JRK.JevRunner.Image/README.md)
+for styling, coordinate validation, native dependencies, and multi-box examples.
 
 ## API errors
 
@@ -167,7 +203,7 @@ including:
 Alternatively you can mark a partial class or record class with `[JevQuery]` and supply readable `State`
 and `JevModel` properties. Note that State can be a string, array or any object.  Question properties implement one of
 `INoulQuestionDefinition<TInstruction>`, `IChoiceQuestionDefinition<TInstruction>`,
-or `IScoreQuestionDefinition<TInstruction>` from `JRK.JevRunner.Annotation`.
+`IScoreQuestionDefinition<TInstruction>`, or `IBoxQuestionDefinition<TInstruction>` from `JRK.JevRunner.Annotation`.
 The generator adds `GetRequest()`, `Execute(runner, cancellationToken)`, and named
 typed answer accessors such as `GetBudgetAnswer(Response)`. Generated `Execute`
 returns `Task<{QueryName}ResponseWrapper>`. The wrapper exposes getter-only typed

@@ -27,6 +27,7 @@ classes and record classes annotated with `JRK.JevRunner.Annotation.JevQueryAttr
 | `INoulQuestionDefinition<TInstruction>` | `Instructions`, `string? Yes`, `string? No` | `NoulQuestionBuilder`, `NoulAnswer`, `GetRequiredNoulAnswer`; apply optional criteria |
 | `IChoiceQuestionDefinition<TInstruction>` | `Instructions`, `ChoiceCriteria[] Choices` | `ChoiceQuestionBuilder`, `ChoiceAnswer`, `GetRequiredChoiceAnswer`; call `AddChoice(item.Choice, item.Instruction)` for each entry |
 | `IScoreQuestionDefinition<TInstruction>` | `Instructions`, `string[] Criterias` | `ScoreQuestionBuilder`, `ScoreAnswer`, `GetRequiredScoreAnswer`; call `AddCriteria(item)` for each entry |
+| `IBoxQuestionDefinition<TInstruction>` | `Instructions` | `BoxQuestionBuilder`, `BoxAnswer`, `GetRequiredBoxAnswer`; no additional configuration |
 
 `Instructions` must be compatible with the builder constructor (the runtime accepts
 `JevMessage`, including its implicit conversion from strings). `ChoiceCriteria`
@@ -80,10 +81,31 @@ question named `Budget`, and both the wrapper's `Budget` property and
 `GetBudgetAnswer(Response)` retrieve that named typed answer. Wrapper properties
 perform the required-answer lookup on each access and throw if the answer is
 missing or has a mismatched type. Noul, choice, and score properties return
-`NoulAnswer`, `ChoiceAnswer`, and `ScoreAnswer`, respectively. Choice and score
+`NoulAnswer`, `ChoiceAnswer`, and `ScoreAnswer`, respectively. Box properties return
+the full `BoxAnswer`, including normalized edges and confidence. Choice and score
 answers are full objects, including probabilities and confidence, rather than
 just a selected string or numeric score. Question names come from property identifiers, not their types.
 Existing members must not collide with these generated method names.
+
+### Box questions
+
+Use `GenericBoxQuestionDefinition<TInstruction>` or implement `IBoxQuestionDefinition<TInstruction>`:
+
+```csharp
+[JevQuery]
+public partial class ImageQuery
+{
+    public AssetState State { get; } = new();
+    public JevModel JevModel => JevModel.Latest;
+    public GenericBoxQuestionDefinition<string> Head { get; } = new("Find the head in `Photo`.");
+}
+```
+
+Use `JRK.JevRunner.Annotation`, `JRK.JevRunner.Infrastructure`, and
+`JRK.JevRunner.Requests` for these types.
+Add the `Photo` image asset to `query.State` before execution, as in the main
+README's image example. The generator does not load image files. The generated
+`GetHeadAnswer(response)` and response wrapper's `Head` property return `BoxAnswer`.
 
 See [Examples.cs](../JRK.JevRunner.SourceGenerators.Sample/Examples.cs) for a
 complete mixed noul, choice, and score query against the actual runtime API.
