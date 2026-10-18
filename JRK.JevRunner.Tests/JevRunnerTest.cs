@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
+using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 // ReSharper disable AccessToDisposedClosure
@@ -20,6 +21,59 @@ namespace JRK.JevRunner.Tests;
 [TestSubject(typeof(JevRunner))]
 public class JevRunnerTest
 {
+    /// <summary>Box questions trigger experimental opt-in and their documented answers survive the HTTP pipeline.</summary>
+    /// <remarks>The asset-free case verifies header selection only; the live API still requires an image.</remarks>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Execute_BoxQuestion_SendsOptInAndParsesBoxAnswer(bool includeAsset)
+    {
+        using var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
+                {
+                  "model": "jev-1.14.0",
+                  "answers": {
+                    "mug": {
+                      "type": "box",
+                      "box": {"top": 0.25, "bottom": 0.82, "left": 0.44, "right": 0.84},
+                      "confidence": 0.92
+                    },
+                    "mug_visible": {"type": "noul", "noul": 0.95}
+                  },
+                  "usage": {"input_tokens": 290, "output_tokens": 21}
+                }
+                """, Encoding.UTF8, "application/json")
+        };
+        using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
+        {
+            Assert.Equal("true", Assert.Single(message.Headers.GetValues("TypeSafe-Danger-Zone-Images")));
+            var body = JsonNode.Parse(await message.Content!.ReadAsStringAsync(cancellationToken))!;
+            Assert.Equal("jev-1.14.0", body["model"]!.GetValue<string>());
+            Assert.Equal("box", body["questions"]!["mug"]!["type"]!.GetValue<string>());
+            Assert.Equal(includeAsset ? 1 : 0, body["assets"]!.AsObject().Count);
+            return httpResponse;
+        }));
+        var request = new Request(new {photo = "image-ref"}, new JevModel("jev-1.14.0"))
+            .AddQuestion(new BoxQuestion("mug", "the coffee mug in `photo`"))
+            .AddQuestion(new NoulQuestion("mug_visible", "Is there a mug in `photo`?", null));
+        if (includeAsset)
+            request.Assets.Add(new ImageAsset("image-ref", "jpg", "AQID"));
+
+        var response = await CreateRunner(client).Execute(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, response.Answers.Count);
+        var box = Assert.IsType<BoxAnswer>(response.Answers[0].Answer.Value);
+        Assert.Equal("mug", response.Answers[0].Name);
+        Assert.Equal(0.25, box.Top);
+        Assert.Equal(0.82, box.Bottom);
+        Assert.Equal(0.44, box.Left);
+        Assert.Equal(0.84, box.Right);
+        Assert.Equal(0.92, box.Confidence.Value);
+        Assert.Equal(0.95, response.GetRequiredNoulAnswer("mug_visible").Noul.Value);
+        Assert.Equal(new Usage(290, 21), response.Usage);
+    }
+
     /// <summary>The experimental header is request-scoped and only image requests upload asset data.</summary>
     [Fact]
     public async Task Execute_ImageThenTextRequest_SendsImageHeaderOnlyForImageRequest()

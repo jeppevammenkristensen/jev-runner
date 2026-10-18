@@ -3,9 +3,9 @@ using System.Text.Json.Nodes;
 namespace JRK.JevRunner.Requests;
 
 /// <summary>
-/// Represents a noul, choice, or score question that can be added to a request.
+/// Represents a noul, choice, score, or box question that can be added to a request.
 /// </summary>
-public union Question(NoulQuestion, ChoiceQuestion, ScoreQuestion)
+public union Question(NoulQuestion, ChoiceQuestion, ScoreQuestion, BoxQuestion)
 {
     /// <summary>
     /// Adds the question's JSON representation to the supplied object under its name.
@@ -24,6 +24,10 @@ public union Question(NoulQuestion, ChoiceQuestion, ScoreQuestion)
         else if (this is ScoreQuestion score)
         {
             obj[score.Name] = score.Node;
+        }
+        else if (this is BoxQuestion box)
+        {
+            obj[box.Name] = box.Node;
         }
     }
 }

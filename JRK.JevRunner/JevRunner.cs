@@ -52,7 +52,7 @@ public partial class JevRunner : IJevRunner
             new System.Net.Http.Headers.AuthenticationHeaderValue(
                 "Bearer", _options.ApiKey);
 
-        if (request.Assets.Count > 0)
+        if (request.Assets.Count > 0 || request.Questions.Any(question => question is Requests.BoxQuestion))
         {
             message.Headers.Add("TypeSafe-Danger-Zone-Images", "true");
         }

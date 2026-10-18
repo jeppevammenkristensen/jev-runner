@@ -1,4 +1,5 @@
 ﻿using AutoSpectre;
+using Dumpify;
 using FileBasedApp.Toolkit;
 using JRK.JevRunner.Annotation;
 using JRK.JevRunner.Infrastructure;
@@ -12,13 +13,13 @@ var jevRunner = connector.GetRunner();
 var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
 
 var jevQuery = new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAsset("photo", "person_image",imagePath)));
-var response = await jevQuery.Execute(jevRunner);
+var request = jevQuery.GetRequest();
+request.AddQuestion(new BoxQuestionBuilder("Find_Head", "Find the head in `Photo`"));
 
+var result = await jevRunner.Execute(request);
+var requiredBoxAnswer = result.GetRequiredBoxAnswer("Find_Head");
 
-var assets = new AssetState();
-AnsiConsole.MarkupLineInterpolated($"[green]Person with a beard: {response.HasBeard.Noul}[/]");
-AnsiConsole.MarkupLineInterpolated($"[dim]{response.Response.Usage}[/]");
-
+requiredBoxAnswer.Dump();
 
 
 return;
@@ -83,7 +84,7 @@ public partial class JevQuery
     public JevQuery(FileData state)
     {
         State = state;
-        JevModel = JevModel.Latest;
+        JevModel = JevModel.Preview;
         HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null,null);
         
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
