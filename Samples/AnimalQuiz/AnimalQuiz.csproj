@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="FileBasedApp.Toolkit" Version="1.1.2" />
-    <PackageReference Include="JRK.JevRunner" Version="0.2.0" />
+    <PackageReference Include="JRK.JevRunner" Version="0.4.0" />
   </ItemGroup>
 
   <ItemGroup>
