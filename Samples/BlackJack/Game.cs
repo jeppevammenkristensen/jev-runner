@@ -43,6 +43,8 @@ public class Game
     /// <param name="cardDeck">The shared deck from which both hands draw cards.</param>
     private async Task PlayRound(PlayerDetails[] players, CardDeck cardDeck)
     {
+        AnsiConsole.Write(new Rule($"Round {roundStats.Count + 1}"));
+        
         var player = players[0];
         
         // Holds all the cards. Note that in some scenarios the dealer will not know what the first card
@@ -51,7 +53,7 @@ public class Game
 
         var firstCard = cardDeck.DrawCard();
         allPlayerCards.Add((player, firstCard));
-        AnsiConsole.MarkupLine($"Player initial card: [green]{firstCard.Rank} {firstCard.Suit}[/]");
+        AnsiConsole.MarkupLineInterpolated($"Player initial card: [green]{firstCard.Rank} {firstCard.Suit}[/]");
         bool busted = false;
         bool stopped = false;
         bool madeHalvTolv = false;
@@ -98,7 +100,7 @@ public class Game
         if (busted)
         { 
             // If the player display this. Update the PlayerRoundStats and continue. We will not query Jev here
-            AnsiConsole.MarkupLine($"[red]Player busted[/]");
+            AnsiConsole.MarkupLineInterpolated($"[red]Player busted[/]");
             roundStats.Add(new PlayerRoundStats(KnownPlayerCards: knownCards, CardsInTotal: allPlayerCards.Count, PlayerBusted: true, PlayerWon: false, GotHalvTolv: false, DealerBusted: false, DealerCards: []));
             return;
         }
@@ -106,9 +108,9 @@ public class Game
         AnsiConsole.MarkupLineInterpolated($"Player stopped {playerSum}");
         
         var initialDealerHand = cardDeck.DrawCard();
-        AnsiConsole.MarkupLineInterpolated($"[green]Inital dealer hand {initialDealerHand.Rank} {initialDealerHand.Suit}[/]");
+        AnsiConsole.MarkupLineInterpolated($"[green]Initial dealer hand {initialDealerHand.Rank} {initialDealerHand.Suit}[/]");
         
-        CurrentDealerHand currentDealerHand = new CurrentDealerHand([cardDeck.DrawCard()]);
+        CurrentDealerHand currentDealerHand = new CurrentDealerHand([initialDealerHand]);
         
         
 
@@ -132,7 +134,7 @@ public class Game
             // Jev suggest Stop
             if (response.DealerActions.Choice == "Stop")
             {
-                AnsiConsole.MarkupInterpolated($"[green]Dealer stopped[/]");
+                AnsiConsole.MarkupLineInterpolated($"[green]Dealer stopped[/]");
                 dealerStopped = true;
             }
             
