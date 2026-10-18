@@ -14,15 +14,15 @@ public class ScoreQuestionBuilder : IQuestionBuilder<ScoreQuestion>
     /// <summary>
     /// Gets the instruction to include in the built question.
     /// </summary>
-    public JevMessage Instruction { get; }
+    public JevMessage Instructions { get; }
 
     /// <summary>
     /// Creates a builder with the supplied question name and instruction and no criteria.
     /// </summary>
-    public ScoreQuestionBuilder(string name, JevMessage instruction)
+    public ScoreQuestionBuilder(string name, JevMessage instructions)
     {
         Name = name;
-        Instruction = instruction;
+        Instructions = instructions;
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class ScoreQuestionBuilder : IQuestionBuilder<ScoreQuestion>
     /// </summary>
     public ScoreQuestion Build()
     {
-        return new ScoreQuestion(Name, Instruction, [.. Criterias]);
+        return new ScoreQuestion(Name, Instructions, [.. Criterias]);
     }
 
     /// <summary>

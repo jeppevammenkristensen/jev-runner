@@ -26,6 +26,14 @@ public record Response(List<AnswerWrapper> Answers, Usage Usage)
     /// </summary>
     public ScoreAnswer GetRequiredScoreAnswer(string name) =>
         GetRequiredAnswer(name, answer => answer is ScoreAnswer score ? score : null);
+    
+    /// <summary>
+    /// Returns the named box answer, throwing if it is missing or has another type.
+    /// </summary>
+    /// <param name="name">The question name identifying the required answer.</param>
+    /// <returns>The first matching answer as a bounding box.</returns>
+    /// <exception cref="InvalidOperationException">No answer has the supplied name, or the first match is not a box answer.</exception>
+    public BoxAnswer GetRequiredBoxAnswer(string name) => GetRequiredAnswer(name, answer => answer is BoxAnswer box ? box : null);
 
     /// <summary>
     /// Looks up the first named answer and validates its type using the supplied union-case selector.

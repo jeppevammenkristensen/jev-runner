@@ -15,4 +15,14 @@ public record JevModel(string Model)
     /// Specific model for 1.13.0
     /// </summary>
     public static JevModel Version1_13_0 => new JevModel("jev-1.13.0");
+    
+    /// <summary>
+    /// Specific model for 1.14.0. This model is required for Box questions
+    /// </summary>
+    public static JevModel Version1_14_0 => new JevModel("jev-1.14.0");
+
+    /// <summary>
+    /// Gets the preview model
+    /// </summary>
+    public static JevModel Preview => new JevModel("jev-preview");
 }
