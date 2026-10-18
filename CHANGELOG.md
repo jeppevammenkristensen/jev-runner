@@ -14,6 +14,12 @@
 - Error translation now asynchronously reads the HTTP response body. Tests have been updated for the asynchronous translator and expanded status-code coverage.
 - Added XML documentation for asset state and image-file helpers, and README examples for image requests and API error handling.
 
+### Fixed
+
+- Plain-text and malformed JSON error bodies now remain available as raw `ErrorContent` strings instead of throwing a JSON parsing exception and masking the HTTP failure.
+- Rejecting a duplicate asset state field no longer replaces the previously registered asset.
+- Updated the request-envelope test for the assets map and added regression coverage for image assets, file loading, generated image queries, request-scoped image headers, and error response content.
+
 ## [0.4.0]
 
 ### Added

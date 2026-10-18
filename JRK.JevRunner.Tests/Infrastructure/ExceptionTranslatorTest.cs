@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using JRK.JevRunner.Infrastructure;
@@ -12,6 +13,75 @@ namespace JRK.JevRunner.Tests.Infrastructure;
 [TestSubject(typeof(ExceptionTranslator))]
 public class ExceptionTranslatorTest
 {
+    /// <summary>JSON objects, arrays, and scalar values remain available without losing their structure.</summary>
+    [Theory]
+    [InlineData("""{"error":{"message":"Invalid image"}}""")]
+    [InlineData("""{"detail":[{"loc":["body","state"],"msg":"Field required"}]}""")]
+    [InlineData("""["error",42]""")]
+    [InlineData("\"Invalid image\"")]
+    [InlineData("42")]
+    public async Task TranslateRequestException_JsonBody_PreservesJsonContent(string body)
+    {
+        var original = new HttpRequestException("HTTP failure", null, HttpStatusCode.BadRequest);
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest) {Content = new StringContent(body)};
+
+        var translated = await ExceptionTranslator.TranslateRequestException(original, response);
+
+        var known = Assert.IsType<JevKnownException>(translated);
+        Assert.Same(original, known.InnerException);
+        Assert.NotNull(known.Content);
+        var node = Assert.IsAssignableFrom<JsonNode>(known.Content.Value.Value);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(body), node));
+    }
+
+    /// <summary>Plain text, invalid JSON, HTML, and JSON null preserve the raw error body.</summary>
+    [Theory]
+    [InlineData("Service unavailable")]
+    [InlineData("{invalid json")]
+    [InlineData("<html>Bad gateway</html>")]
+    [InlineData("null")]
+    public async Task TranslateRequestException_TextBody_PreservesRawContent(string body)
+    {
+        var original = new HttpRequestException("HTTP failure", null, HttpStatusCode.BadRequest);
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest) {Content = new StringContent(body)};
+
+        var translated = await ExceptionTranslator.TranslateRequestException(original, response);
+
+        var known = Assert.IsType<JevKnownException>(translated);
+        Assert.Same(original, known.InnerException);
+        Assert.NotNull(known.Content);
+        Assert.Equal(body, Assert.IsType<string>(known.Content.Value.Value));
+    }
+
+    /// <summary>Empty and whitespace-only error bodies are represented by absent content.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData(" \r\n\t")]
+    public async Task TranslateRequestException_EmptyBody_HasNullContent(string body)
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest) {Content = new StringContent(body)};
+
+        var translated = await ExceptionTranslator.TranslateRequestException(
+            new HttpRequestException("HTTP failure", null, response.StatusCode), response);
+
+        Assert.Null(Assert.IsType<JevKnownException>(translated).Content);
+    }
+
+    /// <summary>An unmapped status with a plain-text body still preserves the original HTTP failure.</summary>
+    [Fact]
+    public async Task TranslateRequestException_UnknownStatusWithText_ReturnsOriginalException()
+    {
+        var original = new HttpRequestException("HTTP failure", null, HttpStatusCode.BadGateway);
+        using var response = new HttpResponseMessage(HttpStatusCode.BadGateway)
+        {
+            Content = new StringContent("Bad gateway")
+        };
+
+        var translated = await ExceptionTranslator.TranslateRequestException(original, response);
+
+        Assert.Same(original, translated);
+    }
+
     /// <summary>
     /// Known API failures receive an actionable message and retain the original exception as their cause.
     /// </summary>

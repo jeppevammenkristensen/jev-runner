@@ -139,14 +139,13 @@ catch (JevKnownException error)
 
 Handled status codes are **400, 401, 413, 415, 422, 429, and 529**, with **509**
 retained for compatibility. Other status codes pass through as HTTP exceptions
-when their response body can be parsed. Transport failures pass through without
+regardless of whether their response body is JSON or plain text. Transport failures pass through without
 an HTTP response. The client does not automatically retry rate-limit or overload
 responses.
 
-**Current limitation:** non-empty error bodies are parsed as JSON without a
-plain-text fallback; malformed JSON or plain text throws `JsonException` instead
-of the translated HTTP error. The string union case currently receives the raw
-body when parsing yields JSON null.
+Non-empty error bodies are parsed as JSON when possible. Plain text, malformed
+JSON, and JSON null are retained as raw strings rather than masking the HTTP
+failure with a JSON parsing exception.
 
 See the [TypeSafe error-code documentation](https://docs.typesafe.ai/api#errors).
 

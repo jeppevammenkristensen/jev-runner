@@ -1,24 +1,14 @@
 ﻿using System.Net;
-using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JRK.JevRunner.Infrastructure;
 
-internal class ThrowHelper
-{
-    public static void ThrowIfEmpty<T>(IReadOnlyCollection<T> argument,
-        [CallerArgumentExpression(nameof(argument))] string? argumentName = null)
-    {
-        if (argument.Count == 0)
-        {
-            throw new ArgumentException("The collection cannot be empty", argumentName);
-        }
-    }
-    
-}
-
+/// <summary>Converts recognized HTTP failures into API exceptions retaining their response content.</summary>
 internal class ExceptionTranslator
 {
+    /// <summary>Reads the error body and wraps recognized HTTP status codes, preserving other exceptions.</summary>
+    /// <returns>A known API exception or the supplied exception when its status is not mapped.</returns>
     internal static async Task<Exception> TranslateRequestException(Exception ex, HttpResponseMessage response)
     {
         var result = await response.Content.ReadAsStringAsync();
@@ -27,12 +17,12 @@ internal class ExceptionTranslator
         
         if (!string.IsNullOrWhiteSpace(result))
         {
-            var jsonNode = JsonNode.Parse(result);
-            if (jsonNode is { })
+            try
             {
-                content = jsonNode;
+                var jsonNode = JsonNode.Parse(result);
+                content = jsonNode is { } ? new ErrorContent(jsonNode) : new ErrorContent(result);
             }
-            else
+            catch (JsonException)
             {
                 content = result;
             }
@@ -52,12 +42,4 @@ internal class ExceptionTranslator
             _ => ex
         };
     }
-}
-
-public union ErrorContent(JsonNode,string);
-
-public class JevKnownException(string errorMessage, HttpRequestException httpRequestException, ErrorContent? content)
-    : Exception(errorMessage, httpRequestException)
-{
-    public ErrorContent? Content => content;
 }

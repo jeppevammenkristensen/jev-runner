@@ -1,17 +1,17 @@
-using System.Collections;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 
 namespace JRK.JevRunner;
 
 /// <summary>
-/// Holds the state, model, and questions to send to the API.
+/// Holds the state, model, questions, and assets to send to the API.
 /// </summary>
 public class Request
 {
     /// <summary>
     /// Creates a request with the supplied state and model, defaulting to the latest model when none is supplied.
     /// </summary>
+    /// <remarks>Assets from asset-backed state are copied into the request's asset list during construction.</remarks>
     public Request(JevMessage state, JevModel? model)
     {
         State = state;
@@ -41,5 +41,8 @@ public class Request
     /// </summary>
     public List<Question> Questions { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the assets to include in the request's assets map, keyed by each asset's name.
+    /// </summary>
     public List<Asset> Assets { get; set; } = [];
 }
