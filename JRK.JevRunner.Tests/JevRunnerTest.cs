@@ -115,12 +115,18 @@ public class JevRunnerTest
     /// Known HTTP error responses receive actionable messages and retain the HTTP failure as their cause.
     /// </summary>
     [Theory]
+    [InlineData(HttpStatusCode.BadRequest, "Bad request")]
     [InlineData(HttpStatusCode.Unauthorized,
         "The request was forbidden. Ensure that you called with a valid api token")]
+    [InlineData(HttpStatusCode.RequestEntityTooLarge,
+        "The request exceeds an API size limit. Reduce the request body or image sizes.")]
+    [InlineData(HttpStatusCode.UnsupportedMediaType,
+        "The request uses an unsupported Content-Encoding or more than one compression layer.")]
     [InlineData(HttpStatusCode.UnprocessableEntity,
         "The request body failed validation — for example a missing required field or a malformed question. The body details the offending field.")]
     [InlineData(HttpStatusCode.TooManyRequests, "You may have exceeded your rate limit")]
     [InlineData((HttpStatusCode) 509, "TypeSafe is temporarily overloaded. Retry after a short delay.")]
+    [InlineData((HttpStatusCode) 529, "TypeSafe is temporarily overloaded. Retry after a short delay.")]
     public async Task Execute_KnownErrorStatus_ThrowsKnownException(HttpStatusCode statusCode, string expectedMessage)
     {
         using var httpResponse = new HttpResponseMessage(statusCode);
