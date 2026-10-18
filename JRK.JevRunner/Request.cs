@@ -12,10 +12,10 @@ public class Request
     /// Creates a request with the supplied state and model, defaulting to the latest model when none is supplied.
     /// </summary>
     /// <remarks>Assets from asset-backed state are copied into the request's asset list during construction.</remarks>
-    public Request(JevMessage state, JevModel? model)
+    public Request(JevMessage state, JevModel? model = null)
     {
         State = state;
-        Model = model ?? JevModel.Latest;
+        Model = EnsureCorrectJevModel(model);
 
         if (State is AssetState assetState)
         {
@@ -24,6 +24,19 @@ public class Request
                 Assets.Add(asset.Value);
             }
         }
+    }
+
+    private JevModel EnsureCorrectJevModel(JevModel? model)
+    {
+        if (model != null)
+        {
+            return model;
+        }
+
+        if (Questions.Any(x => x is BoxQuestion))
+            return JevModel.Preview;
+
+        return JevModel.Latest;
     }
 
     /// <summary>

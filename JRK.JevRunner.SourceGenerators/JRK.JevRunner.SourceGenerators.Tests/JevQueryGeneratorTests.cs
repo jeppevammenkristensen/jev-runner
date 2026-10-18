@@ -357,7 +357,6 @@ public class JevQueryGeneratorTests
 
     [Theory]
     [InlineData("State")]
-    [InlineData("JevModel")]
     [InlineData("Instructions")]
     public void MissingRequiredPropertyReportsJev002(string missingProperty)
     {
@@ -369,6 +368,43 @@ public class JevQueryGeneratorTests
         var diagnostic = AssertRejected(source, "JEV002");
 
         Assert.Contains($"'{missingProperty}'", diagnostic.GetMessage());
+    }
+
+    [Theory]
+    [InlineData("INoulQuestionDefinition<string>")]
+    [InlineData("IBoxQuestionDefinition<string>")]
+    public void MissingModelUsesRequestConstructorDefault(string questionInterface)
+    {
+        var (result, output) = Generate(QuerySource(model: "", interfaces: questionInterface) + """
+            public static class Consumer
+            {
+                public static bool Verify()
+                {
+                    var query = new TestNamespace.TravelQuery();
+                    var request = query.GetRequest();
+                    var runner = new JRK.JevRunner.JevRunner();
+                    runner.Response.Answers.Add("Budget", new JRK.JevRunner.Responses.NoulAnswer());
+                    query.Execute(runner).GetAwaiter().GetResult();
+                    return request.Model == "default-model" && request.State == query.State
+                        && request.Questions.Count == 1 && request.Questions[0].Name == "Budget"
+                        && runner.LastRequest.Model == "default-model";
+                }
+            }
+            """);
+
+        var generated = AssertSuccessful(result, output);
+        Assert.Contains("new global::JRK.JevRunner.Request(this.@State);", generated);
+        Assert.DoesNotContain("this.@JevModel", generated);
+        AssertConsumerSucceeds(output);
+    }
+
+    [Theory]
+    [InlineData("public static string JevModel => \"model\";")]
+    [InlineData("public string JevModel { set { } }")]
+    public void PresentButUnreadableModelReportsJev002(string model)
+    {
+        var diagnostic = AssertRejected(QuerySource(model: model), "JEV002");
+        Assert.Contains("'JevModel'", diagnostic.GetMessage());
     }
 
     [Theory]
@@ -991,7 +1027,7 @@ public class JevQueryGeneratorTests
 
                                                public sealed class Request
                                                {
-                                                   public Request(string state, string model) { State = state; Model = model; }
+                                                   public Request(string state, string model = "default-model") { State = state; Model = model; }
                                                    public string State { get; }
                                                    public string Model { get; }
                                                    public System.Collections.Generic.List<Requests.Question> Questions { get; } = new();
