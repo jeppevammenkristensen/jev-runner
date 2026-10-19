@@ -24,4 +24,9 @@ public record ImageAsset(string Name, string Format, string Base64)
             return jsonObject;
         }
     }
+
+    public static ImageAsset FromByteArray(string name, string format, Byte[] bytes)
+    {
+        return new ImageAsset(name, format, Convert.ToBase64String(bytes));
+    }
 }

@@ -5,7 +5,7 @@ using TruePath;
 namespace JRK.JevRunner.Infrastructure;
 
 /// <summary>
-/// Provides helpers for adding image files to asset-backed request state.
+/// Provides helpers for encoding image bytes and adding image files to asset-backed request state.
 /// </summary>
 public static class Extensions
 {
