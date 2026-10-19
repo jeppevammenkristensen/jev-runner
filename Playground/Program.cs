@@ -9,28 +9,33 @@ using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Playground;
 using SkiaSharp;
+using System.IO;
 using Spectre.Console;
+using TruePath;
 
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
+var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Test.jpg";
 
-var jevQuery = new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAsset("photo", "person_image",imagePath)));
+var jevQuery =
+    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment("photo", "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
-// var request = jevQuery.GetRequest();
-// request.AddQuestion(new BoxQuestionBuilder("Find_Head", "Find the head in `Photo`"));
-//
-// var result = await jevRunner.Execute(request);
-//var requiredBoxAnswer = result.GetRequiredBoxAnswer("Find_Head");
-var requiredBoxAnswer = response.FindPerson;
 
-var rendered = new BoxRenderer().DrawBox(imagePath, new List<BoxAnswer> {requiredBoxAnswer, response.FindGlasses}, SKColors.Green);
 
-var outputPng = imagePath / ".." / "output2.png";
+foreach (var responseAnswer in response.Response.Answers)
+{
+    AnsiConsole.MarkupLineInterpolated($"[bold]{responseAnswer.Name}[/]");
+
+    responseAnswer.Answer.Value.Dump();
+}
+
+var boxAnswers = response.Response.Answers.Select(x => x.Answer).OnlyBoxAnswer().Where(x => x.Confidence.Value >= 0.65);
+
+var rendered = new BoxRenderer().DrawBox(imagePath, boxAnswers, SKColors.Green);
+
+var outputPng = imagePath / ".." / "output3.png";
 await outputPng.WriteAllBytesAsync(rendered, CancellationToken.None);
-requiredBoxAnswer.Dump();
-
 
 return;
 
@@ -94,11 +99,10 @@ public partial class JevQuery
     public JevQuery(FileData state)
     {
         State = state;
-        JevModel = JevModel.Preview;
-        HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null,null);
+        HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null, null);
         FindPerson = new GenericBoxQuestionDefinition<string>("Find the head in the `photo`");
-        FindGlasses = new GenericBoxQuestionDefinition<string>("Find the glasses in the `photo`");
-        
+        FindMustache = new GenericBoxQuestionDefinition<string>("Find the mustache in the `photo`");
+
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
             new ChoiceCriteria("Placeholder", "The text is filler or placeholder content, such as 'bla bla bla'."),
@@ -111,14 +115,12 @@ public partial class JevQuery
             "The text provides specific, useful details.");
     }
 
-    public GenericBoxQuestionDefinition<string> FindGlasses { get; private set; }
+    public GenericBoxQuestionDefinition<string> FindMustache { get; set; }
 
     public GenericBoxQuestionDefinition<string> FindPerson { get; private set; }
 
-    private FileData State { get;  }
-    private JevModel JevModel { get; }
-
-    public INoulQuestionDefinition<string> HasBeard { get;  }
-    public ChoiceQuestionDefinition ChoiceQuestionDefinition { get;  }
-    public ScoreQuestionDefinition ScoreQuestionDefinition { get;  }
+    private FileData State { get; }
+    public INoulQuestionDefinition<string> HasBeard { get; }
+    public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
+    public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
 }

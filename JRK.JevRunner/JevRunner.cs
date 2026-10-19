@@ -40,6 +40,14 @@ public partial class JevRunner : IJevRunner
     /// <exception cref="JsonException">The response cannot be read as a JSON object or contains a null JSON response.</exception>
     public async Task<Response> Execute(Request request, CancellationToken cancellationToken = default)
     {
+        // This logic is here. Because between the creation of the request and adding questions
+        // this can affect the best choice for JevModel so it's reevaluated if it hasn't been initalized
+        // with a not null value
+        if (request.PassedModelWasNull)
+        {
+            request.Model = request.AutoDetectJevModel();
+        }
+        
         var json = JsonTranslator.CreateRequestJson(request);
         LogRequestJsonRequestjson(json);
         

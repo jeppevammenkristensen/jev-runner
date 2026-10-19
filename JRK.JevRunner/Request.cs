@@ -9,6 +9,12 @@ namespace JRK.JevRunner;
 public class Request
 {
     /// <summary>
+    /// This will be true if Request was initialized with a null Jev Model
+    /// </summary>
+    /// <remarks>It's used reevalute the model when a query is run. </remarks>
+    internal bool PassedModelWasNull { get; private set; }
+
+    /// <summary>
     /// Creates a request with the supplied state and model, defaulting to the latest model when none is supplied.
     /// </summary>
     /// <remarks>Assets from asset-backed state are copied into the request's asset list during construction.</remarks>
@@ -33,6 +39,18 @@ public class Request
             return model;
         }
 
+        PassedModelWasNull = true;
+
+        return AutoDetectJevModel();
+    }
+
+
+    /// <summary>
+    /// Gets the best JevModel fit for the request. 
+    /// </summary>
+    /// <returns></returns>
+    internal JevModel AutoDetectJevModel()
+    {
         if (Questions.Any(x => x is BoxQuestion))
             return JevModel.Preview;
 
@@ -47,7 +65,7 @@ public class Request
     /// <summary>
     /// Gets the model to use when executing the request.
     /// </summary>
-    public JevModel Model { get; }
+    public JevModel Model { get; internal set; }
 
     /// <summary>
     /// Gets or sets the questions to include in the request.

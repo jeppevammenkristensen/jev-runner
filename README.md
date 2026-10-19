@@ -111,19 +111,46 @@ each file at most 16 MiB, and the request body at most 32 MiB. Base64 increases 
 body size. Rotate the pixels upright; the API does not apply EXIF orientation.
 The helper does not resize, rotate, convert, or validate image data. Use a lowercase
 `.png`, `.jpg`, or `.jpeg` extension that matches the file contents.
+For an explicit per-file check before upload, use `ImageValidator` from the optional
+[`JRK.JevRunner.Image` package](JRK.JevRunner.Image/README.md#validate-an-image-before-uploading).
 See the [TypeSafe image documentation](https://docs.typesafe.ai/images) for all limits.
+
+### Validate and prepare images
+
+The optional `JRK.JevRunner.Image` package provides `ImageValidator`, proportional
+`ImageScaler.Upscale`/`Downscale`, and experimental automatic asset adjustment.
+Validation returns typed dimension or string errors and a result-level
+`SuggestedScaling`; call `ThrowIfInvalid()` to reject a failed validation.
+Suggestions only describe dimension-error direction and do not guarantee that
+resizing will make an image valid. See the [image preparation examples and limitations](JRK.JevRunner.Image/README.md).
+
+To register already-prepared bytes without writing another file:
+
+```csharp
+byte[] imageBytes = new JRK.JevRunner.Image.ImageScaler().Downscale(
+    AbsolutePath.Create(@"C:\images\photo.jpg"));
+var state = new AssetState().AddAsset("photo",
+    ImageAsset.FromByteArray(Guid.NewGuid().ToString(), "png", imageBytes));
+```
+
+`ImageScaler` returns PNG bytes. `FromByteArray` base64-encodes them without a
+`data:` prefix; the factory itself does not validate or convert the supplied format.
 
 ### Locate objects with Box questions
 
 Using the populated `state` above:
 
 ```csharp
-var request = new Request(state, JevModel.Latest)
+var request = new Request(state)
     .AddQuestion(new BoxQuestionBuilder("Head", "Find the head in `photo`."));
 var response = await runner.Execute(request);
 var head = response.GetRequiredBoxAnswer("Head");
 Console.WriteLine($"Top: {head.Top}, left: {head.Left}, confidence: {head.Confidence.Value}");
 ```
+
+Without an explicit model, execution selects `JevModel.Preview` for Box questions
+and `JevModel.Latest` otherwise, including questions added after construction.
+An explicitly supplied model is never overridden.
 
 For generated queries, expose a `GenericBoxQuestionDefinition<string>` property
 or implement `IBoxQuestionDefinition<TInstruction>`. A question property named

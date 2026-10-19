@@ -9,7 +9,7 @@
         <PackageId>JRK.JevRunner.Image</PackageId>
         <Title>JRK JevRunner Image</Title>
         <Authors>Jeppe Roi Kristensen</Authors>
-        <Description>Optional SkiaSharp image helpers for JRK.JevRunner. Render normalized Jev bounding-box answers as customizable outlines and return PNG bytes without modifying the source image.</Description>
+        <Description>Optional SkiaSharp image helpers for JRK.JevRunner. Validate image files, proportionally upscale or downscale them, and render normalized Jev bounding-box answers without modifying source files.</Description>
         <PackageTags>jev;typesafe;ai;system-one;images;bounding-box;skiasharp;dotnet</PackageTags>
         <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
         <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
@@ -17,7 +17,7 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
-        <PackageReleaseNotes>Initial optional SkiaSharp image helpers for JRK.JevRunner. BoxRenderer.DrawBox accepts a single BoxAnswer or an enumerable through the AppliedBox union and draws normalized bounding-box outlines with shared configurable color and stroke width. Supports injectable file access through TruePath and IFileSystem, validates coordinates and stroke width, preserves image dimensions, and returns PNG bytes without modifying the source. Includes Linux native assets alongside SkiaSharp's Windows and macOS assets. Targets .NET 11 and uses preview C# union support.</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial optional SkiaSharp image helpers for JRK.JevRunner. ImageScaler.Upscale and Downscale use the shorter and longer side respectively to scale proportionally to custom bounds (280 and 1568 by default), returning PNG bytes without modifying the source or rejecting results still outside other API limits. ImageValidator inspects actual PNG/JPEG contents, checks inclusive 280-1568-pixel width and height and the 16 MiB file limit, rejects animated PNG and non-default EXIF orientation, and checks pixel decoding when other checks pass. ImageValidationResult exposes typed dimension or string errors, SuggestedScaling, and ThrowIfInvalid(); errors provide GetErrorMessage(), and ImageDimensionError.GetErrors() checks custom dimension bounds. SuggestedScaling groups dimension violations by direction; it ignores other errors and does not guarantee valid resized output. Experimental AddImageAssetWithAutoAdjustment validates, attempts one suggested resize, and registers the result without changing source files. Unchanged files retain their detected format and bytes; resized images become PNG. Validation, byte loading, and resizing consistently use the supplied file system. Adjusted output is not revalidated; request-wide limits require separate validation. BoxRenderer.DrawBox accepts a single BoxAnswer or an enumerable through the AppliedBox union and draws normalized bounding-box outlines with shared configurable color and stroke width. Renderer, validator, and scaler support injectable file access through TruePath and IFileSystem. Includes Linux native assets alongside SkiaSharp's Windows and macOS assets. Targets .NET 11 and uses preview C# union support.</PackageReleaseNotes>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
 

@@ -4,6 +4,12 @@
 
 ### Added
 
+- `ImageAsset.FromByteArray(name, format, bytes)` creates an asset with standard padded base64 without line breaks or a data URI prefix. The supplied format must match the bytes; no conversion or validation is performed.
+- `ImageValidationResult` exposes typed `ImageDimensionError` or string errors, `SuggestedScaling`, and `ThrowIfInvalid()`. `ImageValidationError.GetErrorMessage()` formats either error case; `ImageDimensionError.GetErrors()` checks both axes against inclusive custom bounds.
+- Result-level `SuggestedScaling` reports `Upscale` for undersized dimensions, `Downscale` for oversized dimensions, `ScalingNotPossible` when both kinds occur, and `None` when there are no dimension errors. Suggestions ignore non-dimension errors and do not guarantee that a proportional resize satisfies both bounds.
+- Experimental `AssetState.AddImageAssetWithAutoAdjustment` in the image package validates a file, attempts one suggested resize, and registers its bytes. Unchanged files retain their detected format and bytes; resized images become PNG. All file access uses the supplied file system. Adjusted output is not revalidated.
+- `JRK.JevRunner.Image.ImageScaler.Upscale` and `Downscale` proportionally scale from the shorter or longer side respectively, defaulting to 280 and 1568 pixels. Return PNG bytes without modifying the source or rejecting results whose other dimension remains outside API limits; custom positive bounds and injectable file access are supported.
+- `JRK.JevRunner.Image.ImageValidator` checks actual PNG/JPEG contents, inclusive 280–1568-pixel axis bounds, the 16 MiB file limit, PNG animation, EXIF orientation, and pixel decoding without modifying the file. Returns detected properties and validation errors, with injectable file access. Request-wide limits remain separate.
 - Source-generated Box questions through `IBoxQuestionDefinition<T>` and `GenericBoxQuestionDefinition<T>`, including typed answer methods and response wrapper properties.
 - Runtime Box questions through `BoxQuestionBuilder` and normalized `BoxAnswer` coordinates with confidence, accessible through `Response.GetRequiredBoxAnswer`.
 - Optional `JRK.JevRunner.Image` package with a SkiaSharp `BoxRenderer` that reads an image through TruePath and an injectable file system, draws normalized `BoxAnswer` outlines, and returns PNG bytes without modifying the source. Its `AppliedBox` union accepts one answer or an enumerable of answers with shared color and stroke width.
@@ -11,16 +17,18 @@
 - `AssetState` stores named asset references and collects their assets when constructing a request. Its asynchronous `AddImageAsset` helper reads an image from a TruePath `AbsolutePath`, with optional `IFileSystem` support, and base64-encodes its bytes.
 - `JevKnownException.Content` exposes the API error response content through the nullable `ErrorContent` union.
 - Known-error handling for HTTP 400, 413, 415, and 529, while retaining existing 509 handling.
+- `AnswerExtensions` helpers `OnlyNoul()`, `OnlyChoice()`, `OnlyScoreAnswer()`, and `OnlyBoxAnswer()` filter answer sequences by type and return typed results.
 
 ### Changed
 
-- Playground now executes generated image queries and renders person and glasses boxes together.
+- Playground now uses automatic image adjustment for generated head and mustache queries, prints all named answers, and renders box answers with confidence of at least 0.65 without explicitly selecting a model.
 - Image rendering uses preview C# union support and accepts multiple boxes in a single call.
 - Error translation now asynchronously reads the HTTP response body. Tests have been updated for the asynchronous translator and expanded status-code coverage.
 - Added XML documentation for asset state and image-file helpers, and README examples for image requests and API error handling.
 
 ### Fixed
 
+- Requests constructed without an explicit model now re-evaluate model selection immediately before execution, so Box questions added after construction select `JevModel.Preview`; requests without Box questions use `JevModel.Latest`. Explicitly supplied models remain unchanged.
 - Known HTTP exception messages retain the failure description and append any returned error content.
 - Plain-text and malformed JSON error bodies now remain available as raw `ErrorContent` strings instead of throwing a JSON parsing exception and masking the HTTP failure.
 - Rejecting a duplicate asset state field no longer replaces the previously registered asset.

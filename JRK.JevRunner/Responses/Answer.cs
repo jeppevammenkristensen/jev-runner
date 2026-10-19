@@ -2,6 +2,54 @@ using System.Text.Json.Nodes;
 
 namespace JRK.JevRunner.Responses;
 
+public static class AnswerExtensions
+{
+    public static IEnumerable<NoulAnswer> OnlyNoul(this IEnumerable<Answer> answers)
+    {
+        foreach (var answer in answers)
+        {
+            if (answer is NoulAnswer noulAnswer)
+            {
+                yield return noulAnswer;
+            }
+        }
+    }
+    
+    public static IEnumerable<ChoiceAnswer> OnlyChoice(this IEnumerable<Answer> answers)
+    {
+        foreach (var answer in answers)
+        {
+            if (answer is ChoiceAnswer noulAnswer)
+            {
+                yield return noulAnswer;
+            }
+        }
+    }
+    
+    public static IEnumerable<ScoreAnswer> OnlyScoreAnswer(this IEnumerable<Answer> answers)
+    {
+        foreach (var answer in answers)
+        {
+            if (answer is ScoreAnswer scoreAnswer)
+            {
+                yield return scoreAnswer;
+            }
+        }
+    }
+
+    public static IEnumerable<BoxAnswer> OnlyBoxAnswer(this IEnumerable<Answer> answers)
+    {
+        foreach (var answer in answers)
+        {
+            if (answer is BoxAnswer boxAnswer)
+            {
+                yield return boxAnswer;
+            }
+        }
+    }
+}
+
+
 /// <summary>
 /// Represents a noul, score, choice, or box answer returned by Jev.
 /// </summary>
