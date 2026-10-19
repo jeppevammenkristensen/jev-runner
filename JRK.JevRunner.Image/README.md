@@ -91,6 +91,35 @@ var state = new AssetState().AddAsset("photo", asset);
 convert pixels, or validate them. The supplied format must match the actual bytes.
 Populate `AssetState` before constructing the request or executing a generated query.
 
+## Validate and add an image asset
+
+```csharp
+using JRK.JevRunner.Image;
+using JRK.JevRunner.Requests;
+using TruePath;
+
+var state = new AssetState();
+await state.AddImageWithValidation(
+    "photo", Guid.NewGuid().ToString(),
+    AbsolutePath.Create(@"C:\images\photo.jpg"));
+```
+
+`AddImageWithValidation` validates before registering the asset and throws
+`InvalidOperationException` containing the validation errors if the image is invalid.
+It does not resize or modify the image: valid files retain their original bytes and
+detected PNG or JPEG format, regardless of the filename extension. `stateName` names
+the state field; `assetName` identifies the image in the request's assets map.
+
+The method returns the same state instance, preserving its derived type. Optional
+`token` and `fileSystem` arguments support cancellation and injectable file access;
+validation and byte loading use the same file system. File-access failures propagate
+without registering an asset. Populate the state before constructing a request or
+executing a generated query.
+
+Use this helper when invalid images should be rejected rather than resized. For a
+best-effort resize, use the automatic adjustment helper below; neither helper checks
+request-wide API limits.
+
 ## Automatic image adjustment (experimental)
 
 ```csharp

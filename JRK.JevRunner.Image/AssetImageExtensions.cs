@@ -11,6 +11,38 @@ public static class AssetImageExtensions
     extension<TAssetState>(TAssetState state) where TAssetState : AssetState
     {
         /// <summary>
+        /// Validates an image and throws an exception if it's invalid and otherwise add it as an ImageAssert
+        /// </summary>
+        /// <param name="stateName">The name added to the state</param>
+        /// <param name="assetName">The asset name used in assets</param>
+        /// <param name="path">The path to the file</param>
+        /// <param name="token">Cancellation</param>
+        /// <param name="fileSystem">optional filesystem will use default if null</param>
+        /// <returns>A modified AssetStat</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<TAssetState> AddImageWithValidation(string stateName, string assetName, AbsolutePath path,
+            CancellationToken token = default, IFileSystem? fileSystem = null)
+        {
+            fileSystem ??= new FileSystem();
+            
+            ImageValidator imageValidator = new ImageValidator(fileSystem);
+            var validationResult = imageValidator.Validate(path);
+            token.ThrowIfCancellationRequested();
+            validationResult.ThrowIfInvalid();
+            
+            await using var input = path.OpenRead(fileSystem);
+            using var buffer = new MemoryStream();
+            await input.CopyToAsync(buffer, token);
+            var bytes = buffer.ToArray();
+            var format = validationResult.Format;
+            
+            state.AddAsset(stateName, ImageAsset.FromByteArray(assetName,
+                format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
+            return state;
+
+        }
+        
+        /// <summary>
         /// Validates an image, attempts a suggested resize when invalid, and registers its bytes in the state.
         /// </summary>
         /// <param name="stateName">The state field containing the asset reference.</param>
@@ -30,6 +62,7 @@ public static class AssetImageExtensions
             ImageValidator imageValidator = new ImageValidator(fileSystem);
             var validationResult = imageValidator.Validate(path);
             token.ThrowIfCancellationRequested();
+            
             await using var input = path.OpenRead(fileSystem);
             using var buffer = new MemoryStream();
             await input.CopyToAsync(buffer, token);

@@ -107,7 +107,7 @@ public record ImageDimensionError(
             _ => throw new InvalidOperationException()
         };
 
-        return temp + $"expected {Limit} but value was {Actual}";
+        return temp + $" expected {Limit} but value was {Actual}";
     }
     
     /// <summary>Returns each width and height violation of the inclusive limits, width first.</summary>
