@@ -112,7 +112,7 @@ body size. Rotate the pixels upright; the API does not apply EXIF orientation.
 The helper does not resize, rotate, convert, or validate image data. Use a lowercase
 `.png`, `.jpg`, or `.jpeg` extension that matches the file contents.
 For an explicit per-file check before upload, use `ImageValidator` from the optional
-[`JRK.JevRunner.Image` package](JRK.JevRunner.Image/README.md#validate-an-image-before-uploading).
+[`JRK.JevRunner.Image` package](JRK.JevRunner.Image/README.md#validate-an-image-before-uploading). Or see [Validate and prepare images](#validate-and-prepare-images).
 See the [TypeSafe image documentation](https://docs.typesafe.ai/images) for all limits.
 
 ### Validate and prepare images
@@ -282,6 +282,12 @@ See the [generator contract and diagnostics](JRK.JevRunner.SourceGenerators/JRK.
 and the [mixed-query sample](JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/Examples.cs).
 
 This package is targeting C# 15 and dotnet sdk which is currently in the time of writing in preview
+
+## Dependency notes
+
+This library uses [`TruePath.TestableIO.System.IO`](https://github.com/jeppevammenkristensen/TruePath.TestableIO.System.IO),
+which builds on [`TruePath`](https://github.com/shimat/TruePath) and
+[`TestableIO.System.IO`](https://github.com/TestableIO/System.IO.Abstractions).
 
 ## License
 
