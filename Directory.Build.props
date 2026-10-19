@@ -8,7 +8,6 @@
   <PropertyGroup>    
     <IsPackable>false</IsPackable>
     <VersionPrefix>0.5.0</VersionPrefix>
-    <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev-02</VersionSuffix>
-    <VersionSuffix Condition="'$(Configuration)' != 'Debug'">preview-02</VersionSuffix>
+    <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev-02</VersionSuffix>    
   </PropertyGroup>
 </Project>
