@@ -6,6 +6,11 @@ namespace JRK.JevRunner.Image;
 
 /// <summary>Describes a file's detected image properties and any local upload-readiness failures.</summary>
 /// <remarks>A valid result does not guarantee API acceptance or validate request-wide limits.</remarks>
+/// <param name="Format">The detected image format, or null when no supported format was identified.</param>
+/// <param name="Width">The image width in pixels, or null when it could not be determined.</param>
+/// <param name="Height">The image height in pixels, or null when it could not be determined.</param>
+/// <param name="FileSizeBytes">The encoded file size in bytes before base64 conversion.</param>
+/// <param name="Errors">The failures found by the local image validation checks.</param>
 public sealed record ImageValidationResult(
     string? Format,
     int? Width,
@@ -16,6 +21,10 @@ public sealed record ImageValidationResult(
     /// <summary>Whether all local image checks passed.</summary>
     public bool IsValid => Errors.Count == 0;
 
+    /// <summary>Gets a scaling suggestion based on the reported dimension violations.</summary>
+    /// <remarks>Non-dimension errors are ignored. No dimension violations yields None;
+    /// mixed undersized and oversized dimensions yield ScalingNotPossible.
+    /// A suggestion does not guarantee that proportional resizing will satisfy both bounds.</remarks>
     public ImageSuggestedScaling SuggestedScaling
     {
         get
@@ -50,6 +59,8 @@ public sealed record ImageValidationResult(
         }
     }
     
+    /// <summary>Throws with the validation error messages when any local image check failed.</summary>
+    /// <exception cref="InvalidOperationException">The result contains one or more validation errors.</exception>
     public void ThrowIfInvalid()
     {
         if (IsValid) return;
@@ -65,8 +76,10 @@ public sealed record ImageValidationResult(
     }
 }
 
+/// <summary>Represents either a structured dimension violation or a general image validation message.</summary>
 public union ImageValidationError(ImageDimensionError, string)
 {
+    /// <summary>Returns the dimension violation description or the stored validation message.</summary>
     public string GetErrorMessage()
     {
         return this switch
@@ -77,18 +90,29 @@ public union ImageValidationError(ImageDimensionError, string)
     }
 }
 
+/// <summary>Identifies the image axis checked against a dimension limit.</summary>
 public enum ImageDimension
 {
+    /// <summary>The horizontal size of the image in pixels.</summary>
     Width,
+    /// <summary>The vertical size of the image in pixels.</summary>
     Height,
 }
 
+/// <summary>Identifies whether an image dimension exceeds the maximum or falls below the minimum.</summary>
 public enum ImageDimensionViolation
 {
+    /// <summary>The dimension exceeds the inclusive maximum.</summary>
     ToHigh,
+    /// <summary>The dimension falls below the inclusive minimum.</summary>
     ToSmall
 }
 
+/// <summary>Describes an image dimension that falls outside an inclusive pixel limit.</summary>
+/// <param name="Dimension">The image axis that violates the limit.</param>
+/// <param name="Violation">Whether the dimension exceeds the maximum or falls below the minimum.</param>
+/// <param name="Limit">The violated minimum or maximum limit in pixels.</param>
+/// <param name="Actual">The measured dimension in pixels.</param>
 public record ImageDimensionError(
     ImageDimension Dimension,
     ImageDimensionViolation Violation,
@@ -96,6 +120,7 @@ public record ImageDimensionError(
     int Actual
 )
 {
+    /// <summary>Formats the dimension violation with its expected limit and actual pixel value.</summary>
     public override string ToString()
     {
         string temp = this switch
