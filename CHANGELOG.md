@@ -4,18 +4,21 @@
 
 ### Added
 
+- Typed image validation errors: `NotASupportedImageError` for non-image, undecodable, or unsupported image contents, and `ImageSizeExceededError` exposing the maximum encoded file size. `ImageValidationError.GetErrorMessage()` supports both cases.
 - `JevPrice` represents decimal prices per million input and output tokens, with the output rate defaulting to zero. `Usage.CalculateCost(price)` calculates the combined cost at those rates.
 - `Usage.Zero` provides zero token counts. `Usage.Add(other)` returns independent input and output totals without changing either operand. `IEnumerable<Usage>.SumUsage()` aggregates usages and returns zero for an empty sequence.
 - Unit coverage for usage pricing, addition, and aggregation, including zero values, independent token categories, counts beyond the 32-bit range, deferred sequences, and unchanged operands.
 
 ### Changed
 
+- `ImageValidator` now returns typed errors instead of strings for files exceeding 16 MiB and for non-image, undecodable, or unsupported image contents.
 - **Breaking:** `Usage` is now a `readonly record struct` rather than a record class. It has value semantics and a zero-valued default. Update callers that rely on null, reference identity, or class constraints; use `Usage?` if an absent value is needed.
 - Source-generated query `Execute` methods now accept `IJevRunner` instead of the concrete `JevRunner`, allowing interface-typed runners and alternative implementations while preserving cancellation-token forwarding and typed response wrappers.
 - Package version prefix is now `0.6.0`, with `dev-02` for Debug builds and `preview-01` for non-Debug builds.
 
 ### Fixed
 
+- Undersized image width and height validation messages now report that the dimension is too small rather than too high.
 - Source-generator tests now include `IJevRunner` in their independent runtime contract and verify execution through an interface-typed runner, including the generated signature, request and cancellation-token forwarding, and response wrapping.
 - Corrected a typo in the typed response lookup test documentation.
 

@@ -1,24 +1,8 @@
 using System.IO.Abstractions;
-using JRK.JevRunner.Responses;
 using SkiaSharp;
 using TruePath;
 
 namespace JRK.JevRunner.Image;
-
-/// <summary>Supplies either one bounding-box answer or a collection of answers for image annotation.</summary>
-/// <remarks>Collections must support repeated enumeration for validation and drawing.</remarks>
-public union AppliedBox(BoxAnswer, IEnumerable<BoxAnswer>)
-{
-    /// <summary>Exposes either union case as an enumerable of bounding-box answers.</summary>
-    public IEnumerable<BoxAnswer> GetAll()
-    {
-        return this switch
-        {
-            BoxAnswer a => [a],
-            IEnumerable<BoxAnswer> a => a
-        };
-    }
-}
 
 /// <summary>Draws Jev bounding boxes on images and returns the annotated images as PNG bytes.</summary>
 public sealed class BoxRenderer

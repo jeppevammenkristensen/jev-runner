@@ -5,31 +5,6 @@ using TruePath;
 
 namespace JRK.JevRunner.Image;
 
-/// <summary>Describes whether proportional scaling can address the latest image validation failures.</summary>
-public enum ImageSuggestedScaling
-{
-    /// <summary>
-    /// If you can solve validation by upscaling
-    /// </summary>
-    Upscale,
-
-    /// <summary>
-    /// If you can solve validation by downscaling
-    /// </summary>
-    Downscale,
-
-    /// <summary>
-    /// If scaling can't fix the issues. 
-    /// </summary>
-    /// <remarks>For instance in scenarios where one dimension is to low and the other is to high</remarks>
-    ScalingNotPossible,
-
-    /// <summary>
-    /// Scaling is not required
-    /// </summary>
-    None
-}
-
 /// <summary>Checks image files against TypeSafe's per-image upload requirements without modifying them.</summary>
 /// <remarks>Inspects actual contents independently of the filename. Request body size, processed-image
 /// size, expanded references, and model context limits require separate request-level checks.
@@ -101,14 +76,14 @@ public sealed class ImageValidator
         using var input = filePath.OpenRead(_fileSystem);
         var length = input.Length;
         if (length > MaximumFileSizeBytes)
-            return new(null, null, null, length, ["Image file exceeds 16 MiB."]);
+            return new(null, null, null, length, [new ImageSizeExceededError(MaximumFileSizeBytes)]);
 
         var bytes = new byte[checked((int) length)];
         input.ReadExactly(bytes);
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data);
         if (codec is null)
-            return new ImageValidationResult(null, null, null, length, ["File is not a decodable PNG or JPEG image."]);
+            return new ImageValidationResult(null, null, null, length, [new NotASupportedImageError()]);
 
         var format = codec.EncodedFormat switch
         {
@@ -118,7 +93,7 @@ public sealed class ImageValidator
         };
         var info = codec.Info;
         if (format is null)
-            return new(null, info.Width, info.Height, length, ["Only PNG and JPEG images are supported."]);
+            return new(null, info.Width, info.Height, length, [new NotASupportedImageError()]);
 
         var errors = new List<ImageValidationError>();
 
