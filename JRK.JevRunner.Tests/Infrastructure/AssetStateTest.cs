@@ -17,7 +17,7 @@ public partial class AssetStateTest
     [Fact]
     public void ImageAsset_Node_SerializesImageFields()
     {
-        var image = new ImageAsset("image-ref", "jpg", "AQID");
+        var image = new ImageAsset("image-ref", "jpg", new Base64String("AQID"));
 
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(
             """{"type":"image","format":"jpg","data_base64":"AQID"}"""), image.Node));
@@ -33,8 +33,8 @@ public partial class AssetStateTest
     public void Request_AssetState_CollectsAndSerializesAssets()
     {
         var state = new AssetState();
-        Assert.Same(state, state.AddAsset("photo", new ImageAsset("image-one", "jpg", "AQID")));
-        state.AddAsset("example", new ImageAsset("image-two", "png", "BAUG"));
+        Assert.Same(state, state.AddAsset("photo", new ImageAsset("image-one", "jpg", new Base64String("AQID"))));
+        state.AddAsset("example", new ImageAsset("image-two", "png", new Base64String("BAUG")));
 
         var request = new Request(state, null);
         var json = JsonTranslator.CreateRequestJson(request);
@@ -54,7 +54,7 @@ public partial class AssetStateTest
         var state = new AssetState();
         var request = new Request(state, null);
 
-        state.AddAsset("photo", new ImageAsset("later", "jpg", "AQID"));
+        state.AddAsset("photo", new ImageAsset("later", "jpg", new Base64String("AQID")));
 
         Assert.False(request.HasAssets);
         Assert.Empty(request.Assets);
@@ -64,10 +64,10 @@ public partial class AssetStateTest
     [Fact]
     public void AddAsset_DuplicateField_PreservesOriginalAssetAndReference()
     {
-        var state = new AssetState().AddAsset("photo", new ImageAsset("original", "jpg", "AQID"));
+        var state = new AssetState().AddAsset("photo", new ImageAsset("original", "jpg", new Base64String("AQID")));
 
         Assert.Throws<ArgumentException>(() =>
-            state.AddAsset("photo", new ImageAsset("replacement", "png", "BAUG")));
+            state.AddAsset("photo", new ImageAsset("replacement", "png", new Base64String("BAUG"))));
 
         var json = JsonTranslator.CreateRequestJson(new Request(state, null));
         Assert.Equal("original", state["photo"]);
@@ -120,7 +120,7 @@ public partial class AssetStateTest
     public void GeneratedQuery_GetRequest_CollectsImageAssets()
     {
         var state = new PhotoState();
-        state.AddAsset("photo", new ImageAsset("image-ref", "jpg", "AQID"));
+        state.AddAsset("photo", new ImageAsset("image-ref", "jpg", new Base64String("AQID")));
 
         var request = new ImageQuery(state).GetRequest();
         var json = JsonTranslator.CreateRequestJson(request);

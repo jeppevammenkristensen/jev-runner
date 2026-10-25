@@ -58,7 +58,7 @@ public class JevRunnerTest
             .AddQuestion(new BoxQuestion("mug", "the coffee mug in `photo`"))
             .AddQuestion(new NoulQuestion("mug_visible", "Is there a mug in `photo`?", null));
         if (includeAsset)
-            request.Assets.Add(new ImageAsset("image-ref", "jpg", "AQID"));
+            request.Assets.Add(new ImageAsset("image-ref", "jpg", new Base64String("AQID")));
 
         var response = await CreateRunner(client).Execute(request, TestContext.Current.CancellationToken);
 
@@ -102,7 +102,7 @@ public class JevRunnerTest
             };
         }));
         var runner = CreateRunner(client);
-        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", "AQID"));
+        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", new Base64String("AQID")));
 
         await runner.Execute(new Request(state, null), TestContext.Current.CancellationToken);
         await runner.Execute(CreateRequest(), TestContext.Current.CancellationToken);

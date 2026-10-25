@@ -11,12 +11,18 @@ published release notes.
 
 ### Added
 
+- `FileData` supports image bytes and `Base64String` values, with `Bytes` and
+  `Base64` accessors for either representation.
 - `JevPrice` and `Usage.CalculateCost(price)` calculate costs from decimal rates per million input and output tokens. The output rate defaults to zero.
 - `Usage.Zero`, `Usage.Add(other)`, and `IEnumerable<Usage>.SumUsage()` support immutable token-count aggregation. Empty sequences sum to zero.
 - Unit coverage for pricing, addition, and aggregation, including zero and large counts and operand preservation.
 
 ### Changed
 
+- **Breaking:** `ImageAsset` accepts `FileData` instead of a base64 string. Pass
+  bytes directly or use `new Base64String(value)` for encoded data. Replace
+  `asset.Base64` with `asset.FileData.Base64`. `FromByteArray` is obsolete;
+  use `new ImageAsset(name, format, bytes)` instead.
 - **Breaking:** `Usage` is now a `readonly record struct` instead of a record class. Update code that depends on null, reference identity, or class constraints; use `Usage?` for an optional value.
 - Generated query `Execute` methods accept `IJevRunner` rather than concrete
   `JevRunner`, supporting interface-typed runners and alternative implementations.
@@ -26,6 +32,8 @@ published release notes.
 
 ### Fixed
 
+- Migrated image asset and request tests to `FileData`, fixing test project
+  compilation after the API change.
 - Updated the source-generator tests' independent runtime contract for `IJevRunner`
   and added interface-typed execution and generated-signature coverage, retaining
   request, cancellation-token, and response-wrapper checks.

@@ -1,3 +1,4 @@
+using System.Buffers.Text;
 using System.Text.Json.Nodes;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
@@ -50,7 +51,7 @@ public class BoxQuestionTest
     [Fact]
     public void CreateRequestJson_MixedBoxAndNoul_SerializesQuestionsAndAsset()
     {
-        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", "AQID"));
+        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", (Base64String)"AQID"));
         var request = new Request(state, new JevModel("jev-1.14.0"))
             .AddQuestion(new BoxQuestion("mug", "the coffee mug in `photo`"))
             .AddQuestion(new NoulQuestion("mug_visible", "Is there a mug in `photo`?", null));

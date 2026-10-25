@@ -36,7 +36,7 @@ public class AssetImageExtensionsTest
         var asset = GetImageAsset(state);
         Assert.Equal("image-id", asset.Name);
         Assert.Equal(expectedFormat, asset.Format);
-        Assert.Equal(original, Convert.FromBase64String(asset.Base64));
+        Assert.Equal(original, asset.FileData.Bytes);
         Assert.Equal(original, path.ReadAllBytes(fs));
         Assert.Single(fs.AllFiles);
     }
@@ -59,7 +59,7 @@ public class AssetImageExtensionsTest
 
         var asset = GetImageAsset(state);
         Assert.Equal("png", asset.Format);
-        var bytes = Convert.FromBase64String(asset.Base64);
+        var bytes = asset.FileData.Bytes;
         Assert.Equal(new byte[] {137, 80, 78, 71, 13, 10, 26, 10}, bytes[..8]);
         using var image = SKBitmap.Decode(bytes);
         Assert.Equal(expectedWidth, image.Width);

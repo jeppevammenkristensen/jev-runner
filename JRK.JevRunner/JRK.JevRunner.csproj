@@ -12,7 +12,13 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Usage pricing and aggregation
+    <PackageReleaseNotes>Image asset data
+- Added FileData for image bytes or Base64String values, with Bytes and Base64 accessors.
+- Breaking: ImageAsset now accepts FileData instead of a base64 string. Pass bytes directly or wrap encoded data in new Base64String(value). Replace asset.Base64 with asset.FileData.Base64.
+- ImageAsset.FromByteArray is obsolete; use new ImageAsset(name, format, bytes) instead.
+- Updated image asset and request tests for the new API, resolving test project compilation errors.
+
+Usage pricing and aggregation
 - Added JevPrice with decimal rates per million input and output tokens; the output rate defaults to zero.
 - Added Usage.CalculateCost, Usage.Zero, Usage.Add, and IEnumerable&lt;Usage&gt;.SumUsage(). Addition and aggregation sum input and output counts independently without changing operands; an empty sequence sums to zero.
 
