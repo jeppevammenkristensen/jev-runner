@@ -15,5 +15,5 @@ public partial class Connector
     
     [TextPrompt(DefaultValueSource = nameof(DefaultApiKey))] public partial string ApiKey { get; set; } = string.Empty;
     
-    public JevRunner GetRunner() => JevRunner.Init(ApiKey);
+    public IJevRunner GetRunner() => JevRunner.Init(ApiKey);
 }

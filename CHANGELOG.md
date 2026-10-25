@@ -11,6 +11,13 @@
 ### Changed
 
 - **Breaking:** `Usage` is now a `readonly record struct` rather than a record class. It has value semantics and a zero-valued default. Update callers that rely on null, reference identity, or class constraints; use `Usage?` if an absent value is needed.
+- Source-generated query `Execute` methods now accept `IJevRunner` instead of the concrete `JevRunner`, allowing interface-typed runners and alternative implementations while preserving cancellation-token forwarding and typed response wrappers.
+- Package version prefix is now `0.6.0`, with `dev-02` for Debug builds and `preview-01` for non-Debug builds.
+
+### Fixed
+
+- Source-generator tests now include `IJevRunner` in their independent runtime contract and verify execution through an interface-typed runner, including the generated signature, request and cancellation-token forwarding, and response wrapping.
+- Corrected a typo in the typed response lookup test documentation.
 
 ## [0.5.0]
 

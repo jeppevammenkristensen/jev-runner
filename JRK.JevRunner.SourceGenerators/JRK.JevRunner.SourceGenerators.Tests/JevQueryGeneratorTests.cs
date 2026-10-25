@@ -233,11 +233,12 @@ public class JevQueryGeneratorTests
                                                             {
                                                                 var query = new TestNamespace.TravelQuery();
                                                                 var runner = new JRK.JevRunner.JevRunner();
+                                                                JRK.JevRunner.IJevRunner executor = runner;
                                                                 var expected = new JRK.JevRunner.Responses.NoulAnswer();
                                                                 runner.Response.Answers.Add("Budget", expected);
                                                                 using var cancellation = new System.Threading.CancellationTokenSource();
                                                                 TestNamespace.TravelQueryResponseWrapper response =
-                                                                    query.Execute(runner, cancellation.Token).GetAwaiter().GetResult();
+                                                                    query.Execute(executor, cancellation.Token).GetAwaiter().GetResult();
                                                                 var request = runner.LastRequest;
                                                                 if (!object.ReferenceEquals(response.Response, runner.Response)
                                                                     || !object.ReferenceEquals(response.Budget, expected)
@@ -248,7 +249,7 @@ public class JevQueryGeneratorTests
                                                                     || request.Questions[0].Name != "Budget"
                                                                     || request.Questions[0].Instructions != query.Budget.Instructions) return false;
 
-                                                                var defaultResponse = query.Execute(runner).GetAwaiter().GetResult();
+                                                                var defaultResponse = query.Execute(executor).GetAwaiter().GetResult();
                                                                 return object.ReferenceEquals(defaultResponse.Response, runner.Response)
                                                                     && object.ReferenceEquals(defaultResponse.Budget, expected)
                                                                     && !object.ReferenceEquals(response, defaultResponse)
@@ -267,6 +268,7 @@ public class JevQueryGeneratorTests
             generated);
         Assert.Contains("/// <returns>A task whose result wraps the runner's response and exposes typed answers.</returns>",
             generated);
+        Assert.Contains("Execute(global::JRK.JevRunner.IJevRunner runner,", generated);
         AssertConsumerSucceeds(output);
     }
 
@@ -1011,7 +1013,13 @@ public class JevQueryGeneratorTests
 
                                            namespace JRK.JevRunner
                                            {
-                                               public sealed class JevRunner
+                                               public interface IJevRunner
+                                               {
+                                                   System.Threading.Tasks.Task<Response> Execute(Request request,
+                                                       System.Threading.CancellationToken cancellationToken = default);
+                                               }
+
+                                               public sealed class JevRunner : IJevRunner
                                                {
                                                    public Request LastRequest { get; private set; }
                                                    public System.Threading.CancellationToken LastCancellationToken { get; private set; }

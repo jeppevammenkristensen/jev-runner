@@ -16,6 +16,10 @@
 - Added JevPrice with decimal rates per million input and output tokens; the output rate defaults to zero.
 - Added Usage.CalculateCost, Usage.Zero, Usage.Add, and IEnumerable&lt;Usage&gt;.SumUsage(). Addition and aggregation sum input and output counts independently without changing operands; an empty sequence sums to zero.
 
+Source-generated query execution
+- Generated Execute methods now accept IJevRunner instead of concrete JevRunner, supporting interface-typed runners and alternative implementations while preserving cancellation-token forwarding and typed response wrappers.
+- Updated source-generator test contracts and regression coverage for interface-based execution.
+
 Breaking change
 - Usage is now a readonly record struct instead of a record class. It has value semantics and a zero-valued default; callers relying on null or reference identity must update their code.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>

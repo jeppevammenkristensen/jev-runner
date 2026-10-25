@@ -19,7 +19,7 @@ var jevRunner = connector.GetRunner();
 var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Test.jpg";
 
 var jevQuery =
-    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageWithValidation("photo", "person_image", imagePath)));
+    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment("photo", "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
 
 
