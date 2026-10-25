@@ -4,6 +4,7 @@
 
 ### Added
 
+- `FileData` accepts image bytes or a `Base64String` and exposes both `Bytes` and `Base64` representations.
 - Typed image validation errors: `NotASupportedImageError` for non-image, undecodable, or unsupported image contents, and `ImageSizeExceededError` exposing the maximum encoded file size. `ImageValidationError.GetErrorMessage()` supports both cases.
 - `JevPrice` represents decimal prices per million input and output tokens, with the output rate defaulting to zero. `Usage.CalculateCost(price)` calculates the combined cost at those rates.
 - `Usage.Zero` provides zero token counts. `Usage.Add(other)` returns independent input and output totals without changing either operand. `IEnumerable<Usage>.SumUsage()` aggregates usages and returns zero for an empty sequence.
@@ -11,6 +12,7 @@
 
 ### Changed
 
+- **Breaking:** `ImageAsset` now takes `FileData` instead of a base64 string. Pass bytes directly or wrap encoded strings in `new Base64String(value)`; read data through `asset.FileData.Bytes` or `asset.FileData.Base64`. `FromByteArray` is obsolete; use the constructor with bytes instead.
 - `ImageValidator` now returns typed errors instead of strings for files exceeding 16 MiB and for non-image, undecodable, or unsupported image contents.
 - **Breaking:** `Usage` is now a `readonly record struct` rather than a record class. It has value semantics and a zero-valued default. Update callers that rely on null, reference identity, or class constraints; use `Usage?` if an absent value is needed.
 - Source-generated query `Execute` methods now accept `IJevRunner` instead of the concrete `JevRunner`, allowing interface-typed runners and alternative implementations while preserving cancellation-token forwarding and typed response wrappers.
@@ -18,6 +20,7 @@
 
 ### Fixed
 
+- Updated image asset, request serialization, and HTTP pipeline tests for the `FileData` API, resolving test project build errors.
 - Undersized image width and height validation messages now report that the dimension is too small rather than too high.
 - Source-generator tests now include `IJevRunner` in their independent runtime contract and verify execution through an interface-typed runner, including the generated signature, request and cancellation-token forwarding, and response wrapping.
 - Corrected a typo in the typed response lookup test documentation.

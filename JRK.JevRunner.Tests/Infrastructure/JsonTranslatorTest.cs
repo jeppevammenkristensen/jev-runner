@@ -15,7 +15,7 @@ public class JsonTranslatorTest
     {
         var request = new Request("Evaluate this picture.", JevModel.Latest)
         {
-            Assets = [new ImageAsset("image-ref", "png", "AQID")],
+            Assets = [new ImageAsset("image-ref", "png", new Base64String("AQID"))],
             Questions = [new NoulQuestion("person", "Is there a person in image-ref?", null)]
         };
 

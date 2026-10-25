@@ -34,7 +34,7 @@ public static class Extensions
             using var buffer = new MemoryStream();
             await fileSystemStream.CopyToAsync(buffer);
             var base64 = Convert.ToBase64String(buffer.ToArray());
-            state.AddAsset(stateName, new ImageAsset(assetName,  filePath.GetExtensionWithoutDot(), base64));
+            state.AddAsset(stateName, new ImageAsset(assetName,  filePath.GetExtensionWithoutDot(), (Base64String)base64));
             return state;
         }
     }
