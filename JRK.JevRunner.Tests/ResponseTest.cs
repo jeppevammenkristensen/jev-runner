@@ -30,7 +30,7 @@ public class ResponseTest
     }
 
     /// <summary>
-    /// Every typed lookup reports a missiupdng name consistently.
+    /// Every typed lookup reports a missing name consistently.
     /// </summary>
     [Theory]
     [InlineData("NoulAnswer")]
