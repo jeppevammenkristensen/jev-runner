@@ -4,6 +4,18 @@
 
 ### Added
 
+- `JevPrice` represents decimal prices per million input and output tokens, with the output rate defaulting to zero. `Usage.CalculateCost(price)` calculates the combined cost at those rates.
+- `Usage.Zero` provides zero token counts. `Usage.Add(other)` returns independent input and output totals without changing either operand. `IEnumerable<Usage>.SumUsage()` aggregates usages and returns zero for an empty sequence.
+- Unit coverage for usage pricing, addition, and aggregation, including zero values, independent token categories, counts beyond the 32-bit range, deferred sequences, and unchanged operands.
+
+### Changed
+
+- **Breaking:** `Usage` is now a `readonly record struct` rather than a record class. It has value semantics and a zero-valued default. Update callers that rely on null, reference identity, or class constraints; use `Usage?` if an absent value is needed.
+
+## [0.5.0]
+
+### Added
+
 - `ImageAsset.FromByteArray(name, format, bytes)` creates an asset with standard padded base64 without line breaks or a data URI prefix. The supplied format must match the bytes; no conversion or validation is performed.
 - `ImageValidationResult` exposes typed `ImageDimensionError` or string errors, `SuggestedScaling`, and `ThrowIfInvalid()`. `ImageValidationError.GetErrorMessage()` formats either error case; `ImageDimensionError.GetErrors()` checks both axes against inclusive custom bounds.
 - Result-level `SuggestedScaling` reports `Upscale` for undersized dimensions, `Downscale` for oversized dimensions, `ScalingNotPossible` when both kinds occur, and `None` when there are no dimension errors. Suggestions ignore non-dimension errors and do not guarantee that a proportional resize satisfies both bounds.

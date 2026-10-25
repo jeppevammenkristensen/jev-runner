@@ -32,5 +32,5 @@ public readonly record struct Noul
     /// <summary>
     /// Converts a number to a probability using the constructor's validation.
     /// </summary>
-    public static implicit operator Noul(double value) => new Noul(value);
+    public static implicit operator Noul(double value) => new(value);
 }

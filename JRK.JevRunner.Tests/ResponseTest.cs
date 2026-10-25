@@ -26,11 +26,11 @@ public class ResponseTest
         Assert.Same(noul, response.GetRequiredNoulAnswer("noul"));
         Assert.Same(choice, response.GetRequiredChoiceAnswer("choice"));
         Assert.Same(score, response.GetRequiredScoreAnswer("score"));
-        Assert.Same(usage, response.Usage);
+        Assert.Equal(usage, response.Usage);
     }
 
     /// <summary>
-    /// Every typed lookup reports a missing name consistently.
+    /// Every typed lookup reports a missiupdng name consistently.
     /// </summary>
     [Theory]
     [InlineData("NoulAnswer")]

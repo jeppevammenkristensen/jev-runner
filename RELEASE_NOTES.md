@@ -11,6 +11,18 @@ published release notes.
 
 ### Added
 
+- `JevPrice` and `Usage.CalculateCost(price)` calculate costs from decimal rates per million input and output tokens. The output rate defaults to zero.
+- `Usage.Zero`, `Usage.Add(other)`, and `IEnumerable<Usage>.SumUsage()` support immutable token-count aggregation. Empty sequences sum to zero.
+- Unit coverage for pricing, addition, and aggregation, including zero and large counts and operand preservation.
+
+### Changed
+
+- **Breaking:** `Usage` is now a `readonly record struct` instead of a record class. Update code that depends on null, reference identity, or class constraints; use `Usage?` for an optional value.
+
+## 0.5.0
+
+### Added
+
 - `ImageAsset.FromByteArray(name, format, bytes)` encodes bytes as standard padded
   base64 without line breaks or a `data:` prefix; callers supply the matching format.
 - `ImageValidationResult` exposes typed dimension or string errors, `SuggestedScaling`,
@@ -71,7 +83,7 @@ published release notes.
 
 ## 0.3.1
 
-## Changed
+### Changed
 
 - Removed unnecessary Jetbrains.Annotation dependency
 
@@ -104,7 +116,3 @@ published release notes.
 
 - Generated wrapper-returning `Execute` methods preserve generic query type
   arguments and avoid naming their response local after a containing type parameter.
-
-### Removed
-
-<!-- Removed features or APIs, including migration guidance when needed. -->
