@@ -5,6 +5,10 @@ using TruePath;
 
 namespace JRK.JevRunner.Image;
 
+/// <summary>Wraps an image validation result.</summary>
+public union ImageValidation(ImageValidationResult);
+
+
 /// <summary>Checks image files against TypeSafe's per-image upload requirements without modifying them.</summary>
 /// <remarks>Inspects actual contents independently of the filename. Request body size, processed-image
 /// size, expanded references, and model context limits require separate request-level checks.
@@ -33,37 +37,10 @@ public sealed class ImageValidator
         ArgumentNullException.ThrowIfNull(fileSystem);
         _fileSystem = fileSystem;
     }
-
-    /// <summary>Suggests a resize for the most recent validation, or indicates that no suitable resize is known.</summary>
-    /// <remarks>Before validation, after failed file access, or for known non-dimension errors, returns
-    /// <see cref="ImageSuggestedScaling.ScalingNotPossible"/>. Both output dimensions must fit using the
-    /// default ImageScaler bounds. A suggestion does not guarantee decoding or API acceptance after resizing:
-    /// out-of-range images are not fully decoded during validation. Revalidate the resized file.
-    /// Instance state is replaced by each Validate call; use separate instances for concurrent validation.</remarks>
-    internal ImageSuggestedScaling GetImageSuggestedScaling(ImageValidationResult _lastResult)
-    {
-        if (_lastResult is not {Width: not null, Height: not null})
-        {
-            return ImageSuggestedScaling.ScalingNotPossible;
-        }
-
-        var shorter = Math.Min(_lastResult.Width.Value, _lastResult.Height.Value);
-        var longer = Math.Max(_lastResult.Width.Value, _lastResult.Height.Value);
-        if (shorter >= MinimumDimension && longer <= MaximumDimension)
-            return ImageSuggestedScaling.None;
-
-        // This exact ratio check accounts for ImageScaler's ceiling/floor pixel rounding.
-        if ((long) longer * MinimumDimension > (long) shorter * MaximumDimension)
-            return ImageSuggestedScaling.ScalingNotPossible;
-
-        return shorter < MinimumDimension
-            ? ImageSuggestedScaling.Upscale
-            : ImageSuggestedScaling.Downscale;
-    }
-
-
+   
     /// <summary>Detects PNG/JPEG contents, checks size and dimensions, and decodes the image.</summary>
-    /// <returns>Detected properties and actionable failures; invalid contents do not throw.</returns>
+    /// <returns>A valid case containing detected properties and encoded bytes, or an invalid case
+    /// containing validation failures. Invalid contents do not throw.</returns>
     /// <remarks>Animated PNGs, including single-frame APNGs, are rejected. Progressive JPEG is not
     /// rejected: baseline JPEG is a recommendation, not a hard format requirement.
     /// A suitable filename extension is still needed when using AddImageAsset.</remarks>
@@ -76,14 +53,14 @@ public sealed class ImageValidator
         using var input = filePath.OpenRead(_fileSystem);
         var length = input.Length;
         if (length > MaximumFileSizeBytes)
-            return new(null, null, null, length, [new ImageSizeExceededError(MaximumFileSizeBytes)]);
+            return new InvalidImageResult([new ImageSizeExceededError(MaximumFileSizeBytes)]);
 
         var bytes = new byte[checked((int) length)];
         input.ReadExactly(bytes);
         using var data = SKData.CreateCopy(bytes);
         using var codec = SKCodec.Create(data);
         if (codec is null)
-            return new ImageValidationResult(null, null, null, length, [new NotASupportedImageError()]);
+            return new InvalidImageResult([new NotASupportedImageError()]);
 
         var format = codec.EncodedFormat switch
         {
@@ -93,13 +70,13 @@ public sealed class ImageValidator
         };
         var info = codec.Info;
         if (format is null)
-            return new(null, info.Width, info.Height, length, [new NotASupportedImageError()]);
+            return new InvalidImageResult([new NotASupportedImageError()]);
 
         var errors = new List<ImageValidationError>();
 
+        
         errors.AddRange(ImageDimensionError.GetErrors(info, MinimumDimension, MaximumDimension));
         
-        var dimensionErrorCount = errors.Count;
         // Per-axis bounds also enforce the documented total-pixel bounds.
         if (format == "png")
             ValidatePngChunks(bytes, errors);
@@ -114,7 +91,7 @@ public sealed class ImageValidator
                 errors.Add("Image data is damaged, incomplete, or cannot be fully decoded.");
         }
         
-        return new ImageValidationResult(format, info.Width, info.Height, length, errors.AsReadOnly());
+        return errors.Count > 0 ? new InvalidImageResult(errors.ToArray()) : new ValidImageResult(format, info.Width, info.Height, length,bytes);
     }
 
     /// <summary>Walks PNG chunks to reject animation even when a decoder exposes only its default image.</summary>

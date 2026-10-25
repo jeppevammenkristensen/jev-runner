@@ -24,10 +24,12 @@ public class ImageValidatorTest
         var bytes = CreateImage(format, width, height);
         var result = Validate(bytes);
         Assert.True(result.IsValid);
-        Assert.Equal(expected, result.Format);
-        Assert.Equal(width, result.Width);
-        Assert.Equal(height, result.Height);
-        Assert.Equal(bytes.LongLength, result.FileSizeBytes);
+        var valid = GetValidResult(result);
+        Assert.Equal(expected, valid.Format);
+        Assert.Equal(width, valid.Width);
+        Assert.Equal(height, valid.Height);
+        Assert.Equal(bytes.LongLength, valid.FileSizeBytes);
+        Assert.Equal(bytes, valid.Bytes);
     }
 
     /// <summary>Each axis is checked independently.</summary>
@@ -40,7 +42,7 @@ public class ImageValidatorTest
     {
         var result = Validate(CreateImage(SKEncodedImageFormat.Png, width, height));
         Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors);
+        var error = Assert.Single(GetInvalidResult(result).Errors);
         Assert.True(error is ImageDimensionError);
         if (error is ImageDimensionError details)
         {
@@ -69,7 +71,7 @@ public class ImageValidatorTest
     public void Validate_OversizedFile_ReturnsFailure()
     {
         var result = Validate(new byte[checked((int) ImageValidator.MaximumFileSizeBytes + 1)]);
-        Assert.Contains(result.Errors, error => error is string message && message == "Image file exceeds 16 MiB.");
+        Assert.Contains(GetInvalidResult(result).Errors, error => error is ImageSizeExceededError);
     }
 
     /// <summary>The inclusive file size boundary proceeds to content validation.</summary>
@@ -77,7 +79,7 @@ public class ImageValidatorTest
     public void Validate_ExactFileSizeLimit_DoesNotReportOversize()
     {
         var result = Validate(new byte[checked((int) ImageValidator.MaximumFileSizeBytes)]);
-        Assert.DoesNotContain(result.Errors, error => error is string message && message == "Image file exceeds 16 MiB.");
+        Assert.DoesNotContain(GetInvalidResult(result).Errors, error => error is ImageSizeExceededError);
     }
 
     /// <summary>A truncated PNG cannot pass solely because its dimensions can be read.</summary>
@@ -110,7 +112,7 @@ public class ImageValidatorTest
         ];
         byte[] oriented = [.. jpeg[..2], .. exif, .. jpeg[2..]];
         var result = Validate(oriented);
-        Assert.Contains(result.Errors, error => error is string message &&
+        Assert.Contains(GetInvalidResult(result).Errors, error => error is string message &&
             message == "Apply EXIF orientation to the pixels and reset orientation before uploading.");
     }
 
@@ -126,7 +128,7 @@ public class ImageValidatorTest
         BinaryPrimitives.WriteUInt32BigEndian(frameData.AsSpan(8), 280);
         var frame = PngChunk("fcTL"u8, frameData);
         byte[] apng = [.. png[..33], .. animation, .. frame, .. png[33..]];
-        Assert.Contains(Validate(apng).Errors, error => error is string message &&
+        Assert.Contains(GetInvalidResult(Validate(apng)).Errors, error => error is string message &&
             message == "Animated PNG (APNG) images are not supported; export a still frame.");
     }
 
@@ -166,7 +168,10 @@ public class ImageValidatorTest
         fs.AddFile(path.ToString(), new MockFileData(CreateImage(SKEncodedImageFormat.Png, width, height)));
         var validator = new ImageValidator(fs);
         var result = validator.Validate(path);
-        Assert.Equal(expected, result.SuggestedScaling);
+        if (expected == ImageSuggestedScaling.None)
+            GetValidResult(result);
+        else
+            Assert.Equal(expected, GetInvalidResult(result).SuggestedScaling);
     }
 
     /// <summary>Suggestions describe dimension errors only; IsValid must still be checked independently.</summary>
@@ -183,8 +188,12 @@ public class ImageValidatorTest
         var validator = new ImageValidator(fs);
         var result = validator.Validate(path);
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, error => error is string);
-        Assert.Equal(expected, result.SuggestedScaling);
+        var invalid = GetInvalidResult(result);
+        if (format == SKEncodedImageFormat.Webp)
+            Assert.Contains(invalid.Errors, error => error is NotASupportedImageError);
+        else
+            Assert.Contains(invalid.Errors, error => error is string);
+        Assert.Equal(expected, invalid.SuggestedScaling);
     }
 
     /// <summary>Each returned result retains its own suggestion across subsequent validations and access failures.</summary>
@@ -195,23 +204,38 @@ public class ImageValidatorTest
         var path = AbsolutePath.Create("C:/images/source.png");
         var validator = new ImageValidator(fs);
         fs.AddFile(path.ToString(), new MockFileData(CreateImage(SKEncodedImageFormat.Png, 100, 200)));
-        var small = validator.Validate(path);
+        var small = GetInvalidResult(validator.Validate(path));
         Assert.Equal(ImageSuggestedScaling.Upscale, small.SuggestedScaling);
 
         fs.AddFile(path.ToString(), new MockFileData(CreateImage(SKEncodedImageFormat.Png, 280, 280)));
         var valid = validator.Validate(path);
         Assert.True(valid.IsValid);
-        Assert.Equal(ImageSuggestedScaling.None, valid.SuggestedScaling);
+        GetValidResult(valid);
 
         fs.AddFile(path.ToString(), new MockFileData("invalid"));
         var invalid = validator.Validate(path);
         Assert.False(invalid.IsValid);
-        Assert.Equal(ImageSuggestedScaling.None, invalid.SuggestedScaling);
+        var invalidDetails = GetInvalidResult(invalid);
+        Assert.Equal(ImageSuggestedScaling.None, invalidDetails.SuggestedScaling);
         Assert.Throws<FileNotFoundException>(() => validator.Validate(AbsolutePath.Create("C:/images/missing.png")));
         Assert.Equal(ImageSuggestedScaling.Upscale, small.SuggestedScaling);
-        Assert.Equal(ImageSuggestedScaling.None, valid.SuggestedScaling);
-        Assert.Equal(ImageSuggestedScaling.None, invalid.SuggestedScaling);
+        GetValidResult(valid);
+        Assert.Equal(ImageSuggestedScaling.None, invalidDetails.SuggestedScaling);
     }
+
+    /// <summary>Unwraps the valid union case or fails with the unexpected result.</summary>
+    private static ValidImageResult GetValidResult(ImageValidationResult result) => result switch
+    {
+        ValidImageResult valid => valid,
+        _ => throw new Xunit.Sdk.XunitException("Expected a valid image result.")
+    };
+
+    /// <summary>Unwraps the invalid union case or fails with the unexpected result.</summary>
+    private static InvalidImageResult GetInvalidResult(ImageValidationResult result) => result switch
+    {
+        InvalidImageResult invalid => invalid,
+        _ => throw new Xunit.Sdk.XunitException("Expected an invalid image result.")
+    };
 
     /// <summary>Validates a mock file and verifies validation leaves its contents untouched.</summary>
     private static ImageValidationResult Validate(byte[] bytes)

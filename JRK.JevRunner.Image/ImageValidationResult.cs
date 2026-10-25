@@ -1,25 +1,23 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using TruePath;
 
 namespace JRK.JevRunner.Image;
 
-/// <summary>Describes a file's detected image properties and any local upload-readiness failures.</summary>
-/// <remarks>A valid result does not guarantee API acceptance or validate request-wide limits.</remarks>
-/// <param name="Format">The detected image format, or null when no supported format was identified.</param>
-/// <param name="Width">The image width in pixels, or null when it could not be determined.</param>
-/// <param name="Height">The image height in pixels, or null when it could not be determined.</param>
-/// <param name="FileSizeBytes">The encoded file size in bytes before base64 conversion.</param>
-/// <param name="Errors">The failures found by the local image validation checks.</param>
-public sealed record ImageValidationResult(
-    string? Format,
-    int? Width,
-    int? Height,
-    long FileSizeBytes,
-    IReadOnlyList<ImageValidationError> Errors)
-{
-    /// <summary>Whether all local image checks passed.</summary>
-    public bool IsValid => Errors.Count == 0;
+/// <summary>Contains detected image properties and encoded bytes after local validation succeeds.</summary>
+/// <remarks>Local validation does not guarantee API acceptance or check request-wide limits.</remarks>
+/// <param name="Format">The detected upload format: png or jpg.</param>
+/// <param name="Width">The image width in pixels.</param>
+/// <param name="Height">The image height in pixels.</param>
+/// <param name="FileSizeBytes">The encoded file size before base64 conversion.</param>
+/// <param name="Bytes">The original encoded bytes read during validation.</param>
+public sealed record ValidImageResult(string Format, int Width, int Height, long FileSizeBytes, Byte[] Bytes);
 
+/// <summary>Contains local image validation failures and a dimension-based scaling suggestion.</summary>
+/// <param name="Errors">The failures found by the local validation checks.</param>
+public sealed record InvalidImageResult(ImageValidationError[] Errors)
+{
+    
     /// <summary>Gets a scaling suggestion based on the reported dimension violations.</summary>
     /// <remarks>Non-dimension errors are ignored. No dimension violations yields None;
     /// mixed undersized and oversized dimensions yield ScalingNotPossible.
@@ -57,16 +55,43 @@ public sealed record ImageValidationResult(
             };
         }
     }
+}
+
+/// <summary>Represents either a locally valid image with its bytes or validation failures.</summary>
+/// <remarks>Pattern-match the result to access image metadata or errors and scaling suggestions.</remarks>
+public union ImageValidationResult(ValidImageResult, InvalidImageResult)
+{
+    /// <summary>Whether all local image checks passed.</summary>
+    public bool IsValid => this is ValidImageResult;
     
     /// <summary>Throws with the validation error messages when any local image check failed.</summary>
     /// <exception cref="InvalidOperationException">The result contains one or more validation errors.</exception>
     public void ThrowIfInvalid()
     {
-        if (IsValid) return;
+        switch (this)
+        {
+            case InvalidImageResult invalidImageResult:
+                ThrowHelper.Throw(invalidImageResult);
+                return;
+            case ValidImageResult:
+                return;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+}
+
+/// <summary>Formats image validation failures as an exception.</summary>
+internal static class ThrowHelper
+{
+    /// <summary>Throws an exception containing all reported image validation messages.</summary>
+    [DoesNotReturn]
+    public static void Throw(InvalidImageResult imageResult)
+    {
         var builder = new StringBuilder();
         builder.AppendLine("Image is not valid to use in a Jev Query");
 
-        foreach (var imageValidationError in Errors)
+        foreach (var imageValidationError in imageResult.Errors)
         {
             builder.AppendLine(imageValidationError.GetErrorMessage());
         }

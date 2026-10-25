@@ -28,16 +28,29 @@ public static class AssetImageExtensions
             ImageValidator imageValidator = new ImageValidator(fileSystem);
             var validationResult = imageValidator.Validate(path);
             token.ThrowIfCancellationRequested();
-            validationResult.ThrowIfInvalid();
             
-            await using var input = path.OpenRead(fileSystem);
-            using var buffer = new MemoryStream();
-            await input.CopyToAsync(buffer, token);
-            var bytes = buffer.ToArray();
-            var format = validationResult.Format;
+            switch (validationResult)
+            {
+                case InvalidImageResult invalidImageResult:
+                    ThrowHelper.Throw(invalidImageResult);
+                    break;
+                case ValidImageResult validImageResult:
+                {
+                    await using var input = path.OpenRead(fileSystem);
+                    using var buffer = new MemoryStream();
+                    await input.CopyToAsync(buffer, token);
+                    var bytes = buffer.ToArray();
+                    var format = validImageResult.Format;
+                    
+                    state.AddAsset(stateName, ImageAsset.FromByteArray(assetName,
+                        format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
+                    
+                    break;
+                }
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(validationResult));
+            }
             
-            state.AddAsset(stateName, ImageAsset.FromByteArray(assetName,
-                format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
             return state;
 
         }
@@ -62,16 +75,21 @@ public static class AssetImageExtensions
             ImageValidator imageValidator = new ImageValidator(fileSystem);
             var validationResult = imageValidator.Validate(path);
             token.ThrowIfCancellationRequested();
-            
-            await using var input = path.OpenRead(fileSystem);
-            using var buffer = new MemoryStream();
-            await input.CopyToAsync(buffer, token);
-            var bytes = buffer.ToArray();
-            var format = validationResult.Format;
-            
-            if (!validationResult.IsValid)
+
+            Byte[] bytes = [];
+            string format = string.Empty;
+
+            if (validationResult is ValidImageResult valid)
             {
-                var suggestedScaling = validationResult.SuggestedScaling;
+                await using var input = path.OpenRead(fileSystem);
+                using var buffer = new MemoryStream();
+                await input.CopyToAsync(buffer, token);
+                bytes = buffer.ToArray();
+                format = valid.Format;
+            }
+            else if (validationResult is InvalidImageResult invalidImageResult)
+            {
+                var suggestedScaling = invalidImageResult.SuggestedScaling;
 
                 if (suggestedScaling == ImageSuggestedScaling.Upscale)
                 {
@@ -87,7 +105,7 @@ public static class AssetImageExtensions
                 }
                 else
                 {
-                    validationResult.ThrowIfInvalid();
+                    ThrowHelper.Throw(invalidImageResult);
                 }
             }
             
