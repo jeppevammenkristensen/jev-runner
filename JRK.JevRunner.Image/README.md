@@ -3,7 +3,8 @@
 Optional SkiaSharp helpers for images used with Jev. The core client does not depend
 on this project.
 
-Targets .NET 11 and uses preview C# union support for `AppliedBox`.
+Targets .NET 11 and uses preview C# unions for image validation results, errors,
+and `AppliedBox`.
 
 ## Validate an image before uploading
 
@@ -14,11 +15,19 @@ using TruePath;
 var path = AbsolutePath.Create(@"C:\images\photo.jpg");
 var validator = new ImageValidator();
 var validation = validator.Validate(path);
-var suggestedScaling = validation.SuggestedScaling;
-foreach (var error in validation.Errors)
-    Console.WriteLine(error.GetErrorMessage());
+switch (validation)
+{
+    case ValidImageResult valid:
+        Console.WriteLine($"{valid.Format}: {valid.Width} × {valid.Height}, {valid.FileSizeBytes} bytes");
+        byte[] originalBytes = valid.Bytes;
+        break;
+    case InvalidImageResult invalid:
+        Console.WriteLine($"Suggested scaling: {invalid.SuggestedScaling}");
+        foreach (var error in invalid.Errors)
+            Console.WriteLine(error.GetErrorMessage());
+        break;
+}
 validation.ThrowIfInvalid(); // Throws InvalidOperationException containing the errors if invalid.
-// validation.Format (png or jpg), Width, Height, and FileSizeBytes describe the file.
 ```
 
 `ImageValidator` checks actual contents, not the filename: PNG or JPEG only,
@@ -31,7 +40,20 @@ cannot be detected. Progressive JPEG is not rejected; baseline JPEG is recommend
 Validation does not modify, rotate, or resize the file. Supply an `IFileSystem` to
 the constructor for injectable file access. Invalid contents return errors; missing
 or inaccessible files throw normal file-access exceptions. Oversized files are
-rejected before decoding and have no detected format or dimensions in the result.
+rejected before decoding.
+
+`ImageValidationResult` is a union of `ValidImageResult` and `InvalidImageResult`.
+Pattern-match before accessing case-specific properties:
+
+- `ValidImageResult` exposes non-null `Format` (`png` or `jpg`), `Width`,
+  `Height`, `FileSizeBytes`, and the original encoded `Bytes` read during validation.
+- `InvalidImageResult` exposes `Errors` and `SuggestedScaling`, not image metadata
+  or bytes.
+- The union retains `IsValid` and `ThrowIfInvalid()` for case-independent checks.
+
+**Migration:** replace the former result constructor with the appropriate case.
+Move metadata access into the valid branch, and error/scaling access into the invalid
+branch. Valid results no longer expose an empty error list or a scaling suggestion.
 
 This is a **per-file** check, not a guarantee of API acceptance. It cannot check
 the complete request's 32 MiB body, processed-image and expanded-reference limits,
@@ -40,12 +62,14 @@ does not run validation automatically and still uses the filename extension as
 the upload format: use a matching lowercase `.png`, `.jpg`, or `.jpeg` extension.
 See the [current API requirements](https://docs.typesafe.ai/images#limits).
 
-`validation.Errors` contains an `ImageValidationError` union: either a typed
-`ImageDimensionError` with `Dimension`, `Violation`, `Limit`, and `Actual`, or a string
-for other failures. `ImageDimensionError.GetErrors(info, minimum, maximum)` can also
+`InvalidImageResult.Errors` contains `ImageValidationError` unions: a typed
+`ImageDimensionError` with `Dimension`, `Violation`, `Limit`, and `Actual`,
+`NotASupportedImageError`, `ImageSizeExceededError`, or a string for other failures.
+Use `GetErrorMessage()` to obtain a message from any case.
+`ImageDimensionError.GetErrors(info, minimum, maximum)` can also
 check dimensions independently, returning width violations before height violations.
 
-`validation.SuggestedScaling` belongs to that result, not the validator. It reports
+`InvalidImageResult.SuggestedScaling` belongs to that result, not the validator. It reports
 `Upscale` when dimension errors are only `ToSmall`, `Downscale` when they are only
 `ToHigh`, and `ScalingNotPossible` when both occur. `None` means **no dimension
 errors**, not necessarily a valid image. Non-dimension errors do not affect the
@@ -134,7 +158,8 @@ and registers the resulting bytes. Unchanged images retain their detected format
 and original bytes, while resized images are encoded as PNG. Validation, byte loading,
 and scaling all use the supplied `IFileSystem` (or the local file system by default).
 If validation fails with `None` or
-`ScalingNotPossible`, it calls `ThrowIfInvalid()` instead. Source files are unchanged.
+`ScalingNotPossible`, it throws `InvalidOperationException` containing the validation
+errors instead. Source files are unchanged.
 
 **Current limitations:** adjusted output is not revalidated, and suggestions ignore
 non-dimension errors. A resize can leave the other axis outside the limits, so this
