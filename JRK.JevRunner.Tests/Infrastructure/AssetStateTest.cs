@@ -75,6 +75,62 @@ public partial class AssetStateTest
         Assert.Single(json["assets"]!.AsObject());
     }
 
+    /// <summary>Required assets are retrieved by state field rather than their asset reference.</summary>
+    [Fact]
+    public void GetRequiredAsset_RegisteredField_ReturnsRegisteredAsset()
+    {
+        Asset asset = new ImageAsset("image-ref", "jpg", new Base64String("AQID"));
+        var state = new AssetState().AddAsset("photo", asset);
+
+        var result = state.GetRequiredAsset("photo");
+
+        Assert.Equal(asset, result);
+    }
+
+    /// <summary>Missing keys, asset references, ordinary state entries, and different casing do not resolve assets.</summary>
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("image-ref")]
+    [InlineData("caption")]
+    [InlineData("Photo")]
+    public void GetRequiredAsset_UnregisteredField_ThrowsInvalidOperationException(string name)
+    {
+        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", new Base64String("AQID")));
+        state.Add("caption", "image-ref");
+
+        var error = Assert.Throws<InvalidOperationException>(() => state.GetRequiredAsset(name));
+
+        Assert.Equal($"ImageAsset was not found for key {name}", error.Message);
+    }
+
+    /// <summary>Required image lookup unwraps the asset and preserves the registered image instance.</summary>
+    [Fact]
+    public void GetRequiredImageAsset_RegisteredField_ReturnsRegisteredImage()
+    {
+        var image = new ImageAsset("image-ref", "jpg", new Base64String("AQID"));
+        var state = new AssetState().AddAsset("photo", image);
+
+        var result = state.GetRequiredImageAsset("photo");
+
+        Assert.Same(image, result);
+    }
+
+    /// <summary>Required image lookup reports the requested field when no asset is registered for it.</summary>
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("image-ref")]
+    [InlineData("caption")]
+    [InlineData("Photo")]
+    public void GetRequiredImageAsset_UnregisteredField_ThrowsInvalidOperationException(string name)
+    {
+        var state = new AssetState().AddAsset("photo", new ImageAsset("image-ref", "jpg", new Base64String("AQID")));
+        state.Add("caption", "image-ref");
+
+        var error = Assert.Throws<InvalidOperationException>(() => state.GetRequiredImageAsset(name));
+
+        Assert.Equal($"ImageAsset was not found for key {name}", error.Message);
+    }
+
     /// <summary>The helper uses the injected file system and preserves derived state identity.</summary>
     [Theory]
     [InlineData("jpg")]

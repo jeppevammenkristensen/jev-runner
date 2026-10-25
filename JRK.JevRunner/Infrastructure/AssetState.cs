@@ -27,4 +27,35 @@ public class AssetState : Dictionary<string,string>
         Assets[name] = asset;
         return this;
     }
+
+    /// <summary>
+    /// Attempt to get an Assert based on the name
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public Asset GetRequiredAsset(string name)
+    {
+        if (Assets.TryGetValue(name, out var asset))
+        {
+            return asset;
+        }
+
+        throw new InvalidOperationException($"ImageAsset was not found for key {name}");
+    }
+    
+    /// <summary>
+    /// Attempt to get the asset by state field name 
+    /// </summary>
+    /// <param name="name">The state field name</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public ImageAsset GetRequiredImageAsset(string name)
+    {
+        return GetRequiredAsset(name) switch
+        {
+            ImageAsset a => a,
+            _ => throw new InvalidOperationException($"ImageAsset was not found for key {name}")
+        };
+    }
 }
