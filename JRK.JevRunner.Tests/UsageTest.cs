@@ -4,10 +4,45 @@ using Xunit;
 
 namespace JRK.JevRunner.Tests;
 
-/// <summary>Verifies token usage costs using prices quoted per million tokens.</summary>
+/// <summary>Verifies token usage addition and costs using prices quoted per million tokens.</summary>
 [TestSubject(typeof(Usage))]
 public class UsageTest
 {
+    /// <summary>Addition sums input and output tokens independently, including zero and large counts.</summary>
+    [Theory]
+    [InlineData(0L, 0L, 0L, 0L, 0L, 0L)]
+    [InlineData(120L, 30L, 0L, 0L, 120L, 30L)]
+    [InlineData(0L, 0L, 80L, 70L, 80L, 70L)]
+    [InlineData(120L, 0L, 80L, 0L, 200L, 0L)]
+    [InlineData(0L, 30L, 0L, 70L, 0L, 100L)]
+    [InlineData(120L, 30L, 80L, 70L, 200L, 100L)]
+    [InlineData(2_000_000_000L, 3_000_000_000L, 2_000_000_000L, 3_000_000_000L,
+        4_000_000_000L, 6_000_000_000L)]
+    public void Add_TokenCounts_ReturnsIndependentSums(long inputTokens, long outputTokens,
+        long addedInputTokens, long addedOutputTokens, long expectedInputTokens, long expectedOutputTokens)
+    {
+        var usage = new Usage(inputTokens, outputTokens);
+        var addedUsage = new Usage(addedInputTokens, addedOutputTokens);
+
+        var result = usage.Add(addedUsage);
+
+        Assert.Equal(new Usage(expectedInputTokens, expectedOutputTokens), result);
+    }
+
+    /// <summary>Addition returns a new total without changing either operand.</summary>
+    [Fact]
+    public void Add_NonZeroUsages_DoesNotChangeOperands()
+    {
+        var usage = new Usage(120, 30);
+        var addedUsage = new Usage(80, 70);
+
+        var result = usage.Add(addedUsage);
+
+        Assert.Equal(new Usage(200, 100), result);
+        Assert.Equal(new Usage(120, 30), usage);
+        Assert.Equal(new Usage(80, 70), addedUsage);
+    }
+
     /// <summary>Input and output tokens contribute independently at their respective per-million rates.</summary>
     [Theory]
     [InlineData(0L, 0L, 0L)]

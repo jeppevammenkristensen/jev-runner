@@ -17,32 +17,7 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
-        <PackageReleaseNotes>Initial release: optional SkiaSharp image helpers for JRK.JevRunner.
-
-Image scaling
-- ImageScaler.Upscale and Downscale scale proportionally using the shorter and longer side, respectively, with custom bounds (280 and 1568 by default).
-- Scaling returns PNG bytes without modifying the source. Results still outside other API limits are not rejected.
-
-Image validation
-- ImageValidator inspects actual PNG/JPEG contents and checks inclusive 280-1568-pixel width and height and the 16 MiB file limit.
-- Rejects animated PNG and non-default EXIF orientation. Checks pixel decoding when other checks pass.
-- ImageValidationResult exposes typed dimension or string errors, SuggestedScaling, and ThrowIfInvalid(). Errors provide GetErrorMessage(); ImageDimensionError.GetErrors() checks custom dimension bounds.
-- SuggestedScaling groups dimension violations by direction. It ignores other errors and does not guarantee valid resized output.
-
-Experimental automatic adjustment
-- AddImageAssetWithAutoAdjustment validates, attempts one suggested resize, and registers the result without changing source files.
-- Unchanged files retain their detected format and bytes; resized images become PNG.
-- Validation, byte loading, and resizing consistently use the supplied file system.
-- Adjusted output is not revalidated. Request-wide limits require separate validation.
-
-Bounding-box rendering
-- BoxRenderer.DrawBox accepts a single BoxAnswer or an enumerable through the AppliedBox union.
-- Draws normalized bounding-box outlines with shared configurable color and stroke width.
-
-Platform and file-system support
-- Renderer, validator, and scaler support injectable file access through TruePath and IFileSystem.
-- Includes Linux native assets alongside SkiaSharp's Windows and macOS assets.
-- Targets .NET 11 and uses preview C# union support.</PackageReleaseNotes>
+        <PackageReleaseNotes />
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
 

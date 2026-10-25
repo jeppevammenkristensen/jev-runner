@@ -5,7 +5,7 @@ namespace JRK.JevRunner;
 /// <summary>Contains the input and output token counts reported by the API for a request.</summary>
 /// <param name="InputTokens">The number of input tokens reported by the API.</param>
 /// <param name="OutputTokens">The number of output tokens reported by the API.</param>
-public record Usage ( long InputTokens, long OutputTokens )
+public readonly record struct Usage ( long InputTokens, long OutputTokens )
 {
     /// <summary>Parses token counts from the API response's usage object.</summary>
     public static Usage From(JsonObject asObject)
@@ -17,7 +17,17 @@ public record Usage ( long InputTokens, long OutputTokens )
     /// <summary>
     /// Returns an empty Usage
     /// </summary>
-    public static Usage Zero => new Usage(0, 0);
+    public static Usage Zero => new(0, 0);
+
+    /// <summary>
+    /// Adds the usage to the existing
+    /// </summary>
+    /// <param name="usage">The usage to add</param>
+    /// <returns>Generates the result of the two added Usages</returns>
+    public Usage Add(Usage usage)
+    {
+        return new Usage(InputTokens + usage.InputTokens, OutputTokens + usage.OutputTokens);
+    }
 
     /// <summary>
     /// Calculate the cost for this usage
@@ -43,7 +53,7 @@ public static class UsageExtensions
 
         foreach (var usage in usages)
         {
-            result = new Usage(usage.InputTokens + result.InputTokens, usage.OutputTokens + result.OutputTokens);
+            result = result.Add(usage);
         }
 
         return result;
