@@ -42,8 +42,7 @@ public static class AssetImageExtensions
                     var bytes = buffer.ToArray();
                     var format = validImageResult.Format;
                     
-                    state.AddAsset(stateName, ImageAsset.FromByteArray(assetName,
-                        format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
+                    state.AddAsset(stateName, new ImageAsset(assetName, format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
                     
                     break;
                 }
@@ -109,8 +108,7 @@ public static class AssetImageExtensions
                 }
             }
             
-            state.AddAsset(stateName, ImageAsset.FromByteArray(assetName,
-                format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
+            state.AddAsset(stateName, new ImageAsset(assetName, format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
             return state;
 
         }
