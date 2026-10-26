@@ -11,6 +11,12 @@ published release notes.
 
 ### Added
 
+- `AssetState.GetRequiredAsset(name)` and `GetRequiredImageAsset(name)` retrieve
+  registered assets by state field name. Missing assets and non-image assets in
+  image lookups throw `InvalidOperationException`.
+- Typed image validation errors: `NotASupportedImageError` for non-image,
+  undecodable, or unsupported contents, and `ImageSizeExceededError` exposing the
+  maximum encoded file size. Both support `GetErrorMessage()`.
 - `FileData` supports image bytes and `Base64String` values, with `Bytes` and
   `Base64` accessors for either representation.
 - `JevPrice` and `Usage.CalculateCost(price)` calculate costs from decimal rates per million input and output tokens. The output rate defaults to zero.
@@ -19,6 +25,12 @@ published release notes.
 
 ### Changed
 
+- **Breaking:** `ImageValidationResult` is now a union of `ValidImageResult` and
+  `InvalidImageResult`. Pattern-match valid results for detected metadata and
+  original encoded `Bytes`, or invalid results for `Errors` and `SuggestedScaling`.
+  `IsValid` and `ThrowIfInvalid()` remain available on the union.
+- `ImageValidator` returns typed errors instead of strings for files exceeding
+  16 MiB and for non-image, undecodable, or unsupported contents.
 - **Breaking:** `ImageAsset` accepts `FileData` instead of a base64 string. Pass
   bytes directly or use `new Base64String(value)` for encoded data. Replace
   `asset.Base64` with `asset.FileData.Base64`. `FromByteArray` is obsolete;
@@ -27,11 +39,13 @@ published release notes.
 - Generated query `Execute` methods accept `IJevRunner` rather than concrete
   `JevRunner`, supporting interface-typed runners and alternative implementations.
   Cancellation-token forwarding and typed response wrappers are unchanged.
-- Version settings now produce `0.6.0-dev-02` for Debug builds and
-  `0.6.0-preview-01` for non-Debug builds.
+- Version settings now produce `0.6.0-dev-04` for Debug builds and
+  `0.6.0` for non-Debug builds.
 
 ### Fixed
 
+- Undersized image width and height validation messages now report that the
+  dimension is too small rather than too high.
 - Migrated image asset and request tests to `FileData`, fixing test project
   compilation after the API change.
 - Updated the source-generator tests' independent runtime contract for `IJevRunner`
