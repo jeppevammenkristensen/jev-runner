@@ -18,6 +18,9 @@
 - ImageAsset.FromByteArray is obsolete; use new ImageAsset(name, format, bytes) instead.
 - Updated image asset and request tests for the new API, resolving test project compilation errors.
 
+Asset lookup
+- Added AssetState.GetRequiredAsset(name) and GetRequiredImageAsset(name) to retrieve registered assets by state field name. Missing assets and non-image assets in image lookups throw InvalidOperationException.
+
 Usage pricing and aggregation
 - Added JevPrice with decimal rates per million input and output tokens; the output rate defaults to zero.
 - Added Usage.CalculateCost, Usage.Zero, Usage.Add, and IEnumerable&lt;Usage&gt;.SumUsage(). Addition and aggregation sum input and output counts independently without changing operands; an empty sequence sums to zero.
