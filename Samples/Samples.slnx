@@ -3,4 +3,5 @@
     <Project Path="BlackJack.Tests/BlackJack.Tests.csproj" />
     <Project Path="BlackJack/BlackJack.csproj" />
     <Project Path="FileGrouping/FileGrouping.csproj" />
+    <Project Path="FileImageAnalyzer/FileImageAnalyzer.csproj" />
 </Solution>
