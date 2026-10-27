@@ -26,7 +26,7 @@ namespace AnimalQuiz
         /// Reuses the configured Jev client across all rounds.
         /// </summary>
         /// <returns>Zero when all selected rounds have finished.</returns>
-        protected override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
+        public override async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
         {
             var commonAnimalsJson = PathUtil.GetExecutionFolder() / "common-animals.json";
             List<(string english, string danish)> animals = new();

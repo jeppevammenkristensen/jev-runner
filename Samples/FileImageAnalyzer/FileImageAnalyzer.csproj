@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FileBasedApp.Toolkit" Version="1.2.0" />
+      <PackageReference Include="JRK.JevRunner" Version="0.6.0" />
+      <PackageReference Include="JRK.JevRunner.Image" Version="0.6.0" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="4.1.3" />
+      <PackageReference Include="Spectre.Console.ImageSharp" Version="0.57.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Program.cs">
+        <DependentUpon>FileImageRunCommand.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>
