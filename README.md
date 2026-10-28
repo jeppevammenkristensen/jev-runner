@@ -224,6 +224,8 @@ including:
   round history to decide whether to stop or draw.
 - [FileGrouping](Samples/README.md#filegrouping): classify files with Jev and move
   them into category folders.
+- [FileImageAnalyzer](Samples/README.md#fileimageanalyzer): analyze local photos for
+  pets, children, and screenshots, and display images with a child bounding box.
 
 ## Generated queries
 

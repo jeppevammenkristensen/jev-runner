@@ -2,7 +2,7 @@
 
 Runnable examples of using JRK.JevRunner with Jev and the TypeSafe System One API.
 Open [Samples.slnx](Samples.slnx) in your IDE, or run a sample from the command line.
-The samples include AnimalQuiz, BlackJack (Halvtolv), and FileGrouping.
+The samples include AnimalQuiz, BlackJack (Halvtolv), FileGrouping, and FileImageAnalyzer.
 
 ## Prerequisites
 
@@ -195,3 +195,84 @@ dotnet run --project Samples/FileGrouping/FileGrouping.csproj -- --help
   `FileState` and `FileQuery` definitions.
 - [FileGrouping.csproj](FileGrouping/FileGrouping.csproj): the console application
   and its published package references.
+
+## FileImageAnalyzer
+
+[FileImageAnalyzer](FileImageAnalyzer/) is an interactive console sample that
+recursively finds JPEG and PNG files in a directory and asks Jev whether each image
+contains a pet or child, or is a screenshot. It displays the numeric Noul answers
+and the image in the terminal. When the child answer exceeds `0.65`, it draws a
+black bounding box using the query's child Box answer. Press a key after each
+successfully analyzed image to continue; individual file failures are reported
+without stopping the remaining analysis.
+
+**This sample uploads image content to the live TypeSafe API.** Only use images
+you have permission to share, especially photos of children. It does not move or
+overwrite source files. The image API and automatic image adjustment are
+experimental; see the [image package documentation](../JRK.JevRunner.Image/README.md)
+for limitations and native dependencies. Terminal image rendering uses
+SixLabors.ImageSharp; review its license requirements before commercial use.
+
+The sample demonstrates:
+
+- Preparing an image asset with `AddImageAssetWithAutoAdjustment` and a custom
+  `AssetState` before executing a generated `[JevQuery]`.
+- Combining Noul judgments and a Box question with generated typed answers.
+- Drawing a bounding box with `BoxRenderer` and displaying images with
+  Spectre.Console.
+- Reporting per-image and total token usage and estimated cost using a hard-coded
+  `JevPrice`, rather than fetching current API pricing.
+
+### Run from the command line
+
+Run these commands **from the repository root**, replacing the path with the
+directory containing your images. In PowerShell:
+
+```powershell
+$env:JEV_TOKEN = "<your-typesafe-api-key>"
+dotnet run --project Samples/FileImageAnalyzer/FileImageAnalyzer.csproj -- "C:\path\to\images" --max-items 5 --skip 0
+```
+
+For Bash or a compatible shell:
+
+```bash
+export JEV_TOKEN="<your-typesafe-api-key>"
+dotnet run --project Samples/FileImageAnalyzer/FileImageAnalyzer.csproj -- "/path/to/images" --max-items 5 --skip 0
+```
+
+The directory argument is optional and defaults to the current working directory.
+`--max-items` defaults to `20`; `--skip` defaults to `0` and skips matching images
+before applying the maximum. Enumeration is not explicitly sorted, so these
+options do not guarantee stable paging between runs.
+
+FileImageAnalyzer reads **`JEV_TOKEN`**, not `TYPESAFE_API_KEY`. Alternatively,
+supply `--api-key "<your-typesafe-api-key>"`, but be aware that command-line
+arguments may be recorded in shell history or visible to other processes. Do not
+commit your key to source control.
+
+To see the command-line help:
+
+```shell
+dotnet run --project Samples/FileImageAnalyzer/FileImageAnalyzer.csproj -- --help
+```
+
+### Run from an IDE
+
+1. Open [Samples.slnx](Samples.slnx).
+2. Select `FileImageAnalyzer` as the startup/run project.
+3. Set `JEV_TOKEN` in the run configuration's environment variables, or supply
+   `--api-key "<your-typesafe-api-key>"` as a program argument.
+4. Supply the image directory as a program argument, quoting paths with spaces,
+   and optionally add `--max-items` and `--skip`.
+5. Run the project in an interactive console.
+
+### Explore the code
+
+- [Program.cs](FileImageAnalyzer/Program.cs): console command setup.
+- [RunCommand.cs](FileImageAnalyzer/RunCommand.cs): API-key and directory
+  configuration, `--max-items`, and `--skip`.
+- [DirectoryAnalysisOperation.cs](FileImageAnalyzer/DirectoryAnalysisOperation.cs):
+  recursive enumeration, image preparation, query execution, rendering, and usage totals.
+- [PhotoAssetState.cs](FileImageAnalyzer/PhotoAssetState.cs): the image asset state.
+- [ImageQuery.cs](FileImageAnalyzer/ImageQuery.cs): pet, child, screenshot, and
+  child bounding-box question definitions.

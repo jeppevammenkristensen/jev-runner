@@ -15,10 +15,4 @@
       <PackageReference Include="Spectre.Console.ImageSharp" Version="0.57.2" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Update="Program.cs">
-        <DependentUpon>FileImageRunCommand.cs</DependentUpon>
-      </Compile>
-    </ItemGroup>
-
 </Project>
