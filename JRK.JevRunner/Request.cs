@@ -13,6 +13,12 @@ public class Request
     /// </summary>
     /// <remarks>It's used reevalute the model when a query is run. </remarks>
     internal bool PassedModelWasNull { get; private set; }
+    
+    /// <summary>
+    /// If set to true a validation error will throw an exception before
+    /// the request is performed
+    /// </summary>
+    public bool StrictValidation { get; set; }
 
     /// <summary>
     /// Creates a request with the supplied state and model, defaulting to the latest model when none is supplied.
@@ -44,6 +50,8 @@ public class Request
         return AutoDetectJevModel();
     }
 
+    
+    
 
     /// <summary>
     /// Gets the best JevModel fit for the request. 
@@ -51,9 +59,8 @@ public class Request
     /// <returns></returns>
     internal JevModel AutoDetectJevModel()
     {
-        if (Questions.Any(x => x is BoxQuestion))
-            return JevModel.Preview;
-
+        // In the current time of writing Latest and Preview are aligned
+        // So JevModel.Latest is used
         return JevModel.Latest;
     }
 
@@ -76,4 +83,39 @@ public class Request
     /// Gets or sets the assets to include in the request's assets map, keyed by each asset's name.
     /// </summary>
     public List<Asset> Assets { get; set; } = [];
+    
+    /// <summary>
+    /// Enables long context for a request. (The default is 64kb and the suggested max by TypeSafe)
+    /// </summary>
+    /// <remarks>Toggling this means that there is no limit to the context size. However TypeSafe instructs that this makes the request slower and less precise</remarks>
+    public bool LongContextEnabled { get; set; } = false;
+}
+
+internal static class RequestValidator
+{
+    public static SimpleValidation Validate(Request request)
+    {
+        if (request.Model is {IsKnownVersion: false})
+        {
+            return ($"Unknown version {request.Model.Model}", RequestValidationError.UnsupportedVersion);
+        }
+
+        if (request.Questions.Any(x => x is BoxQuestion) && request.Model.IsVersion(JevVersions.Version1_13_0))
+        {
+            return ($"Box questions are only supported from version {JevVersions.Version1_14_0}", RequestValidationError.BoxNotSupported);
+        }
+
+        return true;
+    }
+}
+
+public enum RequestValidationError
+{
+    UnsupportedVersion,
+    BoxNotSupported
+}
+
+internal union SimpleValidation(bool, (string, RequestValidationError))
+{
+    
 }
