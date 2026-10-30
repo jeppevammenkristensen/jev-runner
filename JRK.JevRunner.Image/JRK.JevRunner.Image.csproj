@@ -17,16 +17,10 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
-        <PackageReleaseNotes>Image validation results
-- Breaking: ImageValidationResult is now a union of ValidImageResult and InvalidImageResult rather than a record with shared metadata and errors.
-- Pattern-match valid results for detected Format, Width, Height, FileSizeBytes, and original encoded Bytes. Invalid results expose Errors and SuggestedScaling.
-- IsValid and ThrowIfInvalid() remain available on the union.
-- Replaced string errors with NotASupportedImageError for non-image, undecodable, or unsupported contents and ImageSizeExceededError exposing the maximum encoded file size. Both support GetErrorMessage().
-- Fixed undersized width and height validation messages to report that the dimension is too small.
-
-Image asset integration
-- Image helpers now construct ImageAsset with bytes through the FileData API instead of the obsolete FromByteArray factory.
-- Validation and automatic adjustment helpers handle the valid and invalid result cases. Resized output remains PNG and is not revalidated.</PackageReleaseNotes>
+        <PackageReleaseNotes>0.7.0: Core client integration
+- Updated alongside JRK.JevRunner 0.7.0; no image-helper API changes in this release.
+- The core client now supports opt-in long context and optional strict model validation. Automatic model selection uses JevModel.Latest, including Box questions; explicit models remain unchanged and Box questions require jev-1.14.0 or later.
+- Long context beyond the default 64 KB is slower and less accurate. The bundled known-model list may lag the TypeSafe API.</PackageReleaseNotes>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
 

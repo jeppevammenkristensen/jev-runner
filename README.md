@@ -59,6 +59,48 @@ var response = await runner.Execute(request);
 Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ```
 
+## Models and request validation
+
+Requests without an explicit model use `JevModel.Latest`, including requests with
+Box questions. An explicitly supplied model is never overridden. Box questions
+require `jev-1.14.0` or later; `JevModel.Preview` remains available as an explicit choice.
+
+`JevVersions` provides `Latest`, `Preview`, `Version1_13_0`, and `Version1_14_0`
+string constants and the known-version list `Versions`. Inspect a `JevModel` with
+`IsLatest`, `IsPreview`, `IsKnownVersion`, or `IsVersion(version)`.
+
+`Request.StrictValidation` defaults to `false`. Before sending a request, the
+runner logs a warning for an unknown model identifier or for Box questions using
+`jev-1.13.0`, but still sends the request. Set `StrictValidation = true` to throw
+`InvalidOperationException` for either condition before any HTTP request:
+
+```csharp
+var request = new Request("Application state", JevModel.Latest)
+{
+    StrictValidation = true
+};
+```
+
+The bundled known-version list may lag the API: an unknown identifier is not
+necessarily unsupported by TypeSafe. These checks do not replace API validation
+or guarantee that a request is valid.
+
+## Long context (opt-in)
+
+Set `request.LongContextEnabled = true` or call the chainable
+`request.EnableLongContext()` extension from `JRK.JevRunner` to send
+`TypeSafe-Danger-Zone-Long-Context: true` for that request. The default is disabled.
+
+```csharp
+var request = new Request("Application state", JevModel.Latest)
+    .EnableLongContext()
+    .AddQuestion(new NoulQuestionBuilder("ready", "Is the application ready?"));
+```
+
+This opts into context beyond TypeSafe's default **64 KB** limit. TypeSafe cautions
+that longer context is **slower and less accurate** than staying within the default
+limit; enable it only for requests that need it. Other API limits still apply.
+
 ## Images (experimental)
 
 Jev's image API is **dreamer-ready**, not production-ready: request formats, limits,
@@ -130,11 +172,12 @@ To register already-prepared bytes without writing another file:
 byte[] imageBytes = new JRK.JevRunner.Image.ImageScaler().Downscale(
     AbsolutePath.Create(@"C:\images\photo.jpg"));
 var state = new AssetState().AddAsset("photo",
-    ImageAsset.FromByteArray(Guid.NewGuid().ToString(), "png", imageBytes));
+    new ImageAsset(Guid.NewGuid().ToString(), "png", imageBytes));
 ```
 
-`ImageScaler` returns PNG bytes. `FromByteArray` base64-encodes them without a
-`data:` prefix; the factory itself does not validate or convert the supplied format.
+`ImageScaler` returns PNG bytes. `ImageAsset` accepts them through `FileData`,
+which exposes `Bytes` and `Base64`; the constructor does not validate or convert
+the supplied format.
 
 ### Locate objects with Box questions
 
@@ -148,9 +191,9 @@ var head = response.GetRequiredBoxAnswer("Head");
 Console.WriteLine($"Top: {head.Top}, left: {head.Left}, confidence: {head.Confidence.Value}");
 ```
 
-Without an explicit model, execution selects `JevModel.Preview` for Box questions
-and `JevModel.Latest` otherwise, including questions added after construction.
-An explicitly supplied model is never overridden.
+Without an explicit model, execution selects `JevModel.Latest`, including for Box
+questions added after construction. An explicitly supplied model is never overridden.
+Box questions require `jev-1.14.0` or later; see [request validation](#models-and-request-validation).
 
 For generated queries, expose a `GenericBoxQuestionDefinition<string>` property
 or implement `IBoxQuestionDefinition<TInstruction>`. A question property named

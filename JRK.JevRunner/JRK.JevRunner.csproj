@@ -12,25 +12,12 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>Image asset data
-- Added FileData for image bytes or Base64String values, with Bytes and Base64 accessors.
-- Breaking: ImageAsset now accepts FileData instead of a base64 string. Pass bytes directly or wrap encoded data in new Base64String(value). Replace asset.Base64 with asset.FileData.Base64.
-- ImageAsset.FromByteArray is obsolete; use new ImageAsset(name, format, bytes) instead.
-- Updated image asset and request tests for the new API, resolving test project compilation errors.
-
-Asset lookup
-- Added AssetState.GetRequiredAsset(name) and GetRequiredImageAsset(name) to retrieve registered assets by state field name. Missing assets and non-image assets in image lookups throw InvalidOperationException.
-
-Usage pricing and aggregation
-- Added JevPrice with decimal rates per million input and output tokens; the output rate defaults to zero.
-- Added Usage.CalculateCost, Usage.Zero, Usage.Add, and IEnumerable&lt;Usage&gt;.SumUsage(). Addition and aggregation sum input and output counts independently without changing operands; an empty sequence sums to zero.
-
-Source-generated query execution
-- Generated Execute methods now accept IJevRunner instead of concrete JevRunner, supporting interface-typed runners and alternative implementations while preserving cancellation-token forwarding and typed response wrappers.
-- Updated source-generator test contracts and regression coverage for interface-based execution.
-
-Breaking change
-- Usage is now a readonly record struct instead of a record class. It has value semantics and a zero-valued default; callers relying on null or reference identity must update their code.</PackageReleaseNotes>
+    <PackageReleaseNotes>0.7.0: Long context and model validation
+- Added opt-in Request.LongContextEnabled and chainable EnableLongContext(), sending TypeSafe-Danger-Zone-Long-Context: true for that request only. Disabled by default; context beyond the default 64 KB is slower and less accurate. Enable only when needed.
+- Added Request.StrictValidation, default false. Unknown model identifiers and Box questions with jev-1.13.0 log a warning and proceed; strict mode throws InvalidOperationException before HTTP. The bundled known-version list may lag the API and does not replace API validation.
+- Added JevVersions constants and Versions list, plus JevModel.IsLatest, IsPreview, IsKnownVersion, and IsVersion inspection helpers.
+- Added request inspection helpers HasBoxQuestion and HasImages.
+- Automatic model selection now always uses JevModel.Latest, including Box questions. Explicit models remain unchanged; Box questions require jev-1.14.0 or later.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

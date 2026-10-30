@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## [0.7.0]
+
+### Added
+
+- Request-scoped long context through `Request.LongContextEnabled` and chainable `EnableLongContext()`, sending `TypeSafe-Danger-Zone-Long-Context: true`. Disabled by default. Context beyond the default 64 KB is slower and less accurate; enable only when needed.
+- `Request.StrictValidation`, defaulting to `false`: unknown model identifiers and Box questions with `jev-1.13.0` log a warning and proceed. When enabled, either condition throws `InvalidOperationException` before HTTP. The bundled known-version list may lag the API and does not replace server validation.
+- `JevVersions` model identifier constants and `Versions` known-version list; `JevModel.IsLatest`, `IsPreview`, `IsKnownVersion`, and `IsVersion(version)` inspection helpers.
+- Request inspection helpers `HasBoxQuestion` and `HasImages`.
+- Unit tests cover request feature helpers, model classification, automatic model selection, strict and warning-only validation, structured failure logging, and independent request-scoped danger-zone headers.
+
+### Changed
+
+- Automatic model selection now always uses `JevModel.Latest`, including Box requests and questions added after construction. Explicit model choices remain unchanged; Box questions require `jev-1.14.0` or later.
+- Package version prefix is now `0.7.0`, retaining `dev-04` for Debug builds and no suffix for non-Debug builds.
+- Updated README model selection, long-context cautions, validation guidance, and image asset construction examples.
+
 ## [0.6.0]
 
 ### Added
