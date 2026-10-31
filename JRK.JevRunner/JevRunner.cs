@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -8,24 +9,87 @@ using Microsoft.Extensions.Logging;
 namespace JRK.JevRunner;
 
 
-/// <summary>
-/// DangerZones are attributes you can include in the request for
-/// toggling areas like Images or LongContext
-/// </summary>
-public partial class DangerZones
+internal interface IBackTick
 {
-    /// <summary>
-    /// Header to use when you want to include Images (currently Dreamerready)
-    /// </summary>
-    public const string Images = "TypeSafe-Danger-Zone-Images";
-    /// <summary>
-    /// Header to use to "disable" the max context size
-    /// </summary>
-    /// <remarks>TypeSafe states for longer context above the default 64 kb that "It is slower and less accurate than staying within the default limits, so turn it on only for requests that need it."</remarks>
-    public const string LongContext = "TypeSafe-Danger-Zone-Long-Context";
+    public string Value { get; }
 
-    [GeneratedRegex("^TypeSafe-Danger-Zone")]
-    public static partial Regex DangerZoneHeaderRegex();
+    /// <summary>
+    /// The BackTick Quoted Value
+    /// </summary>
+    public string BackTickQuoted => $"`{Value}`";
+}
+
+internal static partial class StateRegex
+{
+    [GeneratedRegex("^[^`\\s]+$")]
+    internal static partial Regex ValidPathName { get; }
+
+    internal static void ThrowIfInvalid(string? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, paramName);
+
+        if (ValidPathName.IsMatch(value))
+            return;
+
+        throw new InvalidOperationException($"{paramName} cannot have whitespace or the backtick character `");
+    }
+}
+
+public class StatePath : IBackTick
+{
+    public string Path { get; }
+
+    public StatePath(string path)
+    {
+        StateRegex.ThrowIfInvalid(path);
+        Path = path;
+    }
+
+    string IBackTick.Value => Path;
+    
+}
+
+public class StateReference : IBackTick
+{
+    public StateReference(string value)
+    {
+        StateRegex.ThrowIfInvalid(value);
+        Value = value;
+    }
+    
+    public static implicit operator StateReference(string value) => new(value);
+
+    public string Value { get; }
+    public string BackTickQuoted => $"`{Value}`";
+}
+
+public static class FormattableStringExtensions
+{
+    extension(FormattableString fm)
+    {
+        /// <summary>
+        /// Handles correct escaping of AssetName
+        /// </summary>
+        /// <returns></returns>
+        public string Escaped
+        {
+            get
+            {
+                List<object?> objects = [];
+        
+                foreach (var argument in fm.GetArguments())
+                {
+                    object? obj = argument switch
+                    {
+                        IBackTick name => name.BackTickQuoted,
+                        _ => argument
+                    };
+                    objects.Add(obj);
+                }
+                return string.Format(fm.Format, objects.ToArray());
+            }
+        }
+    }
 }
 
 
@@ -188,33 +252,6 @@ internal static class HttpRequestMessageExtensions
         }
     }
     
-}
-
-internal union Maybe<T>(T,NoneValue)
-{
-    internal Maybe<T> Some (T value)
-    {
-        return new Maybe<T>(value);
-    }
-
-    internal Maybe<T> None => NoneValue.New;
-
-    public Maybe<T> If(Action<T> some, Action? none = null)
-    {
-        switch (Value)
-        {
-            case NoneValue noneValue:
-                none?.Invoke();
-                break;
-            case T unknown:
-                some.Invoke(unknown);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        return this;
-    }
 }
 
 internal class NoneValue

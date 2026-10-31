@@ -20,6 +20,5 @@
     <ProjectReference Include="..\JRK.JevRunner.Image\JRK.JevRunner.Image.csproj" />
     <ProjectReference Include="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-  
+  </ItemGroup>  
 </Project>
