@@ -66,7 +66,7 @@ public static class AssetImageExtensions
         /// <remarks>Unchanged images retain their detected format and bytes. Resized images are encoded as PNG.
         /// A single resize is attempted without revalidating its output; scaling suggestions consider only
         /// dimension violations. File access and scaling failures propagate without registering an asset.</remarks>
-        public async Task<TAssetState> AddImageAssetWithAutoAdjustment(string stateName, string assetName, AbsolutePath path,
+        public async Task<TAssetState> AddImageAssetWithAutoAdjustment(StateReference stateName, string assetName, AbsolutePath path,
             CancellationToken token = default, IFileSystem? fileSystem = null)
         {
             fileSystem ??= new FileSystem();

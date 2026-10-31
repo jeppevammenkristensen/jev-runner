@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using JRK.JevRunner.Infrastructure;
 
 namespace JRK.JevRunner.Requests;
 
 /// <summary>
 /// Represents text, an object array, or a single object used as request state or question instructions.
 /// </summary>
-public union JevMessage(string, object[],object)
+public union JevMessage(string, object[],object, FormattableString)
 {
     private static readonly JsonSerializerOptions TupleJsonOptions = new()
     {
@@ -22,14 +23,17 @@ public union JevMessage(string, object[],object)
     /// <remarks>If the underlying type is a value type it will be serialized as Item1,Item2...ItemN</remarks>
     public JsonNode Node => Value switch
     {
-        object[] array => JsonSerializer.SerializeToNode(array)!.AsArray(),
+        object[] array => new JsonArray(array.Select(item => item is AssetState state
+            ? state.ToStateJson()
+            : JsonSerializer.SerializeToNode(item)).ToArray()),
+        AssetState state => state.ToStateJson(),
         string str => JsonSerializer.SerializeToNode(str)!,
         ITuple tuple when tuple.GetType().IsValueType => JsonSerializer.SerializeToNode((object)tuple, TupleJsonOptions)!,
+        FormattableString fm => JsonSerializer.SerializeToNode(fm.Escaped)!,
         { } single => JsonSerializer.SerializeToNode(single)!,
-        
         _ => throw new NotImplementedException()
     };
-
+    
     /// <summary>
     /// Normalizes the stored content to an array so messages can be concatenated without losing individual items.
     /// </summary>
@@ -37,6 +41,7 @@ public union JevMessage(string, object[],object)
     {
         string str => [str],
         object[] array => array,
+        FormattableString fm => [fm.Escaped],
         { } s => [s],
         _ => throw new NotImplementedException()
     };

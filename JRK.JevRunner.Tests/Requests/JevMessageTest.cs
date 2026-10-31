@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using JetBrains.Annotations;
 using JRK.JevRunner.Requests;
 using Xunit;
 
@@ -7,6 +8,35 @@ namespace JRK.JevRunner.Tests.Requests;
 [TestSubject(typeof(JevMessage))]
 public class JevMessageTest
 {
+    [Fact]
+    public void Node_SerializesFormattableStringWithQuotedStateReferenceAndPath()
+    {
+        StateReference name = "photo";
+        var path = new StatePath("frames[0].photo");
+        var count = 2;
+        FormattableString content = $"Compare {name} with {path} in {count} sentences.";
+        JevMessage message = new(content);
+
+        Assert.Equal("Compare `photo` with `frames[0].photo` in 2 sentences.", message.Node.GetValue<string>());
+    }
+
+    [Fact]
+    public void CombineWith_FormatsFormattableStringsOnBothSides()
+    {
+        StateReference first = "front";
+        var second = new StatePath("frames[1].photo");
+        FormattableString firstContent = $"Describe {first}.";
+        FormattableString secondContent = $"Compare with {second}.";
+        JevMessage firstMessage = new(firstContent);
+        JevMessage secondMessage = new(secondContent);
+
+        var node = firstMessage.CombineWith(secondMessage).Node.AsArray();
+
+        Assert.Equal(2, node.Count);
+        Assert.Equal("Describe `front`.", node[0]!.GetValue<string>());
+        Assert.Equal("Compare with `frames[1].photo`.", node[1]!.GetValue<string>());
+    }
+
     [Fact]
     public void Node_SerializesNamedValueTupleUsingRuntimeFieldNames()
     {

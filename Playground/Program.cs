@@ -10,16 +10,19 @@ using JRK.JevRunner.Responses;
 using Playground;
 using SkiaSharp;
 using System.IO;
+using JRK.JevRunner;
 using Spectre.Console;
 using TruePath;
+
+
 
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Test.jpg";
+var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
 
 var jevQuery =
-    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment("photo", "person_image", imagePath)));
+    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
 
 
@@ -41,8 +44,8 @@ return;
 
 public class FileData : AssetState
 {
-    public string File { get; }
-    public string Extension { get; }
+    public string File { get; set; }
+    public string Extension { get; set; }
 
     public FileData(string file, string extension)
     {
@@ -81,27 +84,30 @@ public class ChoiceQuestionDefinition : IChoiceQuestionDefinition<string>
 }
 
 /// <summary>Provides instructions and criteria for scoring the supplied file's information quality.</summary>
-public class ScoreQuestionDefinition : IScoreQuestionDefinition<string>
+public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableString>
 {
-    public ScoreQuestionDefinition(string instructions, params string[] criterias)
+    public ScoreQuestionDefinition(FormattableString instructions, params string[] criterias)
     {
         Instructions = instructions;
         Criterias = criterias;
     }
 
-    public string Instructions { get; }
+    public FormattableString Instructions { get; }
     public string[] Criterias { get; }
 }
 
 [JevQuery]
 public partial class JevQuery
 {
+    public static readonly StateReference Photo = nameof(Photo);
+    public static readonly StateReference SecondPhoto = nameof(SecondPhoto);
+    
     public JevQuery(FileData state)
     {
         State = state;
-        HasBeard = new GenericNoulQuestionDefinition<string>("`photo` has a person with a beard in it", null, null);
-        FindPerson = new GenericBoxQuestionDefinition<string>("Find the head in the `photo`");
-        FindMustache = new GenericBoxQuestionDefinition<string>("Find the mustache in the `photo`");
+        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person with a beard in it", null, null);
+        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo}");
+        FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
@@ -109,18 +115,18 @@ public partial class JevQuery
             new ChoiceCriteria("Meaningful",
                 "The text conveys meaningful information rather than placeholder content."));
         ScoreQuestionDefinition = new ScoreQuestionDefinition(
-            "Score the information quality of the text in the supplied file.",
+            $"Score the information quality of {new StatePath(nameof(File))} the text in the supplied file.",
             "The text conveys meaningful information rather than filler or placeholder content.",
             "The text is clear and understandable.",
             "The text provides specific, useful details.");
     }
 
-    public GenericBoxQuestionDefinition<string> FindMustache { get; set; }
+    public GenericBoxQuestionDefinition<FormattableString> FindMustache { get; set; }
 
-    public GenericBoxQuestionDefinition<string> FindPerson { get; private set; }
+    public GenericBoxQuestionDefinition<FormattableString> FindPerson { get; private set; }
 
     private FileData State { get; }
-    public INoulQuestionDefinition<string> HasBeard { get; }
+    public INoulQuestionDefinition<FormattableString> HasBeard { get; }
     public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
 }
