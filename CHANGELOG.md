@@ -8,6 +8,8 @@
 - `Request.StrictValidation`, defaulting to `false`: unknown model identifiers and Box questions with `jev-1.13.0` log a warning and proceed. When enabled, either condition throws `InvalidOperationException` before HTTP. The bundled known-version list may lag the API and does not replace server validation.
 - `JevVersions` model identifier constants and `Versions` known-version list; `JevModel.IsLatest`, `IsPreview`, `IsKnownVersion`, and `IsVersion(version)` inspection helpers.
 - Request inspection helpers `HasBoxQuestion` and `HasImages`.
+- `StateReference` and `StatePath` identify state fields and paths for automatic backtick quoting in `FormattableString` instructions. `JevMessage` accepts these instructions, and `FormattableString.Escaped` formats them while preserving ordinary arguments.
+- `AssetState.ToStateJson()` merges public readable properties on derived state classes with dictionary entries, honors JSON property naming and ignore attributes, and rejects duplicate JSON member names.
 - Unit tests cover request feature helpers, model classification, automatic model selection, strict and warning-only validation, structured failure logging, and independent request-scoped danger-zone headers.
 
 ### Changed
@@ -15,6 +17,11 @@
 - Automatic model selection now always uses `JevModel.Latest`, including Box requests and questions added after construction. Explicit model choices remain unchanged; Box questions require `jev-1.14.0` or later.
 - Package version prefix is now `0.7.0`, retaining `dev-04` for Debug builds and no suffix for non-Debug builds.
 - Updated README model selection, long-context cautions, validation guidance, and image asset construction examples.
+- `AssetState.AddAsset`, `GetRequiredImageAsset`, and the image package's `AddImageAssetWithAutoAdjustment` now accept `StateReference` for state field names. Strings remain usable through implicit conversion, but empty names, whitespace, and backticks are rejected. `StatePath` applies the same text validation; neither type checks whether the referenced field exists.
+
+### Fixed
+
+- Request JSON now preserves derived `AssetState` properties alongside asset references, including asset state items in combined `JevMessage` content.
 
 ## [0.6.0]
 

@@ -24,6 +24,12 @@ published release notes.
 - `JevVersions` identifier constants and known-version list, plus `JevModel`
   inspection helpers `IsLatest`, `IsPreview`, `IsKnownVersion`, and `IsVersion`.
 - Request inspection helpers `HasBoxQuestion` and `HasImages`.
+- `StateReference` and `StatePath` identify state fields and paths for backtick-quoted
+  interpolation. `JevMessage` accepts `FormattableString` instructions, and
+  `FormattableString.Escaped` quotes these arguments while preserving ordinary arguments.
+- `AssetState.ToStateJson()` combines public readable properties on derived state
+  classes with dictionary entries, honors JSON property naming and ignore attributes,
+  and rejects duplicate JSON member names.
 - Unit tests for feature helpers, model classification and selection, both validation
   modes, structured failure logging, and request-scoped danger-zone headers.
 
@@ -35,6 +41,17 @@ published release notes.
 - Version settings produce `0.7.0-dev-04` for Debug builds and `0.7.0` otherwise.
 - README now documents long context and validation, corrects model selection,
   and uses the current image asset constructor.
+- `AssetState.AddAsset`, `GetRequiredImageAsset`, and the image package's
+  `AddImageAssetWithAutoAdjustment` now accept `StateReference` for state field names.
+  Strings remain usable through implicit conversion, but empty names, whitespace,
+  and backticks are rejected. `StatePath` applies the same text validation;
+  neither type checks whether the referenced field exists.
+
+### Fixed
+
+- Request JSON now includes derived `AssetState` properties alongside asset
+  references instead of silently omitting them. This also applies to asset state
+  items in combined `JevMessage` content.
 
 ## 0.6.0
 
