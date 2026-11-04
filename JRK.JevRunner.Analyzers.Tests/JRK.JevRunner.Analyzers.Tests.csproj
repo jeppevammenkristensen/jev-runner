@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.3.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.1" />
+    <ProjectReference Include="../JRK.JevRunner.Analyzers/JRK.JevRunner.Analyzers.csproj" />
+    <ProjectReference Include="../JRK.JevRunner.Analyzers.CodeFixes/JRK.JevRunner.Analyzers.CodeFixes.csproj" />
+  </ItemGroup>
+</Project>

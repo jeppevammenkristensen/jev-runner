@@ -16,6 +16,8 @@
     <ItemGroup>
       <ProjectReference Include="..\JRK.JevRunner.Image\JRK.JevRunner.Image.csproj" />
       <ProjectReference Include="..\JRK.JevRunner\JRK.JevRunner.csproj" />
+      <ProjectReference Include="..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <ProjectReference Include="..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
       <ProjectReference Include="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 

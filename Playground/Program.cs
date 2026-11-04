@@ -9,10 +9,9 @@ using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Playground;
 using SkiaSharp;
-using System.IO;
 using JRK.JevRunner;
 using Spectre.Console;
-using TruePath;
+
 
 
 
@@ -24,8 +23,6 @@ var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pict
 var jevQuery =
     new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
-
-var choiceQuestion = new ChoiceQuestion("Test", $"{"Hello"} angry bird", new ChoiceCriteria())
 
 foreach (var responseAnswer in response.Response.Answers)
 {
@@ -105,8 +102,11 @@ public partial class JevQuery
     public JevQuery(FileData state)
     {
         State = state;
-        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person with a beard in it", null, null);
-        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo}");
+        var str = $"{Photo} has a person with a beard in it";
+        var fooBar = "Happy";
+
+        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"`{Photo}` has a person with a beard in it", null, null);
+        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} `{fooBar}` ");
         FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(

@@ -1,5 +1,17 @@
 namespace JRK.JevRunner;
 
+/// <summary>
+/// Utility helper for escaping a formatablestring
+/// </summary>
+public static class Escape
+{
+    public static string Interpolated(FormattableString formattableString)
+    {
+        return formattableString.Escaped;
+    }
+}
+
+
 /// <summary>Formats instructions with backtick-quoted state references and paths.</summary>
 public static class FormattableStringExtensions
 {

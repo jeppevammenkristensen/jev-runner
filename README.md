@@ -15,9 +15,17 @@ An .NET client for Jev and the TypeSafe System One API. Submit application state
 dotnet add package JRK.JevRunner
 ```
 
-The package includes its source generators automatically; no separate generator package or
-analyzer reference is needed when consuming it through NuGet. The generator assembly targets
-`netstandard2.0` for compiler-host compatibility, while the client targets `net11.0`.
+The package includes its source generators, usage analyzer, and code fix automatically;
+no separate analyzer reference is needed when consuming it through NuGet. These assemblies
+are compile-time assets under `analyzers/dotnet/cs/`, not runtime dependencies, and target
+`netstandard2.0`, while the client targets `net11.0`.
+
+`JEV100` warns when interpolating a state reference or path into a plain string loses
+automatic backtick quoting. Its code fix wraps the interpolation in `Escape.Interpolated(...)`
+to preserve and quote its arguments. `JEV101` warns about redundant explicit backticks around
+state references in preserved interpolations, with a fix to remove them.
+See [analyzer documentation](JRK.JevRunner.Analyzers/README.md)
+for examples and `.editorconfig` configuration.
 
 For repository development, analyzer project references are not transitive. See the sample
 project's explicit analyzer reference. Build and pack the client with:
