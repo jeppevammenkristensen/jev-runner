@@ -13,8 +13,8 @@ public static class JevRunnerExtensions
         /// <summary>
         /// Convenience method to create a runner
         /// </summary>
-        /// <param name="apiKey">The apiKey</param>
-        /// <param name="logger"></param>
+        /// <param name="apiKey">The API key sent as a bearer token with each request.</param>
+        /// <param name="logger">The diagnostic logger, or null to disable logging.</param>
         /// <returns>A new <see cref="JevRunner"/> instance</returns>
         /// <remarks>This is quick usage. If you want to use dependency injection consider using the public constructor</remarks>
         public static JevRunner Init(string apiKey, ILogger<JevRunner>? logger = null)

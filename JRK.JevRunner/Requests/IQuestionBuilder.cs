@@ -3,6 +3,7 @@ namespace JRK.JevRunner.Requests;
 /// <summary>
 /// Builds a typed question and its representation for inclusion in a request.
 /// </summary>
+/// <typeparam name="TQuestion">The question type produced by the builder.</typeparam>
 public interface IQuestionBuilder<TQuestion> where TQuestion : IQuestion
 {
     /// <summary>

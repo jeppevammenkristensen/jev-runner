@@ -8,6 +8,7 @@ namespace JRK.JevRunner.Annotation;
 public class GenericBoxQuestionDefinition<TInstruction> : IBoxQuestionDefinition<TInstruction>
 {
     /// <summary>Creates a box question definition with instructions identifying a target and image.</summary>
+    /// <param name="instructions">The instructions identifying the target to locate and the image to search.</param>
     public GenericBoxQuestionDefinition(TInstruction instructions)
     {
         ArgumentNullException.ThrowIfNull(instructions);

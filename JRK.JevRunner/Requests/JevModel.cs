@@ -24,6 +24,10 @@ public record JevModel(string Model)
     /// version has been added. This method can falsely report an error</remarks>
     public bool IsKnownVersion => JevVersions.Versions.Contains(Model);
 
+    /// <summary>
+    /// Checks whether the model identifier exactly matches the supplied version.
+    /// </summary>
+    /// <param name="version">The model identifier to compare with this model.</param>
     public bool IsVersion(string version) => Model.Equals(version);
     
     /// <summary>

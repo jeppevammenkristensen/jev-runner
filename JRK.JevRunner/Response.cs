@@ -12,18 +12,24 @@ public record Response(List<AnswerWrapper> Answers, Usage Usage)
     /// <summary>
     /// Returns the named noul answer, throwing if it is missing or has another type.
     /// </summary>
+    /// <param name="name">The question name identifying the required answer.</param>
+    /// <returns>The first matching answer as a yes/no probability result.</returns>
     public NoulAnswer GetRequiredNoulAnswer(string name) =>
         GetRequiredAnswer(name, answer => answer is NoulAnswer noul ? noul : null);
 
     /// <summary>
     /// Returns the named choice answer, throwing if it is missing or has another type.
     /// </summary>
+    /// <param name="name">The question name identifying the required answer.</param>
+    /// <returns>The first matching answer as a choice result.</returns>
     public ChoiceAnswer GetRequiredChoiceAnswer(string name) =>
         GetRequiredAnswer(name, answer => answer is ChoiceAnswer choice ? choice : null);
 
     /// <summary>
     /// Returns the named score answer, throwing if it is missing or has another type.
     /// </summary>
+    /// <param name="name">The question name identifying the required answer.</param>
+    /// <returns>The first matching answer as a score result.</returns>
     public ScoreAnswer GetRequiredScoreAnswer(string name) =>
         GetRequiredAnswer(name, answer => answer is ScoreAnswer score ? score : null);
     
@@ -38,6 +44,10 @@ public record Response(List<AnswerWrapper> Answers, Usage Usage)
     /// <summary>
     /// Looks up the first named answer and validates its type using the supplied union-case selector.
     /// </summary>
+    /// <typeparam name="TAnswer">The required answer type.</typeparam>
+    /// <param name="name">The question name identifying the required answer.</param>
+    /// <param name="selectAnswer">Extracts the expected answer case, or returns null for a different case.</param>
+    /// <returns>The first named answer converted to the required type.</returns>
     private TAnswer GetRequiredAnswer<TAnswer>(string name, Func<Answer, TAnswer?> selectAnswer)
         where TAnswer : class
     {

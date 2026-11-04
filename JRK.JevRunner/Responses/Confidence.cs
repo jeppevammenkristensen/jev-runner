@@ -15,6 +15,7 @@ public readonly record struct Confidence
     /// Creates a confidence value from a finite number between zero and one, inclusive.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is non-finite or outside [0, 1].</exception>
+    /// <param name="value">The finite distribution confidence in the inclusive range [0, 1].</param>
     public Confidence(double value)
     {
         ErrorMessages.ThrowIfNotBetween0And1(value, nameof(Confidence));
@@ -24,9 +25,11 @@ public readonly record struct Confidence
     /// <summary>
     /// Converts a number to confidence using the constructor's validation.
     /// </summary>
+    /// <param name="value">The finite distribution confidence in the inclusive range [0, 1].</param>
     public static implicit operator Confidence(double value) => new(value);
     /// <summary>
     /// Returns the underlying confidence value.
     /// </summary>
+    /// <param name="confidence">The confidence whose numeric value is returned.</param>
     public static implicit operator double(Confidence confidence) => confidence.Value;
 }

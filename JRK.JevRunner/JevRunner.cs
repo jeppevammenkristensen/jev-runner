@@ -1,96 +1,10 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging;
 
 namespace JRK.JevRunner;
-
-
-internal interface IBackTick
-{
-    public string Value { get; }
-
-    /// <summary>
-    /// The BackTick Quoted Value
-    /// </summary>
-    public string BackTickQuoted => $"`{Value}`";
-}
-
-internal static partial class StateRegex
-{
-    [GeneratedRegex("^[^`\\s]+$")]
-    internal static partial Regex ValidPathName { get; }
-
-    internal static void ThrowIfInvalid(string? value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value, paramName);
-
-        if (ValidPathName.IsMatch(value))
-            return;
-
-        throw new InvalidOperationException($"{paramName} cannot have whitespace or the backtick character `");
-    }
-}
-
-public class StatePath : IBackTick
-{
-    public string Path { get; }
-
-    public StatePath(string path)
-    {
-        StateRegex.ThrowIfInvalid(path);
-        Path = path;
-    }
-
-    string IBackTick.Value => Path;
-    
-}
-
-public class StateReference : IBackTick
-{
-    public StateReference(string value)
-    {
-        StateRegex.ThrowIfInvalid(value);
-        Value = value;
-    }
-    
-    public static implicit operator StateReference(string value) => new(value);
-
-    public string Value { get; }
-    public string BackTickQuoted => $"`{Value}`";
-}
-
-public static class FormattableStringExtensions
-{
-    extension(FormattableString fm)
-    {
-        /// <summary>
-        /// Handles correct escaping of AssetName
-        /// </summary>
-        /// <returns></returns>
-        public string Escaped
-        {
-            get
-            {
-                List<object?> objects = [];
-        
-                foreach (var argument in fm.GetArguments())
-                {
-                    object? obj = argument switch
-                    {
-                        IBackTick name => name.BackTickQuoted,
-                        _ => argument
-                    };
-                    objects.Add(obj);
-                }
-                return string.Format(fm.Format, objects.ToArray());
-            }
-        }
-    }
-}
 
 
 /// <summary>
@@ -105,6 +19,9 @@ public partial class JevRunner : IJevRunner
     /// <summary>
     /// Submits requests to the TypeSafe System One API and parses their named answers.
     /// </summary>
+    /// <param name="options">The API authentication settings.</param>
+    /// <param name="client">The HTTP client used to send requests; ownership remains with the caller.</param>
+    /// <param name="logger">The logger receiving request diagnostics, validation warnings, and failures.</param>
     public JevRunner(JevOptions options, HttpClient client, ILogger<JevRunner> logger)
     {
         if (string.IsNullOrWhiteSpace(options.ApiKey))
@@ -121,7 +38,7 @@ public partial class JevRunner : IJevRunner
     /// Serializes and submits the request, then parses the API's named answers into a response.
     /// </summary>
     /// <param name="request">The state, model, and questions to send to the API.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancels HTTP submission and response reading.</param>
     /// <returns>A response containing the supported answers returned by the API.</returns>
     /// <exception cref="InvalidOperationException">The API returns an unsuccessful HTTP status code.</exception>
     /// <exception cref="JsonException">The response cannot be read as a JSON object or contains a null JSON response.</exception>
@@ -188,6 +105,10 @@ public partial class JevRunner : IJevRunner
         }
     }
 
+    /// <summary>Checks model compatibility, throwing in strict mode or logging a warning otherwise.</summary>
+    /// <param name="request">The request and validation policy to inspect.</param>
+    /// <returns>The detected validation error, or an empty result when validation succeeds.</returns>
+    /// <exception cref="InvalidOperationException">Strict validation is enabled and a compatibility check fails.</exception>
     private Maybe<RequestValidationError> ValidateRequest(Request request)
     {
         var simpleValidation = RequestValidator.Validate(request);
@@ -209,57 +130,25 @@ public partial class JevRunner : IJevRunner
         }
     }
 
+    /// <summary>Logs the serialized request at debug level.</summary>
+    /// <param name="requestJson">The JSON payload about to be sent.</param>
     [LoggerMessage(LogLevel.Debug, "Request json {RequestJson}")]
     partial void LogRequestJsonRequestjson(JsonObject requestJson);
 
+    /// <summary>Logs a compatibility warning when the request is allowed to proceed.</summary>
+    /// <param name="error">The validation failure description.</param>
+    /// <param name="validationType">The compatibility check that failed.</param>
     [LoggerMessage(LogLevel.Warning, "Validation failed. {Error} {ValidationType}")]
     partial void LogValidationFailedErrorValidationtype(string error, RequestValidationError validationType);
 
+    /// <summary>Logs an unsuccessful HTTP response without a known local validation error.</summary>
+    /// <param name="exception">The exception raised by HTTP status validation.</param>
     [LoggerMessage(LogLevel.Error, "Request failed")]
     partial void LogRequestFailed(Exception exception);
 
+    /// <summary>Logs an unsuccessful HTTP response alongside a previously detected compatibility error.</summary>
+    /// <param name="ex">The exception raised by HTTP status validation.</param>
+    /// <param name="type">The compatibility error detected before submission.</param>
     [LoggerMessage(LogLevel.Error, "Known validation error {Type}")]
     partial void LogKnownValidationErrorType(Exception ex, RequestValidationError type);
-}
-
-internal static class HttpRequestMessageExtensions
-{
-    extension(HttpRequestMessage message)
-    {
-        /// <summary>
-        /// Toggles Images DangerZone (by adding <see cref="DangerZones.Images"/>)
-        /// </summary>
-        /// <returns></returns>
-        internal HttpRequestMessage AddImageDangerZone()
-        {
-            message.Headers.Add(DangerZones.Images, "true");
-            return message;
-        }
-
-        /// <summary>
-        /// Toggles LongContext DangerZone (by adding <see cref="DangerZones.LongContext"/>)
-        /// </summary>
-        /// <returns></returns>
-        internal HttpRequestMessage AddLongContext()
-        {
-            message.Headers.Add(DangerZones.LongContext, "true");
-            return message;
-        }
-
-        internal bool HasDangerRequestMessage()
-        {
-            return message.Headers.Any(x => DangerZones.DangerZoneHeaderRegex().IsMatch(x.Key ?? string.Empty));
-        }
-    }
-    
-}
-
-internal class NoneValue
-{
-    private NoneValue()
-    {
-        
-    }
-    
-    public static NoneValue New => new NoneValue();
 }

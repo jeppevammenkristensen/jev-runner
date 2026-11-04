@@ -11,6 +11,7 @@ public record NoulAnswer(Noul Noul)
     /// <summary>
     /// Parses the answer's numeric <c>noul</c> field as a validated probability.
     /// </summary>
+    /// <param name="obj">The answer object containing the numeric <c>noul</c> field.</param>
     public static NoulAnswer From(JsonObject obj)
     {
         Noul noul = (Noul)obj["noul"]!.GetValue<double>();

@@ -10,6 +10,7 @@ internal class JsonTranslator
     /// <summary>
     /// Creates the JSON payload for a request, including its state, model, questions, and assets.
     /// </summary>
+    /// <param name="request">The request whose state, questions, and assets are added to the service payload.</param>
     internal static JsonObject CreateRequestJson(Request request)
     {
         var json = new JsonObject

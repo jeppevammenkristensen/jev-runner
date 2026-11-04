@@ -17,6 +17,7 @@ public readonly record struct Score
     /// Creates a score, rejecting only values below zero.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is below zero.</exception>
+    /// <param name="value">The score to store, which must not be less than zero.</param>
     public Score(double value)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);

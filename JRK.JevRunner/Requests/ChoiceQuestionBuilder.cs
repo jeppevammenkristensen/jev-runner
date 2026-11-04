@@ -10,6 +10,8 @@ public class ChoiceQuestionBuilder : IQuestionBuilder<ChoiceQuestion>
     /// <summary>
     /// Creates a builder with the supplied question name and instruction and no choices.
     /// </summary>
+    /// <param name="name">The key identifying the question in the request.</param>
+    /// <param name="instruction">The instructions for selecting a choice.</param>
     public ChoiceQuestionBuilder(string name, JevMessage instruction)
     {
         Name = name;
@@ -19,6 +21,8 @@ public class ChoiceQuestionBuilder : IQuestionBuilder<ChoiceQuestion>
     /// <summary>
     /// Appends a choice and its selection instruction, returning this builder for further configuration.
     /// </summary>
+    /// <param name="choice">The option key to include in the question's criteria.</param>
+    /// <param name="instruction">The instruction describing when to select this choice.</param>
     public ChoiceQuestionBuilder AddChoice(string choice, string instruction)
     {
         Choices = Choices.Add(new ChoiceCriteria(choice, instruction));

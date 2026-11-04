@@ -9,6 +9,7 @@ public readonly record struct Noul
     /// Creates a probability from a finite number between zero and one, inclusive.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is non-finite or outside [0, 1].</exception>
+    /// <param name="value">The finite probability of yes in the inclusive range [0, 1].</param>
     public Noul(double value)
     {
         ErrorMessages.ThrowIfNotBetween0And1(value);
@@ -28,9 +29,11 @@ public readonly record struct Noul
     /// <summary>
     /// Converts the probability to a Boolean using the inclusive 0.5 threshold.
     /// </summary>
+    /// <param name="noul">The probability to compare with the inclusive 0.5 threshold.</param>
     public static implicit operator Boolean(Noul noul) => noul.Success;
     /// <summary>
     /// Converts a number to a probability using the constructor's validation.
     /// </summary>
+    /// <param name="value">The finite probability of yes in the inclusive range [0, 1].</param>
     public static implicit operator Noul(double value) => new(value);
 }

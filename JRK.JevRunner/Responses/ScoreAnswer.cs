@@ -19,6 +19,7 @@ public record ScoreAnswer(double Score, ImmutableArray<LegendProbability> Legend
     /// Pairing stops at the shorter object if their lengths differ.
     /// </remarks>
     /// <exception cref="InvalidOperationException">A paired legend and probability entry have different keys.</exception>
+    /// <param name="obj">The score answer containing the score, legend, probabilities, and confidence.</param>
     public static ScoreAnswer From(JsonObject obj)
     {
         var score = obj["score"]!.GetValue<double>();

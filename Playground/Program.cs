@@ -25,7 +25,6 @@ var jevQuery =
     new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
 
-
 foreach (var responseAnswer in response.Response.Answers)
 {
     AnsiConsole.MarkupLineInterpolated($"[bold]{responseAnswer.Name}[/]");
@@ -100,7 +99,6 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
 public partial class JevQuery
 {
     public static readonly StateReference Photo = nameof(Photo);
-    public static readonly StateReference SecondPhoto = nameof(SecondPhoto);
     
     public JevQuery(FileData state)
     {
