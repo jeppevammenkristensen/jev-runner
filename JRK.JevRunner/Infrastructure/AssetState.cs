@@ -43,6 +43,11 @@ public class AssetState : Dictionary<string,string>
                 continue;
 
             var value = property.GetValue(this);
+            if (value is FormattableString formattableString)
+            {
+                value = formattableString.Escaped;
+            }
+            
             if (ignore?.Condition == JsonIgnoreCondition.WhenWritingNull && value is null)
                 continue;
             if (ignore?.Condition == JsonIgnoreCondition.WhenWritingDefault &&

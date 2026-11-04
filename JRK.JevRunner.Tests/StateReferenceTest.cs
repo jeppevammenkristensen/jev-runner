@@ -43,6 +43,8 @@ public class StateReferenceTest
     [InlineData("my photo")]
     [InlineData("photo\tname")]
     [InlineData("photo\nname")]
+    [InlineData("photo\n")]
+    [InlineData("photo\r\n")]
     [InlineData("my`photo")]
     public void Constructor_RejectsWhitespaceOrBackticksInValue(string value)
     {

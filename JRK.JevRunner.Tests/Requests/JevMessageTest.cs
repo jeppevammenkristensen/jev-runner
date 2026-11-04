@@ -8,6 +8,41 @@ namespace JRK.JevRunner.Tests.Requests;
 [TestSubject(typeof(JevMessage))]
 public class JevMessageTest
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Node_FormatsFormattableStringArrayElements(bool combine)
+    {
+        StateReference name = "photo";
+        var path = new StatePath("frames[0].photo");
+        FormattableString content = $"Compare {name} with {path} in {2:D2} sentences.";
+        JevMessage message = new(new object[] { "Instructions", content, new { Count = 2 } });
+        if (combine)
+            message = message.CombineWith(new JevMessage("End"));
+
+        var node = message.Node.AsArray();
+
+        Assert.Equal(combine ? 4 : 3, node.Count);
+        Assert.Equal("Instructions", node[0]!.GetValue<string>());
+        Assert.Equal("Compare `photo` with `frames[0].photo` in 02 sentences.", node[1]!.GetValue<string>());
+        Assert.Equal(2, node[2]!["Count"]!.GetValue<int>());
+        if (combine)
+            Assert.Equal("End", node[3]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Node_PreservesNullArrayElements()
+    {
+        JevMessage message = new(new object[] { "Before", null!, "After" });
+
+        var node = message.Node.AsArray();
+
+        Assert.Equal(3, node.Count);
+        Assert.Equal("Before", node[0]!.GetValue<string>());
+        Assert.Null(node[1]);
+        Assert.Equal("After", node[2]!.GetValue<string>());
+    }
+
     [Fact]
     public void Node_SerializesFormattableStringWithQuotedStateReferenceAndPath()
     {

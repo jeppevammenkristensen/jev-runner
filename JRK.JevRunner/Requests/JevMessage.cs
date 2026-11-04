@@ -15,25 +15,37 @@ public union JevMessage(string, object[],object, FormattableString)
         IncludeFields = true
     };
 
+    
     /// <summary>
     /// Serializes the stored content to a JSON value, array, or object for inclusion in a request.
     /// </summary>
     /// <remarks>Value tuples include their fields using runtime names such as Item1 and Item2.</remarks>
     /// <exception cref="NotImplementedException">The stored value does not match a supported case.</exception>
     /// <remarks>If the underlying type is a value type it will be serialized as Item1,Item2...ItemN</remarks>
-    public JsonNode Node => Value switch
+    public JsonNode Node
     {
-        object[] array => new JsonArray(array.Select(item => item is AssetState state
-            ? state.ToStateJson()
-            : JsonSerializer.SerializeToNode(item)).ToArray()),
-        AssetState state => state.ToStateJson(),
-        string str => JsonSerializer.SerializeToNode(str)!,
-        ITuple tuple when tuple.GetType().IsValueType => JsonSerializer.SerializeToNode((object)tuple, TupleJsonOptions)!,
-        FormattableString fm => JsonSerializer.SerializeToNode(fm.Escaped)!,
-        { } single => JsonSerializer.SerializeToNode(single)!,
-        _ => throw new NotImplementedException()
-    };
-    
+        get
+        {
+            if (Value is object[] array)
+                return new JsonArray(array.Select(item => SerializeSingleItem(item,false)).ToArray());
+
+            return SerializeSingleItem(Value, true)!;
+        }
+    }
+
+    private static JsonNode? SerializeSingleItem(object item, bool throwIfNull)
+    {
+        return item switch
+        {
+            AssetState state => state.ToStateJson(),
+            string str => JsonSerializer.SerializeToNode(str)!,
+            ITuple tuple when tuple.GetType().IsValueType => JsonSerializer.SerializeToNode<object>(tuple, TupleJsonOptions)!,
+            FormattableString fm => JsonSerializer.SerializeToNode(fm.Escaped)!,
+            { } single => JsonSerializer.SerializeToNode(single)!,
+            _ => throwIfNull ? throw new NotImplementedException() : null
+        };
+    }
+
     /// <summary>
     /// Normalizes the stored content to an array so messages can be concatenated without losing individual items.
     /// </summary>

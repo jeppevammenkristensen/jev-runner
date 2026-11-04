@@ -25,6 +25,8 @@ var jevQuery =
     new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
 var response = await jevQuery.Execute(jevRunner);
 
+var choiceQuestion = new ChoiceQuestion("Test", $"{"Hello"} angry bird", new ChoiceCriteria())
+
 foreach (var responseAnswer in response.Response.Answers)
 {
     AnsiConsole.MarkupLineInterpolated($"[bold]{responseAnswer.Name}[/]");
