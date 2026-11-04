@@ -33,6 +33,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="JRK.JevRunner.Tests" />
+    <ProjectReference Include="..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj"
+                      ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
@@ -52,18 +56,18 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
-  <!-- Resolve the generator's actual output path, including custom output configurations.
+  <!-- Resolve compile-time tooling output paths, including custom output configurations.
        The project reference builds it normally; packing without a build requires existing output. -->
-  <Target Name="IncludeSourceGeneratorInPackage" BeforeTargets="_GetPackageFiles">
-    <MSBuild Projects="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj"
+  <Target Name="IncludeCompileTimeToolsInPackage" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj;..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj;..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj"
              Targets="GetTargetPath" Properties="Configuration=$(Configuration)"
              RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained">
-      <Output TaskParameter="TargetOutputs" ItemName="_SourceGeneratorPackageOutput" />
+      <Output TaskParameter="TargetOutputs" ItemName="_CompileTimePackageOutput" />
     </MSBuild>
-    <Error Condition="!Exists('%(_SourceGeneratorPackageOutput.Identity)')"
-           Text="Build JRK.JevRunner before packing with --no-build: source generator output is missing." />
+    <Error Condition="!Exists('%(_CompileTimePackageOutput.Identity)')"
+           Text="Build JRK.JevRunner before packing with --no-build: compile-time tooling output is missing." />
     <ItemGroup>
-      <None Include="@(_SourceGeneratorPackageOutput)" Pack="true" PackagePath="analyzers/dotnet/cs" />
+      <None Include="@(_CompileTimePackageOutput)" Pack="true" PackagePath="analyzers/dotnet/cs" />
     </ItemGroup>
   </Target>
 

@@ -1,4 +1,9 @@
 <Solution>
+   <Folder Name="/Analyzers/">
+      <Project Path="JRK.JevRunner.Analyzers.CodeFixes/JRK.JevRunner.Analyzers.CodeFixes.csproj" />
+      <Project Path="JRK.JevRunner.Analyzers/JRK.JevRunner.Analyzers.csproj" />
+      <Project Path="JRK.JevRunner.Analyzers.Tests/JRK.JevRunner.Analyzers.Tests.csproj" />
+   </Folder>
    <Folder Name="/SourceGenerators/">
       <Project Path="JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/JRK.JevRunner.SourceGenerators.Sample.csproj" />
       <Project Path="JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Tests/JRK.JevRunner.SourceGenerators.Tests.csproj" />

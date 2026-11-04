@@ -118,7 +118,7 @@ public class AssetState : Dictionary<string,string>
         return GetRequiredAsset(name.Value) switch
         {
             ImageAsset a => a,
-            _ => throw new InvalidOperationException($"ImageAsset was not found for key {name}")
+            _ => throw new InvalidOperationException(Escape.Interpolated($"ImageAsset was not found for key {name}"))
         };
     }
 }
