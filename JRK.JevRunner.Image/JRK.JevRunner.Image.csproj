@@ -18,7 +18,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
         <PackageReleaseNotes>0.7.0: Core client integration
-- Updated alongside JRK.JevRunner 0.7.0; no image-helper API changes in this release.
+- AddImageAssetWithAutoAdjustment now accepts StateReference for the state field name. Strings remain usable through implicit conversion, but empty names, whitespace, and backticks are rejected.
+- Core request serialization now preserves derived AssetState properties alongside image asset references, including asset state items in combined JevMessage content.
 - The core client now supports opt-in long context and optional strict model validation. Automatic model selection uses JevModel.Latest, including Box questions; explicit models remain unchanged and Box questions require jev-1.14.0 or later.
 - Long context beyond the default 64 KB is slower and less accurate. The bundled known-model list may lag the TypeSafe API.</PackageReleaseNotes>
         <LangVersion>preview</LangVersion>
