@@ -45,6 +45,8 @@ public class StatePathTest
     [InlineData("ticket. messages")]
     [InlineData("ticket\tmessages")]
     [InlineData("ticket\nmessages")]
+    [InlineData("ticket.messages\n")]
+    [InlineData("ticket.messages\r\n")]
     [InlineData("ticket.`messages`")]
     public void Constructor_RejectsWhitespaceOrBackticksInPath(string path)
     {
