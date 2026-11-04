@@ -61,6 +61,9 @@ public class AssetState : Dictionary<string,string>
     }
 
     /// <summary>Adds a state member without silently overwriting a property or asset reference.</summary>
+    /// <param name="json">The state object receiving the member.</param>
+    /// <param name="name">The JSON member name, which must not already exist in the state object.</param>
+    /// <param name="value">The member's JSON value, or null for a JSON null value.</param>
     private static void AddStateMember(JsonObject json, string name, JsonNode? value)
     {
         if (json.ContainsKey(name))
@@ -84,11 +87,11 @@ public class AssetState : Dictionary<string,string>
     }
 
     /// <summary>
-    /// Attempt to get an Assert based on the name
+    /// Gets the registered asset associated with a required state field.
     /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <param name="name">The state field name under which the asset was registered.</param>
+    /// <returns>The asset registered for the state field.</returns>
+    /// <exception cref="InvalidOperationException">No asset is registered for the supplied state field name.</exception>
     public Asset GetRequiredAsset(string name)
     {
         if (Assets.TryGetValue(name, out var asset))
@@ -100,11 +103,11 @@ public class AssetState : Dictionary<string,string>
     }
     
     /// <summary>
-    /// Attempt to get the asset by state field name 
+    /// Gets the registered image asset associated with a required state field.
     /// </summary>
-    /// <param name="name">The state field name</param>
-    /// <returns></returns>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <param name="name">The state field reference under which the image asset was registered.</param>
+    /// <returns>The image asset registered for the state field.</returns>
+    /// <exception cref="InvalidOperationException">The state field has no registered asset, or its asset is not an image.</exception>
     public ImageAsset GetRequiredImageAsset(StateReference name)
     {
         return GetRequiredAsset(name.Value) switch

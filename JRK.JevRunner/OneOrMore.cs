@@ -9,6 +9,8 @@ public union OneOrMore<T>(T, IEnumerable<T>)
     /// <summary>
     /// Wraps the supplied sequence without copying it or validating its item count.
     /// </summary>
+    /// <param name="list">The sequence to store without enumeration or copying.</param>
+    /// <returns>A union containing the supplied sequence.</returns>
     public static OneOrMore<T> FromEnumerable(IEnumerable<T> list)
     {
         return list;

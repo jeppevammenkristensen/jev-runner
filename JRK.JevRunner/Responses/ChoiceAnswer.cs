@@ -15,6 +15,7 @@ public record ChoiceAnswer(string Choice, ImmutableArray<Probability> Probabilit
     /// Parses the <c>choice</c>, <c>probabilities</c>, and <c>confidence</c> fields of an answer.
     /// </summary>
     /// <remarks>Option probabilities retain the JSON object's enumeration order.</remarks>
+    /// <param name="obj">The choice answer containing the selected option, probabilities, and confidence.</param>
     public static ChoiceAnswer From(JsonObject obj)
     {
         var choice = obj["choice"]!.GetValue<string>();

@@ -11,6 +11,8 @@ public class JevKnownException(string errorMessage, HttpRequestException httpReq
     : Exception(BuildMessage(errorMessage, content), httpRequestException)
 {
     /// <summary>Retains the HTTP failure description and appends any returned error content.</summary>
+    /// <param name="message">The HTTP failure description that begins the exception message.</param>
+    /// <param name="errorContent">The parsed JSON or raw text to append, or null to retain only the description.</param>
     private static string BuildMessage(string message, ErrorContent? errorContent)
     {
         var builder = new StringBuilder(message);

@@ -8,6 +8,8 @@ public class NoulQuestionBuilder : IQuestionBuilder<NoulQuestion>
     /// <summary>
     /// Creates a builder with the supplied question name and initial instruction.
     /// </summary>
+    /// <param name="name">The key identifying the question in the request.</param>
+    /// <param name="instruction">The initial instructions for answering the question.</param>
     public NoulQuestionBuilder(string name, JevMessage instruction)
     {
         Name = name;
@@ -17,6 +19,8 @@ public class NoulQuestionBuilder : IQuestionBuilder<NoulQuestion>
     /// <summary>
     /// Sets the definitions for yes and no answers and returns this builder.
     /// </summary>
+    /// <param name="yesDescription">The description of when the answer should be yes.</param>
+    /// <param name="noDescription">The description of when the answer should be no.</param>
     public NoulQuestionBuilder AddYesNo(string yesDescription, string noDescription)
     {
         Criteria = new YesNo(yesDescription, noDescription);

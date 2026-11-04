@@ -8,6 +8,8 @@ namespace JRK.JevRunner.Infrastructure;
 internal class ExceptionTranslator
 {
     /// <summary>Reads the error body and wraps recognized HTTP status codes, preserving other exceptions.</summary>
+    /// <param name="ex">The exception to translate when its HTTP status code is recognized.</param>
+    /// <param name="response">The response whose body supplies error details for a translated exception.</param>
     /// <returns>A known API exception or the supplied exception when its status is not mapped.</returns>
     internal static async Task<Exception> TranslateRequestException(Exception ex, HttpResponseMessage response)
     {

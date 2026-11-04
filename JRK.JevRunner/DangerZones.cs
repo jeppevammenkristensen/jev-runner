@@ -18,6 +18,8 @@ public static partial class DangerZones
     /// <remarks>TypeSafe states for longer context above the default 64 kb that "It is slower and less accurate than staying within the default limits, so turn it on only for requests that need it."</remarks>
     public const string LongContext = "TypeSafe-Danger-Zone-Long-Context";
 
+    /// <summary>Gets the regular expression matching experimental feature header prefixes.</summary>
+    /// <returns>A cached regular expression for the danger-zone header prefix.</returns>
     [GeneratedRegex("^TypeSafe-Danger-Zone")]
     public static partial Regex DangerZoneHeaderRegex();
 }

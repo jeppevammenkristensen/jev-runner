@@ -1,13 +1,15 @@
 ﻿namespace JRK.JevRunner;
 
+/// <summary>Provides fluent request configuration and feature inspection.</summary>
 public static class RequestExtensions
 {
+    /// <param name="request">The request to configure or inspect.</param>
     extension(Request request)
     {
         /// <summary>
         /// Chainable convenience method for enabling long context for the request
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The same request with long context enabled.</returns>
         public Request EnableLongContext()
         {
             request.LongContextEnabled = true;

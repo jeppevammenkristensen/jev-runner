@@ -24,6 +24,8 @@ public class Request
     /// Creates a request with the supplied state and model, defaulting to the latest model when none is supplied.
     /// </summary>
     /// <remarks>Assets from asset-backed state are copied into the request's asset list during construction.</remarks>
+    /// <param name="state">The context evaluated by every question, optionally including registered assets.</param>
+    /// <param name="model">The model to use, or null to select the latest model automatically.</param>
     public Request(JevMessage state, JevModel? model = null)
     {
         State = state;
@@ -38,6 +40,9 @@ public class Request
         }
     }
 
+    /// <summary>Retains an explicit model or records that automatic model selection is required.</summary>
+    /// <param name="model">The requested model, or null for automatic selection.</param>
+    /// <returns>The supplied model or the automatically selected model.</returns>
     private JevModel EnsureCorrectJevModel(JevModel? model)
     {
         if (model != null)
@@ -56,7 +61,7 @@ public class Request
     /// <summary>
     /// Gets the best JevModel fit for the request. 
     /// </summary>
-    /// <returns></returns>
+    /// <returns>The latest model alias.</returns>
     internal JevModel AutoDetectJevModel()
     {
         // In the current time of writing Latest and Preview are aligned
@@ -89,33 +94,4 @@ public class Request
     /// </summary>
     /// <remarks>Toggling this means that there is no limit to the context size. However TypeSafe instructs that this makes the request slower and less precise</remarks>
     public bool LongContextEnabled { get; set; } = false;
-}
-
-internal static class RequestValidator
-{
-    public static SimpleValidation Validate(Request request)
-    {
-        if (request.Model is {IsKnownVersion: false})
-        {
-            return ($"Unknown version {request.Model.Model}", RequestValidationError.UnsupportedVersion);
-        }
-
-        if (request.Questions.Any(x => x is BoxQuestion) && request.Model.IsVersion(JevVersions.Version1_13_0))
-        {
-            return ($"Box questions are only supported from version {JevVersions.Version1_14_0}", RequestValidationError.BoxNotSupported);
-        }
-
-        return true;
-    }
-}
-
-public enum RequestValidationError
-{
-    UnsupportedVersion,
-    BoxNotSupported
-}
-
-internal union SimpleValidation(bool, (string, RequestValidationError))
-{
-    
 }

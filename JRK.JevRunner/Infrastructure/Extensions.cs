@@ -9,6 +9,9 @@ namespace JRK.JevRunner.Infrastructure;
 /// </summary>
 public static class Extensions
 {
+    /// <summary>Provides image-file registration for asset-backed state instances.</summary>
+    /// <typeparam name="TAssetState">The concrete state type retained by the fluent result.</typeparam>
+    /// <param name="state">The state receiving the image asset and its reference.</param>
     extension<TAssetState>(TAssetState state) where TAssetState : AssetState
     {
         

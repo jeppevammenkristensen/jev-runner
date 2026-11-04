@@ -19,6 +19,8 @@ public class ScoreQuestionBuilder : IQuestionBuilder<ScoreQuestion>
     /// <summary>
     /// Creates a builder with the supplied question name and instruction and no criteria.
     /// </summary>
+    /// <param name="name">The key identifying the question in the request.</param>
+    /// <param name="instructions">The instructions for evaluating the scoring criteria.</param>
     public ScoreQuestionBuilder(string name, JevMessage instructions)
     {
         Name = name;
@@ -28,6 +30,7 @@ public class ScoreQuestionBuilder : IQuestionBuilder<ScoreQuestion>
     /// <summary>
     /// Appends a scoring criterion and returns this builder for further configuration.
     /// </summary>
+    /// <param name="criteria">The scoring criterion to append after the existing criteria.</param>
     public ScoreQuestionBuilder AddCriteria(string criteria)
     {
         Criterias = Criterias.Add(criteria);

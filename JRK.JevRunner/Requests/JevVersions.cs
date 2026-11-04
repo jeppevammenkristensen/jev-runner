@@ -18,6 +18,7 @@ public static class JevVersions
     /// <summary>Gets the model identifier for version 1.14.0.</summary>
     public const string Version1_14_0 = "jev-1.14.0";
     
+    /// <summary>Gets a new set of the known model identifiers, including latest and preview aliases.</summary>
     public static HashSet<string> Versions =>
     [
         Latest,

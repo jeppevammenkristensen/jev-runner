@@ -49,6 +49,7 @@ public union JevMessage(string, object[],object, FormattableString)
     /// <summary>
     /// Creates a message containing this message's items followed by the supplied message's items.
     /// </summary>
+    /// <param name="message">The message whose items are appended after this message's items.</param>
     public JevMessage CombineWith(JevMessage message)
     {
         var items = Array.Concat(message.Array);
