@@ -11,6 +11,7 @@
     <Description>Compile-time diagnostics for JRK.JevRunner.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>0.7.1: Backtick-aware interpolation diagnostics and code fixes
+- Own the usage-analyzer and code-fix assemblies in one package, installed automatically through the JRK.JevRunner dependency.
 - JEV100 detects lost automatic quoting in plain strings; its fix wraps the interpolation in Escape.Interpolated.
 - JEV101 detects redundant explicit backticks in preserved interpolations; its fix removes only the adjacent pair.
 - Recognize generic constraint chains and marker interfaces inherited through class constraints.

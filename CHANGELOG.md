@@ -1,11 +1,23 @@
 ﻿# Changelog
 
+## [0.7.1]
+
+### Added
+
+- Automatically installed usage analyzers and IDE code fixes through the core package dependency on `JRK.JevRunner.Analyzers`: `JEV100` detects state interpolations that lose automatic backtick quoting, and `JEV101` detects redundant explicit backticks in preserved interpolations. An explicit analyzer package reference is optional.
+- `Escape.Interpolated(FormattableString)` returns a string while automatically backtick-quoting `IBackTick` arguments, including `StateReference` and `StatePath`. Ordinary arguments retain normal formatting.
+- Explicit analyzer and code-fix project references enable local development diagnostics in Playground and JRK.JevRunner.Image. Image NuGet consumers receive tooling through the core dependency without duplicate assemblies or tooling runtime dependencies.
+
+### Fixed
+
+- Only the analyzer NuGet package owns usage-analyzer and code-fix DLLs; core embeds only its source generator. Direct and transitive analyzer package references resolve to the same package instead of separate embedded copies.
+- Usage analysis follows generic constraint chains, including marker interfaces inherited through class constraints.
+- The interpolation code fix starts with a root-qualified helper call and simplifies it where safe, preserving correct binding when local names shadow `Escape` or `JRK`.
+
 ## [0.7.0]
 
 ### Added
 
-- Bundled usage analyzers and code fixes in the core NuGet package: JEV100 detects state interpolations that lose automatic backtick quoting, and JEV101 detects redundant explicit backticks in preserved interpolations. A standalone analyzer package is also available.
-- Explicit analyzer and code-fix project references enable local development diagnostics in JRK.JevRunner.Image without duplicating tooling in its NuGet package.
 - Request-scoped long context through `Request.LongContextEnabled` and chainable `EnableLongContext()`, sending `TypeSafe-Danger-Zone-Long-Context: true`. Disabled by default. Context beyond the default 64 KB is slower and less accurate; enable only when needed.
 - `Request.StrictValidation`, defaulting to `false`: unknown model identifiers and Box questions with `jev-1.13.0` log a warning and proceed. When enabled, either condition throws `InvalidOperationException` before HTTP. The bundled known-version list may lag the API and does not replace server validation.
 - `JevVersions` model identifier constants and `Versions` known-version list; `JevModel.IsLatest`, `IsPreview`, `IsKnownVersion`, and `IsVersion(version)` inspection helpers.
@@ -23,8 +35,6 @@
 
 ### Fixed
 
-- Usage analysis now follows generic constraint chains, including marker interfaces inherited through class constraints.
-- The interpolation code fix starts with a root-qualified helper call and simplifies it where safe, preserving correct binding when local names shadow Escape or JRK.
 - Request JSON now preserves derived `AssetState` properties alongside asset references, including asset state items in combined `JevMessage` content.
 
 ## [0.6.0]

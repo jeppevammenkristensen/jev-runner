@@ -11,14 +11,14 @@
         <Authors>Jeppe Roi Kristensen</Authors>
         <Description>Optional SkiaSharp image helpers for JRK.JevRunner. Validate image files, proportionally upscale or downscale them, and render normalized Jev bounding-box answers without modifying source files.</Description>
         <PackageTags>jev;typesafe;ai;system-one;images;bounding-box;skiasharp;dotnet</PackageTags>
-        <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/jeppevammenkristensen/jev-runner</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/jeppevammenkristensen/jev-runner</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
         <PackageReleaseNotes>0.7.1: Usage analyzer integration
-- Core usage analyzers and code fixes are available through the JRK.JevRunner NuGet dependency; they are not bundled again in the image package.
+- Usage analyzers and code fixes flow through JRK.JevRunner to its JRK.JevRunner.Analyzers dependency; neither core nor Image embeds duplicate tooling assemblies.
 - Explicit analyzer and code-fix project references enable diagnostics during local image-library development without adding runtime dependencies.</PackageReleaseNotes>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
@@ -32,7 +32,7 @@
     <ItemGroup>
       <PackageReference Include="SkiaSharp" Version="4.153.1" />
       <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
-      <ProjectReference Include="..\JRK.JevRunner\JRK.JevRunner.csproj" />
+      <ProjectReference Include="..\JRK.JevRunner\JRK.JevRunner.csproj" PrivateAssets="none" />
       <ProjectReference Include="..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj"
                         OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
       <ProjectReference Include="..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj"

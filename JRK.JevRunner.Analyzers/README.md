@@ -1,8 +1,9 @@
 # JRK.JevRunner.Analyzers
 
-The main `JRK.JevRunner` package bundles the analyzer and code fix automatically.
-They are compile-time assets, not runtime dependencies. A standalone analyzer
-package is also available:
+The main `JRK.JevRunner` package depends on this package, so NuGet installs the
+analyzer and code fix automatically. Only this package contains their DLLs; the
+core and Image packages do not embed duplicate copies. They are compile-time assets,
+not runtime assemblies. An explicit reference is optional:
 
 ```sh
 dotnet add package JRK.JevRunner.Analyzers

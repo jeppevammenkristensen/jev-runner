@@ -11,12 +11,12 @@
     <Authors>Jeppe Roi Kristensen</Authors>
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
-    <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/jeppevammenkristensen/jev-runner</PackageProjectUrl>
     <PackageReleaseNotes>0.7.1: Usage analyzers and code fixes
-- Bundle JEV100 and JEV101 usage diagnostics with code fixes for lost backtick quoting and redundant explicit backticks.
-- Escape.Interpolated preserves arguments while returning a string. Its code fix simplifies qualification where safe and avoids shadowed local names.
+- Supply JEV100 and JEV101 usage diagnostics and code fixes through the JRK.JevRunner.Analyzers package dependency, without embedding duplicate assemblies.
+- Add Escape.Interpolated(FormattableString) to return a string with automatic quoting for state references and paths, retaining ordinary argument formatting. Its code fix simplifies qualification where safe and avoids shadowed local names.
 - Usage diagnostics recognize marker interfaces inherited through generic class constraints and chained type parameters.</PackageReleaseNotes>
-    <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
+    <RepositoryUrl>https://github.com/jeppevammenkristensen/jev-runner</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -27,8 +27,12 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="JRK.JevRunner.Tests" />
+    <!-- NuGet omits project references with ReferenceOutputAssembly=false from
+         the package dependency graph. Include only analyzer assets and disable
+         copy-local so this tooling dependency contributes no runtime DLLs. -->
     <ProjectReference Include="..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="true" Private="false"
+                      IncludeAssets="analyzers" PrivateAssets="none" />
     <ProjectReference Include="..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj"
                       ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj"
@@ -50,10 +54,10 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
-  <!-- Resolve compile-time tooling output paths, including custom output configurations.
-       The project reference builds it normally; packing without a build requires existing output. -->
-  <Target Name="IncludeCompileTimeToolsInPackage" BeforeTargets="_GetPackageFiles">
-    <MSBuild Projects="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj;..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj;..\JRK.JevRunner.Analyzers.CodeFixes\JRK.JevRunner.Analyzers.CodeFixes.csproj"
+  <!-- Embed only the source generator. Usage analyzers and code fixes are supplied
+       by the analyzer package dependency so NuGet resolves a single copy. -->
+  <Target Name="IncludeSourceGeneratorInPackage" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="..\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators\JRK.JevRunner.SourceGenerators.csproj"
              Targets="GetTargetPath" Properties="Configuration=$(Configuration)"
              RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained">
       <Output TaskParameter="TargetOutputs" ItemName="_CompileTimePackageOutput" />
