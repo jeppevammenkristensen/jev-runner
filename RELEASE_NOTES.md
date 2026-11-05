@@ -9,42 +9,7 @@ published release notes.
 
 ## Unreleased
 
-## 0.7.1
-
-### Added
-
-- The core `JRK.JevRunner` NuGet package now depends on `JRK.JevRunner.Analyzers`
-  for usage diagnostics and IDE code fixes, while embedding its source generator.
-  NuGet installs the analyzer dependency automatically; an explicit reference is optional.
-- `JEV100` warns when a plain-string interpolation loses automatic backtick quoting
-  for state references or paths. Its code fix wraps the interpolation in
-  `Escape.Interpolated(...)`, preserving a string result with automatic quoting.
-- `JEV101` warns about redundant explicit backticks around automatically quoted
-  arguments in preserved interpolations. Its code fix removes only the adjacent pair.
-- `Escape.Interpolated(FormattableString)` explicitly formats preserved arguments
-  into a string, quoting `IBackTick` values and retaining ordinary argument formatting.
-- Playground and the Image library explicitly reference the analyzer and code-fix
-  projects for repository development. Image NuGet consumers receive tooling through
-  the core dependency; the Image package does not bundle duplicate tooling assemblies.
-
-### Fixed
-
-- Usage-analyzer and code-fix DLLs are owned only by the analyzer package, not
-  embedded again in core or Image. NuGet resolves one analyzer package even when
-  consumers also reference it directly, avoiding duplicate copies across packages.
-- Usage diagnostics recognize generic constraint chains, including marker
-  interfaces inherited through class constraints.
-- The interpolation code fix simplifies helper qualification where safe and retains
-  namespace or root qualification when local names such as `Escape` or `JRK` conflict.
-
-### Compatibility
-
-- The client and Image packages still target .NET 11 and use preview C# features.
-  Analyzers, code fixes, and source generators target `netstandard2.0` and are
-  compile-time assets under `analyzers/dotnet/cs/`, not runtime dependencies.
-- Both usage diagnostics are warnings by default and support Fix All. Configure
-  severity through `.editorconfig` using `dotnet_diagnostic.JEV100.severity` or
-  `dotnet_diagnostic.JEV101.severity`.
+opne
 
 ## 0.7.0
 
