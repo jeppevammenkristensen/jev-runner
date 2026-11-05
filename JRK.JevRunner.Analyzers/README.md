@@ -31,7 +31,8 @@ verbatim, and raw strings are supported, as are Unicode-escaped backticks.
 Fix All is supported. Plain string targets still report JEV100 instead.
 
 Repository projects using project references need explicit analyzer references;
-Playground includes these. NuGet consumers receive both rules automatically.
+Playground and JRK.JevRunner.Image include these. Image NuGet consumers receive
+the tooling through the core package dependency; Image does not bundle it again.
 
 ## JEV100: Preserve backtick quoting
 
@@ -56,7 +57,13 @@ The **Use Escape.Interpolated** code fix changes the entire interpolation
 to `Escape.Interpolated($"Describe {field}.")`, adding the JevRunner
 namespace import if needed. This retains a string result while applying quoting.
 Fix All is supported. The fix is offered when the compatible Escape.Interpolated helper is
-available in the compilation.
+available in the compilation. The fix starts with a root-qualified helper call,
+then uses semantic simplification to produce the short name where safe. Namespace
+or global qualification is retained when needed to avoid shadowed names such as
+Escape or JRK.
+
+Generic constraints are followed transitively, including class constraints whose
+base classes or interfaces implement the marker. This applies to both rules.
 
 The rule is a warning by default. Configure or disable it in `.editorconfig`:
 

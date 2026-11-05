@@ -19,25 +19,25 @@ namespace JRK.JevRunner.Analyzers.Tests;
 public class BackTickInterpolationTests
 {
     private const string Contract = """
-        namespace JRK.JevRunner
-        {
-            internal interface IBackTick { }
-            public class StateReference : IBackTick { public string Value => "name"; }
-            public class StatePath : IBackTick { }
-            public class DerivedReference : StateReference { }
-            public static class Escape
-            {
-                public static string Interpolated(System.FormattableString value) => value.Escaped;
-            }
-            public static class FormattableStringExtensions
-            {
-                extension(System.FormattableString value)
-                {
-                    public string Escaped => value.ToString();
-                }
-            }
-        }
-        """;
+                                    namespace JRK.JevRunner
+                                    {
+                                        internal interface IBackTick { }
+                                        public class StateReference : IBackTick { public string Value => "name"; }
+                                        public class StatePath : IBackTick { }
+                                        public class DerivedReference : StateReference { }
+                                        public static class Escape
+                                        {
+                                            public static string Interpolated(System.FormattableString value) => value.Escaped;
+                                        }
+                                        public static class FormattableStringExtensions
+                                        {
+                                            extension(System.FormattableString value)
+                                            {
+                                                public string Escaped => value.ToString();
+                                            }
+                                        }
+                                    }
+                                    """;
 
     [Theory]
     [InlineData("string text = $\"Describe {reference}.\";", 1)]
@@ -66,18 +66,21 @@ public class BackTickInterpolationTests
         });
     }
 
-    [Fact]
-    public async Task RecognizesMarkerAndGenericConstraints()
+    [Theory]
+    [InlineData("string Direct(JRK.JevRunner.IBackTick value) => $\"{value}\";")]
+    [InlineData("string Generic<T>(T value) where T : JRK.JevRunner.IBackTick => $\"{value}\";")]
+    [InlineData("string Generic<T>(T value) where T : JRK.JevRunner.StateReference => $\"{value}\";")]
+    [InlineData("string Generic<T, U>(T value) where T : U where U : JRK.JevRunner.StateReference => $\"{value}\";")]
+    public async Task RecognizesMarkerAndGenericConstraints(string member)
     {
         using var workspace = new AdhocWorkspace();
         var document = CreateDocument(workspace, Contract + """
-            class C
-            {
-                string Direct(JRK.JevRunner.IBackTick value) => $"{value}";
-                string Generic<T>(T value) where T : JRK.JevRunner.StateReference => $"{value}";
-            }
-            """);
-        Assert.Equal(2, (await Analyze(document)).Length);
+                                                            class C
+                                                            {
+                                                            """ + member + """
+                                                            }
+                                                            """);
+        Assert.Single(await Analyze(document));
     }
 
     [Theory]
@@ -131,7 +134,8 @@ public class BackTickInterpolationTests
         var operations = await action.GetOperationsAsync(TestContext.Current.CancellationToken);
         var solution = Assert.Single(operations.OfType<ApplyChangesOperation>()).ChangedSolution;
         var fixedDocument = solution.GetDocument(document.Id)!;
-        Assert.Equal(Source(expected), (await fixedDocument.GetTextAsync(TestContext.Current.CancellationToken)).ToString());
+        Assert.Equal(Source(expected),
+            (await fixedDocument.GetTextAsync(TestContext.Current.CancellationToken)).ToString());
         Assert.Empty(await Analyze(fixedDocument));
     }
 
@@ -140,10 +144,10 @@ public class BackTickInterpolationTests
     {
         using var workspace = new AdhocWorkspace();
         var document = CreateDocument(workspace, """
-            interface IBackTick { }
-            class Reference : IBackTick { }
-            class C { string M(Reference value) => $"{value}"; }
-            """);
+                                                 interface IBackTick { }
+                                                 class Reference : IBackTick { }
+                                                 class C { string M(Reference value) => $"{value}"; }
+                                                 """);
         Assert.Empty(await Analyze(document));
     }
 
@@ -171,7 +175,7 @@ public class BackTickInterpolationTests
         Assert.DoesNotContain("global::JRK.JevRunner", text);
         var fixedRoot = (await fixedDocument.GetSyntaxRootAsync(TestContext.Current.CancellationToken))!;
         Assert.Contains(fixedRoot.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>(),
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>(),
             invocation => invocation.Expression.ToString() == "Escape.Interpolated");
         Assert.DoesNotContain("((FormattableString)", text);
         Assert.Empty(await Analyze(fixedDocument));
@@ -182,14 +186,15 @@ public class BackTickInterpolationTests
     [InlineData("")]
     [InlineData("public static class FormattableStringExtensions { }")]
     [InlineData("public static class Escape { public static string Interpolated(string value) => value; }")]
-    [InlineData("public static class Escape { public static object Interpolated(System.FormattableString value) => value; }")]
+    [InlineData(
+        "public static class Escape { public static object Interpolated(System.FormattableString value) => value; }")]
     public async Task DoesNotOfferFixWithoutInterpolationHelper(string helper)
     {
         using var workspace = new AdhocWorkspace();
         var source = """
-            namespace JRK.JevRunner { internal interface IBackTick { } public class StateReference : IBackTick { } }
-            class C { string M(JRK.JevRunner.StateReference value) => $"{value}"; }
-            """;
+                     namespace JRK.JevRunner { internal interface IBackTick { } public class StateReference : IBackTick { } }
+                     class C { string M(JRK.JevRunner.StateReference value) => $"{value}"; }
+                     """;
         var document = CreateDocument(workspace, source + "namespace JRK.JevRunner { " + helper + " }");
         var diagnostics = await Analyze(document);
         var actions = new List<CodeAction>();
@@ -199,14 +204,16 @@ public class BackTickInterpolationTests
         Assert.Empty(actions);
     }
 
-    [Fact]
-    public async Task FixBindsToJevRunnerHelperEvenWhenEscapeIsShadowed()
+    [Theory]
+    [InlineData("string Escape = \"local\";")]
+    [InlineData("string JRK = \"local\";")]
+    [InlineData("string Escape = \"local\"; string JRK = \"local\";")]
+    public async Task FixBindsToJevRunnerHelperEvenWhenNamesAreShadowed(string declarations)
     {
         using var workspace = new AdhocWorkspace();
-        var document = CreateDocument(workspace, Source("""
-            string Escape = "local";
-            string text = $"Describe {reference}.";
-            """));
+        var document = CreateDocument(workspace, Source(declarations + """
+                                                                       string text = $"Describe {reference}.";
+                                                                       """));
         var diagnostic = Assert.Single(await Analyze(document));
         var actions = new List<CodeAction>();
         await new BackTickInterpolationCodeFixProvider().RegisterCodeFixesAsync(
@@ -218,7 +225,7 @@ public class BackTickInterpolationTests
         Assert.Empty(await Analyze(fixedDocument));
         var root = (await fixedDocument.GetSyntaxRootAsync(TestContext.Current.CancellationToken))!;
         var invocation = Assert.Single(root.DescendantNodes()
-            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>(),
+                .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>(),
             node => node.Expression.ToString().EndsWith("Escape.Interpolated", StringComparison.Ordinal));
         var model = (await fixedDocument.GetSemanticModelAsync(TestContext.Current.CancellationToken))!;
         var symbol = Assert.IsAssignableFrom<IMethodSymbol>(
@@ -228,13 +235,13 @@ public class BackTickInterpolationTests
 
     /// <summary>Creates a compilable usage fixture with both string and formattable parameter targets.</summary>
     private static string Source(string statement) => Contract + """
-        class C
-        {
-            void Consume(string value) { }
-            void Preserve(System.FormattableString value) { }
-            void M(JRK.JevRunner.StateReference reference, JRK.JevRunner.StatePath path, JRK.JevRunner.DerivedReference derived)
-            {
-        """ + statement + "\n} }";
+                                                                 class C
+                                                                 {
+                                                                     void Consume(string value) { }
+                                                                     void Preserve(System.FormattableString value) { }
+                                                                     void M(JRK.JevRunner.StateReference reference, JRK.JevRunner.StatePath path, JRK.JevRunner.DerivedReference derived)
+                                                                     {
+                                                                 """ + statement + "\n} }";
 
     /// <summary>Creates a workspace document so the same fixture supports semantic analysis and code fixes.</summary>
     private static Document CreateDocument(AdhocWorkspace workspace, string source)
@@ -242,9 +249,11 @@ public class BackTickInterpolationTests
         var project = workspace.AddProject("AnalyzerTests", LanguageNames.CSharp)
             .WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview))
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddMetadataReferences(new[] {
+            .AddMetadataReferences(new[]
+            {
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location) });
+                MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
+            });
         return project.AddDocument("Usage.cs", SourceText.From(source));
     }
 
@@ -254,7 +263,8 @@ public class BackTickInterpolationTests
         var cancellationToken = TestContext.Current.CancellationToken;
         var compilation = (await document.Project.GetCompilationAsync(cancellationToken))!;
         Assert.Empty(compilation.GetDiagnostics(cancellationToken).Where(d => d.Severity == DiagnosticSeverity.Error));
-        return await compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new BackTickInterpolationAnalyzer()))
+        return await compilation
+            .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new BackTickInterpolationAnalyzer()))
             .GetAnalyzerDiagnosticsAsync(cancellationToken);
     }
 }
