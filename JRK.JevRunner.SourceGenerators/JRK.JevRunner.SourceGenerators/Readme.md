@@ -135,7 +135,10 @@ a standalone NuGet package: `JRK.JevRunner` bundles its DLL under
 
 The sample and tests target .NET 11. The sample uses explicit analyzer and runtime
 project references for local development. Its `UsePackedJevRunner=true` setting
-instead consumes only the runtime NuGet package to check analyzer packaging.
+instead consumes the runtime NuGet package and its analyzer dependency to check
+packaging. It asserts one resolved copy of each tooling assembly. Optional
+`IncludeImagePackage=true` and `IncludeStandaloneAnalyzers=true` settings also
+check Image and direct analyzer references; see the root README for pack/build commands.
 
 The tests use Roslyn `GeneratorDriver` with isolated runtime contract stubs. They
 check diagnostics, generated API shape, compilation/emission, and named request

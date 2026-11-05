@@ -12,8 +12,9 @@ and `AppliedBox`.
 dotnet add package JRK.JevRunner.Image
 ```
 
-The package depends on JRK.JevRunner, whose NuGet package supplies the JEV100 and
-JEV101 usage analyzers and code fixes. No separate analyzer installation is needed;
+The package depends on JRK.JevRunner, which in turn depends on
+JRK.JevRunner.Analyzers for the JEV100 and JEV101 diagnostics and code fixes.
+No separate analyzer installation is needed;
 the Image package does not bundle duplicate tooling assemblies or add runtime
 dependencies for them. See the [analyzer documentation](../JRK.JevRunner.Analyzers/README.md).
 

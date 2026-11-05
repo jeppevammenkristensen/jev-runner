@@ -2,7 +2,20 @@
 
 [![JRK.JevRunner](https://img.shields.io/nuget/v/JRK.JevRunner.svg?label=JRK.JevRunner)](https://www.nuget.org/packages/JRK.JevRunner) [![JRK.JevRunner.Image](https://img.shields.io/nuget/v/JRK.JevRunner.Image.svg?label=JRK.JevRunner.Image)](https://www.nuget.org/packages/JRK.JevRunner.Image)
 
-An .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
+A .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
+
+## 0.7.1 highlights
+
+- Automatically installed `JEV100` and `JEV101` usage analyzers and IDE code fixes help preserve
+  automatic backtick quoting and remove redundant explicit backticks.
+- `Escape.Interpolated(...)` formats preserved interpolations into strings while
+  automatically quoting state references and paths.
+- Diagnostics follow generic constraint chains; code fixes retain qualification
+  when needed to avoid name conflicts. The Image package receives tooling through
+  its core package dependency, without duplicate assemblies.
+
+See the [0.7.1 release notes](https://github.com/jeppevammenkristensen/jev-runner/blob/HEAD/RELEASE_NOTES.md#071)
+for details. The client still requires .NET 11 and preview C# features.
 
 ## Requirements
 
@@ -15,10 +28,13 @@ An .NET client for Jev and the TypeSafe System One API. Submit application state
 dotnet add package JRK.JevRunner
 ```
 
-The package includes its source generators, usage analyzer, and code fix automatically;
-no separate analyzer reference is needed when consuming it through NuGet. These assemblies
-are compile-time assets under `analyzers/dotnet/cs/`, not runtime dependencies, and target
-`netstandard2.0`, while the client targets `net11.0`.
+The package embeds its source generator and depends on `JRK.JevRunner.Analyzers`
+for usage diagnostics and code fixes. NuGet installs that dependency automatically;
+no separate analyzer reference is needed. Only the analyzer package contains the
+usage-analyzer and code-fix DLLs, so adding a direct reference to that same package
+does not introduce a second physical copy. These assemblies are compile-time assets
+under `analyzers/dotnet/cs/`, not runtime assemblies, and target `netstandard2.0`,
+while the client targets `net11.0`.
 
 `JEV100` warns when interpolating a state reference or path into a plain string loses
 automatic backtick quoting. Its code fix wraps the interpolation in `Escape.Interpolated(...)`
@@ -34,15 +50,25 @@ marker interfaces inherited through generic class constraints and constraint cha
 For repository development, analyzer project references are not transitive.
 Playground and the Image library explicitly reference the analyzer and code-fix
 projects. The Image NuGet package relies on its core package dependency for tooling
-rather than bundling duplicate assemblies. Build and pack the client with:
+rather than bundling duplicate assemblies. Pack the analyzer dependency before
+the client and publish both packages together. For local packaging checks:
 
 ```shell
+dotnet pack JRK.JevRunner.Analyzers/JRK.JevRunner.Analyzers.csproj -c Release
 dotnet pack JRK.JevRunner/JRK.JevRunner.csproj -c Release
 dotnet build JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/JRK.JevRunner.SourceGenerators.Sample.csproj -c Release -p:UsePackedJevRunner=true
+dotnet pack JRK.JevRunner.Image/JRK.JevRunner.Image.csproj -c Release
+dotnet build JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/JRK.JevRunner.SourceGenerators.Sample.csproj -c Release -p:UsePackedJevRunner=true -p:UseImageOnly=true
+dotnet build JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/JRK.JevRunner.SourceGenerators.Sample.csproj -c Release -p:UsePackedJevRunner=true -p:IncludeImagePackage=true
+dotnet build JRK.JevRunner.SourceGenerators/JRK.JevRunner.SourceGenerators.Sample/JRK.JevRunner.SourceGenerators.Sample.csproj -c Release -p:UsePackedJevRunner=true -p:IncludeImagePackage=true -p:IncludeStandaloneAnalyzers=true
 ```
 
-The second command is a build-only packaging smoke check: it consumes the locally packed
-NuGet without an explicit generator reference and compiles code that requires generated types.
+These build-only smoke checks compile generated queries and assert exactly one resolved
+usage-analyzer, code-fix, and source-generator assembly for core alone, Image alone,
+core plus Image, and an additional direct analyzer reference. They use local package feeds and the current
+version settings; `-p:JevRunnerPackageVersion=...` overrides the consumed version.
+Use a new package version for each published fix; replacing an existing version can
+leave consumers or IDEs using cached assemblies.
 
 Package restores audit both direct and transitive dependencies and fail on known vulnerabilities
 or audit-feed failures. To repeat the advisory check:
