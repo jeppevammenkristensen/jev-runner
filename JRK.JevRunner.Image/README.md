@@ -6,6 +6,20 @@ on this project.
 Targets .NET 11 and uses preview C# unions for image validation results, errors,
 and `AppliedBox`.
 
+## Installation and tooling
+
+```shell
+dotnet add package JRK.JevRunner.Image
+```
+
+The package depends on JRK.JevRunner, whose NuGet package supplies the JEV100 and
+JEV101 usage analyzers and code fixes. No separate analyzer installation is needed;
+the Image package does not bundle duplicate tooling assemblies or add runtime
+dependencies for them. See the [analyzer documentation](../JRK.JevRunner.Analyzers/README.md).
+
+For repository development, this project explicitly references the analyzer and
+code-fix projects because analyzer project references are not transitive.
+
 ## Validate an image before uploading
 
 ```csharp

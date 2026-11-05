@@ -102,10 +102,10 @@ public partial class JevQuery
     public JevQuery(FileData state)
     {
         State = state;
-        var str = $"{Photo} has a person with a beard in it";
+        var str = Escape.Interpolated($"{Photo} has a person with a beard in it");
         var fooBar = "Happy";
 
-        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"`{Photo}` has a person with a beard in it", null, null);
+        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person with a beard in it", null, null);
         FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} `{fooBar}` ");
         FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 

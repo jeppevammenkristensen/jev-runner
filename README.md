@@ -27,8 +27,14 @@ state references in preserved interpolations, with a fix to remove them.
 See [analyzer documentation](JRK.JevRunner.Analyzers/README.md)
 for examples and `.editorconfig` configuration.
 
-For repository development, analyzer project references are not transitive. See the sample
-project's explicit analyzer reference. Build and pack the client with:
+The code fix emits the short helper name where safe, retaining namespace or root
+qualification only when needed to avoid name conflicts. Analysis also recognizes
+marker interfaces inherited through generic class constraints and constraint chains.
+
+For repository development, analyzer project references are not transitive.
+Playground and the Image library explicitly reference the analyzer and code-fix
+projects. The Image NuGet package relies on its core package dependency for tooling
+rather than bundling duplicate assemblies. Build and pack the client with:
 
 ```shell
 dotnet pack JRK.JevRunner/JRK.JevRunner.csproj -c Release

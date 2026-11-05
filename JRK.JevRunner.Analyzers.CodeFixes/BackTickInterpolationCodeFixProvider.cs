@@ -20,7 +20,7 @@ public sealed class BackTickInterpolationCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc />
     public override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create("JEV100", "JEV101");
+        ["JEV100", "JEV101"];
 
     /// <inheritdoc />
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
@@ -69,12 +69,13 @@ public sealed class BackTickInterpolationCodeFixProvider : CodeFixProvider
     }
 
     /// <summary>Removes only the two adjacent backticks, preserving raw-string delimiters, indentation, and other text.</summary>
-    private static async Task<Document> RemoveBackticksAsync(Document document, InterpolatedStringExpressionSyntax expression,
+    private static async Task<Document> RemoveBackticksAsync(Document document,
+        InterpolatedStringExpressionSyntax expression,
         InterpolationSyntax hole, CancellationToken cancellationToken)
     {
         var index = expression.Contents.IndexOf(hole);
-        var before = ((InterpolatedStringTextSyntax)expression.Contents[index - 1]).TextToken;
-        var after = ((InterpolatedStringTextSyntax)expression.Contents[index + 1]).TextToken;
+        var before = ((InterpolatedStringTextSyntax) expression.Contents[index - 1]).TextToken;
+        var after = ((InterpolatedStringTextSyntax) expression.Contents[index + 1]).TextToken;
         var beforeLength = BacktickSourceLength(before.Text, atStart: false);
         var afterLength = BacktickSourceLength(after.Text, atStart: true);
         var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
@@ -86,9 +87,11 @@ public sealed class BackTickInterpolationCodeFixProvider : CodeFixProvider
     /// <summary>Accounts for backticks represented as Unicode escapes in ordinary interpolated string text.</summary>
     private static int BacktickSourceLength(string text, bool atStart)
     {
-        foreach (var spelling in new[] { "`", @"\u0060", @"\U00000060" })
+        foreach (var spelling in new[] {"`", @"\u0060", @"\U00000060"})
         {
-            if (atStart ? text.StartsWith(spelling, System.StringComparison.Ordinal) : text.EndsWith(spelling, System.StringComparison.Ordinal))
+            if (atStart
+                    ? text.StartsWith(spelling, System.StringComparison.Ordinal)
+                    : text.EndsWith(spelling, System.StringComparison.Ordinal))
                 return spelling.Length;
         }
 
@@ -108,16 +111,16 @@ public sealed class BackTickInterpolationCodeFixProvider : CodeFixProvider
             .WithAdditionalAnnotations(Formatter.Annotation);
         var updated = root.ReplaceNode(interpolation, replacement);
         if (!root.Usings.Any(directive => directive.Alias is null &&
-                directive.StaticKeyword.IsKind(SyntaxKind.None) &&
-                (directive.Name?.ToString() == "JRK.JevRunner" ||
-                 directive.Name?.ToString() == "global::JRK.JevRunner")))
+                                          directive.StaticKeyword.IsKind(SyntaxKind.None) &&
+                                          (directive.Name?.ToString() == "JRK.JevRunner" ||
+                                           directive.Name?.ToString() == "global::JRK.JevRunner")))
         {
             updated = updated.AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("JRK.JevRunner"))
                 .WithAdditionalAnnotations(Formatter.Annotation));
         }
 
         // Apply simplification here rather than relying on the IDE to process annotations.
-        // This produces Escape.Interpolated while retaining qualification when a local name conflicts.
+        // Start at the global namespace, then retain only the qualification needed to avoid local name conflicts.
         return await Simplifier.ReduceAsync(document.WithSyntaxRoot(updated), Simplifier.Annotation,
             cancellationToken: cancellationToken).ConfigureAwait(false);
     }

@@ -10,6 +10,11 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <Description>Compile-time diagnostics for JRK.JevRunner.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>0.7.1: Backtick-aware interpolation diagnostics and code fixes
+- JEV100 detects lost automatic quoting in plain strings; its fix wraps the interpolation in Escape.Interpolated.
+- JEV101 detects redundant explicit backticks in preserved interpolations; its fix removes only the adjacent pair.
+- Recognize generic constraint chains and marker interfaces inherited through class constraints.
+- Simplify generated helper qualification where safe while preserving correct binding when local names conflict.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -99,7 +100,19 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Recognizes the marker itself, inherited implementations, and constrained type parameters.</summary>
-    private static bool IsBackTick(ITypeSymbol type, INamedTypeSymbol backTick) =>
-        SymbolEqualityComparer.Default.Equals(type, backTick) ||
-        type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, backTick));
+    private static bool IsBackTick(ITypeSymbol type, INamedTypeSymbol backTick,
+        HashSet<ITypeSymbol>? visited = null)
+    {
+        if (SymbolEqualityComparer.Default.Equals(type, backTick) ||
+            type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, backTick)))
+            return true;
+
+        if (type is not ITypeParameterSymbol parameter)
+            return false;
+
+        // Class constraints can supply the marker through their inherited interfaces.
+        // Track visited parameters so incomplete or cyclic constraints cannot recurse forever.
+        visited ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        return visited.Add(type) && parameter.ConstraintTypes.Any(constraint => IsBackTick(constraint, backTick, visited));
+    }
 }

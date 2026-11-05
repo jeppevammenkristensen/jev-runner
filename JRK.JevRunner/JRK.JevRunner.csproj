@@ -12,16 +12,10 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/all</PackageProjectUrl>
-    <PackageReleaseNotes>0.7.0: Long context, model validation, and state references
-- Added opt-in Request.LongContextEnabled and chainable EnableLongContext(), sending TypeSafe-Danger-Zone-Long-Context: true for that request only. Disabled by default; context beyond the default 64 KB is slower and less accurate. Enable only when needed.
-- Added Request.StrictValidation, default false. Unknown model identifiers and Box questions with jev-1.13.0 log a warning and proceed; strict mode throws InvalidOperationException before HTTP. The bundled known-version list may lag the API and does not replace API validation.
-- Added JevVersions constants and Versions list, plus JevModel.IsLatest, IsPreview, IsKnownVersion, and IsVersion inspection helpers.
-- Added request inspection helpers HasBoxQuestion and HasImages.
-- Automatic model selection now always uses JevModel.Latest, including Box questions. Explicit models remain unchanged; Box questions require jev-1.14.0 or later.
-- Added StateReference and StatePath, plus FormattableString instruction support with automatic backtick quoting through FormattableString.Escaped. Ordinary arguments retain their formatting.
-- Added AssetState.ToStateJson(), combining derived public readable properties and dictionary entries, honoring JSON property naming and ignore attributes, and rejecting duplicate JSON member names.
-- Fixed derived AssetState properties being omitted from request JSON, including asset state items in combined JevMessage content.
-- AssetState.AddAsset and GetRequiredImageAsset now accept StateReference. Strings remain usable through implicit conversion, but empty names, whitespace, and backticks are rejected. StatePath applies the same text validation; neither type verifies that a state field exists.</PackageReleaseNotes>
+    <PackageReleaseNotes>0.7.1: Usage analyzers and code fixes
+- Bundle JEV100 and JEV101 usage diagnostics with code fixes for lost backtick quoting and redundant explicit backticks.
+- Escape.Interpolated preserves arguments while returning a string. Its code fix simplifies qualification where safe and avoids shadowed local names.
+- Usage diagnostics recognize marker interfaces inherited through generic class constraints and chained type parameters.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/all</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
