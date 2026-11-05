@@ -99,6 +99,32 @@ var response = await runner.Execute(request);
 Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 ```
 
+## Custom backtick-quoted references
+
+The public `IBackTick` interface lets you create domain-specific reference types
+that receive the same automatic quoting as `StateReference` and `StatePath`.
+Implement `Value`; the default `BackTickQuoted` implementation wraps it in backticks.
+
+```csharp
+using JRK.JevRunner;
+
+var reference = new TicketReference("ticket.messages[0].text");
+var instructions = Escape.Interpolated($"Summarize {reference}.");
+// Summarize `ticket.messages[0].text`.
+
+public sealed record TicketReference(string Value) : IBackTick;
+```
+
+Pass the interpolation directly to `Escape.Interpolated(...)`, or preserve it as a
+`FormattableString` and use `.Escaped`. Converting it to a plain string first loses
+automatic quoting. Do not add explicit backticks around the interpolation. The
+`JEV100` and `JEV101` analyzers also recognize custom `IBackTick` implementations.
+
+Custom implementations are responsible for validating their values: `IBackTick`
+does not reject whitespace or embedded backticks, unlike the built-in reference
+types. This interface only controls instruction formatting; it does not register
+state fields or resolve references against request state.
+
 ## Models and request validation
 
 Requests without an explicit model use `JevModel.Latest`, including requests with

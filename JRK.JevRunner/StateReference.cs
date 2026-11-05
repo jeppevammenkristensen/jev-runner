@@ -1,7 +1,7 @@
 namespace JRK.JevRunner;
 
 /// <summary>Identifies a named state field for backtick-quoted interpolation into instructions.</summary>
-/// <remarks>Validates the name, but does not check whether the field exists in request state.</remarks>
+/// <remarks>Validates the name, but does not check whether the field exists in request state. A <see cref="StateReference"/> can be used </remarks>
 public class StateReference : IBackTick
 {
     /// <summary>Creates a state reference without whitespace or backticks.</summary>
