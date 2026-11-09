@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoSpectre" Version="0.14.4" />
+      <PackageReference Include="AutoSpectre" Version="0.15.0" />
       <PackageReference Include="Dumpify" Version="0.8.0" />
       <PackageReference Include="FileBasedApp.Toolkit" Version="1.2.0" />
     </ItemGroup>

@@ -1,4 +1,5 @@
-﻿using JRK.JevRunner.Annotation;
+﻿using JRK.JevRunner;
+using JRK.JevRunner.Annotation;
 using JRK.JevRunner.Requests;
 
 namespace AnimalQuiz;
@@ -13,6 +14,9 @@ namespace AnimalQuiz;
 [JevQuery]
 public partial class GuessQuery
 {
+    private static readonly StatePath CurrentQuestionPath = new(nameof(GuessQueryState.CurrentQuestion));
+    private static readonly StatePath AnimalToGuessPath = new(nameof(GuessQueryState.AnimalToGuess));
+    
     /// <summary>Creates a turn using the hidden animal and the player's latest input as shared context.</summary>
     public GuessQuery(GuessQueryState queryState)
     {
@@ -22,7 +26,6 @@ public partial class GuessQuery
     /// <summary>Gets the context that Jev evaluates all of this turn's questions against.</summary>
     public GuessQueryState State { get; }
     /// <summary>Gets the model selection; this sample requests the latest Jev model.</summary>
-    public JevModel JevModel { get; } = JevModel.Latest;
 
     /// <summary>Asks Jev whether the input narrows the search, guesses an animal, is invalid, or gives up.</summary>
     public QuessType QuestionType { get; } = new();
@@ -32,7 +35,7 @@ public partial class GuessQuery
     /// The game also uses this answer to check a direct guess such as "Is it a dolphin?".
     /// </summary>
     public NoulQuestion AskedQuestionIsCorrect { get; } =
-        new("The CurrentQuestion is correct regarding the specific AnimalToGuess", null, null);
+        new(Escape.Interpolated($"The {CurrentQuestionPath} is correct regarding the specific {AnimalToGuessPath}"), null, null);
 
     /// <summary>
     /// Adds a separate judgment of whether the player guessed the animal.

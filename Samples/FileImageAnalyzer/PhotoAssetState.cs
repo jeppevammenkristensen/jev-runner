@@ -1,4 +1,5 @@
-﻿using JRK.JevRunner.Infrastructure;
+﻿using JRK.JevRunner;
+using JRK.JevRunner.Infrastructure;
 using TruePath;
 
 namespace FileImageAnalyzer;
@@ -17,7 +18,7 @@ public class PhotoAssetState : AssetState
     }
     
     /// <summary>The asset name used to reference the image in query questions.</summary>
-    public const string PhotoAssetName = "Photo";
+    public static readonly StateReference PhotoAssetName = "Photo";
 
     /// <summary>
     /// This is here just to signal that a AssetState can also contain additional properties

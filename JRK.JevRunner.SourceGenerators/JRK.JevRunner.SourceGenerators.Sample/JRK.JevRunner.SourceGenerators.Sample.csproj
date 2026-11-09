@@ -7,8 +7,9 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(UsePackedJevRunner)' == 'true'">
-        <JevRunnerPackageVersion Condition="'$(JevRunnerPackageVersion)' == ''">0.1.0</JevRunnerPackageVersion>
-        <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)..\..\JRK.JevRunner\bin\$(Configuration);$(RestoreAdditionalProjectSources)</RestoreAdditionalProjectSources>
+        <JevRunnerPackageVersion Condition="'$(JevRunnerPackageVersion)' == '' and '$(VersionSuffix)' == ''">$(VersionPrefix)</JevRunnerPackageVersion>
+        <JevRunnerPackageVersion Condition="'$(JevRunnerPackageVersion)' == ''">$(VersionPrefix)-$(VersionSuffix)</JevRunnerPackageVersion>
+        <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)..\..\JRK.JevRunner\bin\$(Configuration);$(MSBuildThisFileDirectory)..\..\JRK.JevRunner.Analyzers\bin\$(Configuration);$(MSBuildThisFileDirectory)..\..\JRK.JevRunner.Image\bin\$(Configuration);$(RestoreAdditionalProjectSources)</RestoreAdditionalProjectSources>
         <!-- Isolate package smoke builds from cached published packages with the same version. -->
         <RestorePackagesPath>$(MSBuildThisFileDirectory)obj\package-smoke</RestorePackagesPath>
     </PropertyGroup>
@@ -20,8 +21,25 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(UsePackedJevRunner)' == 'true'">
-        <!-- No explicit analyzer reference: the runtime NuGet must supply it. -->
-        <PackageReference Include="JRK.JevRunner" Version="$(JevRunnerPackageVersion)" />
+        <!-- No analyzer project references: NuGet must supply all compile-time tooling. -->
+        <PackageReference Include="JRK.JevRunner" Version="$(JevRunnerPackageVersion)" Condition="'$(UseImageOnly)' != 'true'" />
+        <PackageReference Include="JRK.JevRunner.Image" Version="$(JevRunnerPackageVersion)" Condition="'$(IncludeImagePackage)' == 'true' or '$(UseImageOnly)' == 'true'" />
+        <PackageReference Include="JRK.JevRunner.Analyzers" Version="$(JevRunnerPackageVersion)" Condition="'$(IncludeStandaloneAnalyzers)' == 'true'" />
     </ItemGroup>
+
+    <!-- Packaging regression check: core alone, Image alone, core + Image, and an explicit analyzer
+         reference must all resolve exactly one copy of each tooling assembly. -->
+    <Target Name="ValidatePackedJevRunnerTooling" BeforeTargets="CoreCompile" Condition="'$(UsePackedJevRunner)' == 'true'">
+        <ItemGroup>
+            <_JevUsageAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'JRK.JevRunner.Analyzers'" />
+            <_JevCodeFix Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'JRK.JevRunner.Analyzers.CodeFixes'" />
+            <_JevGenerator Include="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'JRK.JevRunner.SourceGenerators'" />
+        </ItemGroup>
+        <Error Condition="'@(_JevUsageAnalyzer->Count())' != '1'" Text="Expected one JevRunner usage analyzer; found @(_JevUsageAnalyzer->Count()): @(_JevUsageAnalyzer)" />
+        <Error Condition="'@(_JevCodeFix->Count())' != '1'" Text="Expected one JevRunner code-fix assembly; found @(_JevCodeFix->Count()): @(_JevCodeFix)" />
+        <Error Condition="'@(_JevGenerator->Count())' != '1'" Text="Expected one JevRunner source generator; found @(_JevGenerator->Count()): @(_JevGenerator)" />
+        <Error Condition="'%(_JevUsageAnalyzer.NuGetPackageId)' != 'JRK.JevRunner.Analyzers'" Text="The usage analyzer must come from the analyzer package, not an embedded core/Image copy." />
+        <Error Condition="'%(_JevCodeFix.NuGetPackageId)' != 'JRK.JevRunner.Analyzers'" Text="The code fix must come from the analyzer package, not an embedded core/Image copy." />
+    </Target>
 
 </Project>
