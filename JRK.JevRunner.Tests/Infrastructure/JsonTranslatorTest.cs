@@ -28,7 +28,7 @@ public class JsonTranslatorTest
     }
 
     /// <summary>
-    /// A request without questions still contains the state, model, and empty question object.
+    /// A request without questions contains the state, model, and empty question object, but omits assets.
     /// </summary>
     [Fact]
     public void CreateRequestJson_EmptyRequest_SerializesRequestEnvelope()
@@ -41,11 +41,32 @@ public class JsonTranslatorTest
                                       {
                                         "state": "request state",
                                         "model": "jev-test",
-                                        "questions": {},
-                                        "assets": {}
+                                        "questions": {}
                                       }
                                       """);
         Assert.True(JsonNode.DeepEquals(expected, json));
+    }
+
+    /// <summary>Text-only requests omit the assets property, including after all assets have been removed.</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateRequestJson_NoAssets_OmitsAssetsProperty(bool clearExistingAssets)
+    {
+        var request = new Request("request state", JevModel.Latest)
+        {
+            Questions = [new NoulQuestion("approved", "Is this approved?", null)]
+        };
+        if (clearExistingAssets)
+        {
+            request.Assets.Add(new ImageAsset("image-ref", "png", new Base64String("AQID")));
+            request.Assets.Clear();
+        }
+
+        var json = JsonTranslator.CreateRequestJson(request);
+
+        Assert.False(json.ContainsKey("assets"));
+        Assert.Equal("noul", json["questions"]!["approved"]!["type"]!.GetValue<string>());
     }
 
     /// <summary>

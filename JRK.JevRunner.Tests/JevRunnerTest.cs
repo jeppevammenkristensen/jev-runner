@@ -11,6 +11,7 @@ using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
 // ReSharper disable AccessToDisposedClosure
 
 namespace JRK.JevRunner.Tests;
@@ -31,19 +32,19 @@ public class JevRunnerTest
         using var httpResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent("""
-                {
-                  "model": "jev-1.14.0",
-                  "answers": {
-                    "mug": {
-                      "type": "box",
-                      "box": {"top": 0.25, "bottom": 0.82, "left": 0.44, "right": 0.84},
-                      "confidence": 0.92
-                    },
-                    "mug_visible": {"type": "noul", "noul": 0.95}
-                  },
-                  "usage": {"input_tokens": 290, "output_tokens": 21}
-                }
-                """, Encoding.UTF8, "application/json")
+                                        {
+                                          "model": "jev-1.14.0",
+                                          "answers": {
+                                            "mug": {
+                                              "type": "box",
+                                              "box": {"top": 0.25, "bottom": 0.82, "left": 0.44, "right": 0.84},
+                                              "confidence": 0.92
+                                            },
+                                            "mug_visible": {"type": "noul", "noul": 0.95}
+                                          },
+                                          "usage": {"input_tokens": 290, "output_tokens": 21}
+                                        }
+                                        """, Encoding.UTF8, "application/json")
         };
         using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
         {
@@ -51,7 +52,10 @@ public class JevRunnerTest
             var body = JsonNode.Parse(await message.Content!.ReadAsStringAsync(cancellationToken))!;
             Assert.Equal("jev-1.14.0", body["model"]!.GetValue<string>());
             Assert.Equal("box", body["questions"]!["mug"]!["type"]!.GetValue<string>());
-            Assert.Equal(includeAsset ? 1 : 0, body["assets"]!.AsObject().Count);
+            if (includeAsset)
+                Assert.Single(body["assets"]!.AsObject());
+            else
+                Assert.False(body.AsObject().ContainsKey("assets"));
             return httpResponse;
         }));
         var request = new Request(new {photo = "image-ref"}, new JevModel("jev-1.14.0"))
@@ -91,7 +95,7 @@ public class JevRunnerTest
             else
             {
                 Assert.False(message.Headers.Contains("TypeSafe-Danger-Zone-Images"));
-                Assert.Empty(body["assets"]!.AsObject());
+                Assert.False(body.AsObject().ContainsKey("assets"));
             }
 
             return new HttpResponseMessage(HttpStatusCode.OK)
@@ -135,6 +139,7 @@ public class JevRunnerTest
         {
             Assert.Equal(body, Assert.IsType<string>(error.Content.Value.Value));
         }
+
         Assert.Equal(HttpStatusCode.BadRequest, Assert.IsType<HttpRequestException>(error.InnerException).StatusCode);
     }
 
@@ -174,6 +179,7 @@ public class JevRunnerTest
             Assert.Equal("jev-latest", body["model"]!.GetValue<string>());
             Assert.Equal("noul", body["questions"]!["approved"]!["type"]!.GetValue<string>());
             Assert.Equal("choice", body["questions"]!["priority"]!["type"]!.GetValue<string>());
+            Assert.False(body.AsObject().ContainsKey("assets"));
             return httpResponse;
         }));
         var runner = CreateRunner(client);
@@ -211,14 +217,14 @@ public class JevRunnerTest
     {
         using var httpResponse = new HttpResponseMessage(HttpStatusCode.OK);
         httpResponse.Content = new StringContent($$"""
-                                                 {
-                                                   "answers": {},
-                                                   "usage": {
-                                                     "input_tokens": {{inputTokens}},
-                                                     "output_tokens": {{outputTokens}}
+                                                   {
+                                                     "answers": {},
+                                                     "usage": {
+                                                       "input_tokens": {{inputTokens}},
+                                                       "output_tokens": {{outputTokens}}
+                                                     }
                                                    }
-                                                 }
-                                                 """, Encoding.UTF8, "application/json");
+                                                   """, Encoding.UTF8, "application/json");
         using var client = new HttpClient(new FakeHttpMessageHandler((_, _) => Task.FromResult(httpResponse)));
         var runner = CreateRunner(client);
 
@@ -251,7 +257,8 @@ public class JevRunnerTest
         using var client = new HttpClient(new FakeHttpMessageHandler((_, _) => Task.FromResult(httpResponse)));
         var runner = CreateRunner(client);
 
-        var exception = await Assert.ThrowsAsync<JevKnownException>(() => runner.Execute(CreateRequest(), TestContext.Current.CancellationToken));
+        var exception = await Assert.ThrowsAsync<JevKnownException>(() =>
+            runner.Execute(CreateRequest(), TestContext.Current.CancellationToken));
 
         Assert.Equal(expectedMessage, exception.Message);
         var httpException = Assert.IsType<HttpRequestException>(exception.InnerException);
@@ -271,7 +278,8 @@ public class JevRunnerTest
         using var client = new HttpClient(new FakeHttpMessageHandler((_, _) => Task.FromResult(httpResponse)));
         var runner = CreateRunner(client);
 
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => runner.Execute(CreateRequest(), TestContext.Current.CancellationToken));
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            runner.Execute(CreateRequest(), TestContext.Current.CancellationToken));
 
         Assert.Equal(statusCode, exception.StatusCode);
     }
@@ -287,7 +295,8 @@ public class JevRunnerTest
             Task.FromException<HttpResponseMessage>(original)));
         var runner = CreateRunner(client);
 
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => runner.Execute(CreateRequest(),TestContext.Current.CancellationToken));
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            runner.Execute(CreateRequest(), TestContext.Current.CancellationToken));
 
         Assert.Same(original, exception);
         Assert.Null(exception.StatusCode);
