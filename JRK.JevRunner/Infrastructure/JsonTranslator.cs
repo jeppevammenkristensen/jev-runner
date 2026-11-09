@@ -27,15 +27,20 @@ internal class JsonTranslator
         }
         
         json.Add("questions", question);
-        
-        var assets = new JsonObject();
 
-        foreach (var asset in request.Assets)
+        if (request.Assets is {Count: > 0})
         {
-            asset.AddTo(assets);
+            var assets = new JsonObject();
+
+            foreach (var asset in request.Assets)
+            {
+                asset.AddTo(assets);
+            }
+        
+            json.Add("assets", assets);
         }
         
-        json.Add("assets", assets);
+        
 
         return json;
     }

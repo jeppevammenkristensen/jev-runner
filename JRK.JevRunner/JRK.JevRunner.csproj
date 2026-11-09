@@ -12,10 +12,9 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/jev-runner</PackageProjectUrl>
-    <PackageReleaseNotes>0.7.1: Usage analyzers and code fixes
-- Supply JEV100 and JEV101 usage diagnostics and code fixes through the JRK.JevRunner.Analyzers package dependency, without embedding duplicate assemblies.
-- Add Escape.Interpolated(FormattableString) to return a string with automatic quoting for state references and paths, retaining ordinary argument formatting. Its code fix simplifies qualification where safe and avoids shadowed local names.
-- Usage diagnostics recognize marker interfaces inherited through generic class constraints and chained type parameters.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fix issue when no image was passed
+      - When no asset where added. Incorrect body was generated when doing Jev request
+    </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/jev-runner</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
