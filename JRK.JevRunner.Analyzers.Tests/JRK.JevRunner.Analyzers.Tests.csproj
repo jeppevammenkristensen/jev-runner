@@ -6,9 +6,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.3.0" />
-    <PackageReference Include="xunit.v3" Version="4.0.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
     <ProjectReference Include="../JRK.JevRunner.Analyzers/JRK.JevRunner.Analyzers.csproj" />
     <ProjectReference Include="../JRK.JevRunner.Analyzers.CodeFixes/JRK.JevRunner.Analyzers.CodeFixes.csproj" />
   </ItemGroup>

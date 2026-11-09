@@ -30,8 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="SkiaSharp" Version="4.153.1" />
-      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
+      <PackageReference Include="SkiaSharp" Version="4.156.0-preview.1.26512.10" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.156.0-preview.1.26512.10" />
       <ProjectReference Include="..\JRK.JevRunner\JRK.JevRunner.csproj" PrivateAssets="none" />
       <ProjectReference Include="..\JRK.JevRunner.Analyzers\JRK.JevRunner.Analyzers.csproj"
                         OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />

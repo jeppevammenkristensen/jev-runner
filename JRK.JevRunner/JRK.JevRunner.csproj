@@ -46,7 +46,7 @@
 
   <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2026.2.0"  PrivateAssets="all" />
-      <PackageReference Include="TruePath.TestableIO.System.IO" Version="1.0.1" />
+      <PackageReference Include="TruePath.TestableIO.System.IO" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

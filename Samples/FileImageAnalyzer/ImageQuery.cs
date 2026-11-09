@@ -1,4 +1,5 @@
 ﻿using JRK.JevRunner.Annotation;
+using JRK.JevRunner;
 
 namespace FileImageAnalyzer;
 
@@ -16,16 +17,16 @@ public partial class ImageQuery
     public PhotoAssetState State { get; }
 
     /// <summary>Gets the question asking whether the image contains a pet.</summary>
-    public GenericNoulQuestionDefinition<string> HasPet => new($"`{PhotoAssetState.PhotoAssetName}` has a Pet in the image", null, null);
+    public GenericNoulQuestionDefinition<FormattableString> HasPet => new($"{PhotoAssetState.PhotoAssetName} has a Pet in the image", null, null);
     
     /// <summary>Gets the question asking whether the image contains a child.</summary>
-    public GenericNoulQuestionDefinition<string> HasChild =>
-        new($"`{PhotoAssetState.PhotoAssetName}` has a Child in the image", null, null);
+    public GenericNoulQuestionDefinition<FormattableString> HasChild =>
+        new($"{PhotoAssetState.PhotoAssetName} has a Child in the image", null, null);
     
     /// <summary>Gets the question asking whether the image is a screenshot.</summary>
-    public GenericNoulQuestionDefinition<string> IsScreenShot => new ($"`{PhotoAssetState.PhotoAssetName}` is a ScreenShot image", null, null);
+    public GenericNoulQuestionDefinition<string> IsScreenShot => new ($"{PhotoAssetState.PhotoAssetName.Value} is a ScreenShot image", null, null);
     
-    public GenericBoxQuestionDefinition<string> ChildBox => new ($"`Find a Child in `{PhotoAssetState.PhotoAssetName}`");
+    public GenericBoxQuestionDefinition<string> ChildBox => new (Escape.Interpolated($"Find a Child in {PhotoAssetState.PhotoAssetName}"));
     
     
     
