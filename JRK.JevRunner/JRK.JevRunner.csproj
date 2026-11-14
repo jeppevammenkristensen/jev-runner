@@ -12,8 +12,12 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/jev-runner</PackageProjectUrl>
-    <PackageReleaseNotes>Fix issue when no image was passed
-      - When no asset where added. Incorrect body was generated when doing Jev request
+    <PackageReleaseNotes>0.7.2: Runner initialization, query preprocessing, and safe header diagnostics
+- Initialize runners with ILoggerFactory or ILogger&lt;JevRunner&gt;, or read API keys from an environment variable (JEV_TOKEN by default).
+- Generate query APIs for IJevQueryProcessRequestBeforeExecution implementations without requiring JevQueryAttribute. Process the completed request immediately before execution and use the returned request.
+- Log outgoing request, client-default, and content headers at debug level, redacting credential headers and API-key occurrences before logging.
+- Breaking: Request.Execute(apiKey, ...) now accepts ILoggerFactory instead of ILogger&lt;JevRunner&gt;; use a factory or execute through an explicitly initialized runner.
+- Add regression coverage for initialization, query preprocessing, and credential-safe header diagnostics.
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/jev-runner</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
