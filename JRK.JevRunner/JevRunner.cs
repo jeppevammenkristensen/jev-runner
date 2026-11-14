@@ -123,10 +123,10 @@ public partial class JevRunner : IJevRunner
                 LogValidationFailedErrorValidationtype(validationError.Item1, validationError.Item2);
                 return validationError.Item2;
 
-            case bool b:
+            case bool:
                 return NoneValue.New;
             default:
-                throw new ArgumentOutOfRangeException(nameof(simpleValidation));
+                throw new ArgumentOutOfRangeException();
         }
     }
 
