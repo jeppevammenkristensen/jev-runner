@@ -9,7 +9,34 @@ published release notes.
 
 ## Unreleased
 
-opne
+### Added
+
+- Runner initialization with `ILoggerFactory` or `ILogger<JevRunner>` and
+  environment-variable API keys (`JEV_TOKEN` by default, or a custom name).
+  Null logging dependencies use no-op logging; missing variables and invalid
+  keys are rejected.
+- `IJevQueryProcessRequestBeforeExecution` support in the source generator.
+  Implementing the interface enables generation without `[JevQuery]`; queries
+  must still be partial and supply a readable `State`. Generated execution
+  processes the request after adding questions and immediately before invoking
+  the runner, using the returned request. Explicit implementations and inherited
+  interfaces are supported. `GetRequest()` alone does not invoke the hook.
+- Debug-level header diagnostics include client defaults, request-specific
+  overrides, and content headers. Credential headers and configured API-key
+  occurrences in other header values are redacted before logging, without
+  modifying the transmitted headers. Headers added later by handlers or the
+  transport are not included; request JSON logging remains unredacted.
+- Regression tests cover initialization, missing and invalid keys, interface-only
+  query discovery, preprocessing order and failures, request replacement,
+  cancellation forwarding, and credential-safe header logging.
+
+### Changed
+
+- **Breaking:** `Request.Execute(apiKey, ...)` now accepts `ILoggerFactory`
+  instead of `ILogger<JevRunner>`. Use a factory, or initialize a runner with
+  `JevRunner.Init(apiKey, logger)` and call `runner.Execute(request, cancellationToken)`.
+- Playground demonstrates enabling long context through the query processing hook.
+- Documented the generator's query-candidate and question-definition parameters.
 
 ## 0.7.0
 

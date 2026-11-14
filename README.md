@@ -4,17 +4,16 @@
 
 A .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
 
-## 0.7.1 highlights
+## Upcoming changes (0.7.2)
 
-- Automatically installed `JEV100` and `JEV101` usage analyzers and IDE code fixes help preserve
-  automatic backtick quoting and remove redundant explicit backticks.
-- `Escape.Interpolated(...)` formats preserved interpolations into strings while
-  automatically quoting state references and paths.
-- Diagnostics follow generic constraint chains; code fixes retain qualification
-  when needed to avoid name conflicts. The Image package receives tooling through
-  its core package dependency, without duplicate assemblies.
+- Initialize runners with a logger factory, a typed logger, or an environment-variable API key.
+- Implement `IJevQueryProcessRequestBeforeExecution` to customize generated requests
+  immediately before execution; `[JevQuery]` is optional for these queries.
+- Inspect outgoing headers at debug level without exposing the Jev token in header diagnostics.
+- **Breaking:** `request.Execute(apiKey, ...)` now accepts `ILoggerFactory` rather than
+  `ILogger<JevRunner>`. See [initialization and logging](#initialization-and-logging) for migration.
 
-See the [0.7.1 release notes](https://github.com/jeppevammenkristensen/jev-runner/blob/HEAD/RELEASE_NOTES.md#071)
+See the [unreleased notes](RELEASE_NOTES.md#unreleased)
 for details. The client still requires .NET 11 and preview C# features.
 
 ## Requirements
@@ -97,6 +96,49 @@ var request = new Request("The brown fox jumped over the lazy dog.", JevModel.La
 
 var response = await runner.Execute(request);
 Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
+```
+
+## Initialization and logging
+
+`JevRunner.Init(apiKey)` uses no-op logging. To receive diagnostics, pass an
+`ILoggerFactory` or `ILogger<JevRunner>`:
+
+```csharp
+var runner = JevRunner.Init(apiKey, loggerFactory);
+var runnerWithTypedLogger = JevRunner.Init(apiKey, logger);
+```
+
+`InitFromEnvironmentVariable` reads `JEV_TOKEN` by default, or a custom variable:
+
+```csharp
+var runner = JevRunner.InitFromEnvironmentVariable(loggerFactory: loggerFactory);
+var customRunner = JevRunner.InitFromEnvironmentVariable(
+    "TYPESAFE_API_KEY", logger: logger);
+```
+
+A missing variable throws `InvalidOperationException`; an empty or whitespace-only
+API key throws `ArgumentException`. Both logging overloads accept null and fall back
+to no-op logging. Use a named `loggerFactory` or `logger` argument for environment
+initialization, or a typed null for `Init`, to disambiguate the overloads.
+For dependency injection or a custom HTTP pipeline, use the public constructor
+with `JevOptions`, `HttpClient`, and `ILogger<JevRunner>`.
+
+At debug level, the runner logs the request JSON and a snapshot of outgoing
+headers immediately before sending. The snapshot includes client-default,
+request-specific, and content headers, with request-specific values overriding
+defaults. It does not include headers added later by handlers or the transport.
+`Authorization`, `Proxy-Authorization`, `Cookie`, `JevToken`, and `X-Api-Key`
+values are replaced with `[REDACTED]`; occurrences of the configured API key in
+other header values are also redacted before entering the logging pipeline.
+The actual HTTP headers are unchanged. Request JSON logging is not redacted:
+avoid placing secrets in request state or instructions.
+
+**Migration:** `request.Execute(apiKey, loggerFactory)` now takes an
+`ILoggerFactory` instead of a typed logger. To retain an existing typed logger:
+
+```csharp
+var runner = JevRunner.Init(apiKey, logger);
+var response = await runner.Execute(request, cancellationToken);
 ```
 
 ## Custom backtick-quoted references
@@ -338,8 +380,10 @@ including:
 
 ## Generated queries
 
-Alternatively you can mark a partial class or record class with `[JevQuery]` and supply readable `State`
-and `JevModel` properties. Note that State can be a string, array or any object.  Question properties implement one of
+Alternatively you can mark a partial class or record class with `[JevQuery]`, or implement
+`IJevQueryProcessRequestBeforeExecution` without the attribute. Supply a readable
+`State` property and optionally `JevModel`; omitting the model uses automatic selection.
+State can be a string, array or any object. Question properties implement one of
 `INoulQuestionDefinition<TInstruction>`, `IChoiceQuestionDefinition<TInstruction>`,
 `IScoreQuestionDefinition<TInstruction>`, or `IBoxQuestionDefinition<TInstruction>` from `JRK.JevRunner.Annotation`.
 The generator adds `GetRequest()`, `Execute(runner, cancellationToken)`, and named
@@ -382,6 +426,29 @@ execution and answer lookup. Wrapper answer properties throw if an answer is
 missing or has a mismatched type.
 Criteria are generated only when both `Yes` and `No` are non-null; otherwise
 criteria remain unset.
+
+### Customize a generated request before execution
+
+Implement `IJevQueryProcessRequestBeforeExecution` to modify the completed request
+or return a replacement. The class must still be `partial` and satisfy the query
+contract, but does not need `[JevQuery]`:
+
+```csharp
+public partial class LongContextQuery : IJevQueryProcessRequestBeforeExecution
+{
+    public string State => "Application state requiring long context.";
+    public JumpQuestion DogJumpedOver { get; } = new();
+
+    public Request ProcessRequestBeforeExecution(Request request) =>
+        request.EnableLongContext();
+}
+```
+
+Generated `Execute` invokes this hook once, after adding all questions and
+immediately before calling `IJevRunner.Execute`. The returned request and the
+original cancellation token are passed to the runner. Explicit interface
+implementations are supported. If the hook throws, execution fails without
+calling the runner. Calling `GetRequest()` alone does not invoke the hook.
 
 Question attributes have been replaced by definition interfaces. Choice definitions
 provide `ChoiceCriteria[] Choices`; score definitions provide `string[] Criterias`
