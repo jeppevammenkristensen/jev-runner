@@ -12,6 +12,128 @@ namespace JRK.JevRunner.SourceGenerators.Tests;
 
 public class JevQueryGeneratorTests
 {
+    /// <summary>Interface discovery handles inherited and explicit implementations, with or without an attribute.</summary>
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void RequestProcessorRunsOnceAfterQuestionsAndForwardsReturnedRequest(
+        bool annotated, bool inherited, bool explicitImplementation)
+    {
+        const string processor = "JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution";
+        var implementation = $$"""
+                               public int Calls { get; private set; }
+                               public JRK.JevRunner.Request ProcessedRequest { get; private set; }
+                               {{(explicitImplementation ? $"JRK.JevRunner.Request {processor}." : "public JRK.JevRunner.Request ")}}ProcessRequestBeforeExecution(JRK.JevRunner.Request request)
+                               {
+                                   Calls++;
+                                   if (request.Questions.Count != 1 || request.Questions[0].Name != "Budget")
+                                       throw new System.InvalidOperationException("Questions must be added before processing.");
+                                   ProcessedRequest = new JRK.JevRunner.Request("processed state", "processed model");
+                                   ProcessedRequest.Questions.AddRange(request.Questions);
+                                   return ProcessedRequest;
+                               }
+                               """;
+        var (result, output) = Generate($$"""
+                                          namespace TestNamespace
+                                          {
+                                              // A marker on a later partial declaration must still generate only once.
+                                              public partial class TravelQuery { }
+                                              {{(annotated ? "[JRK.JevRunner.Annotation.JevQuery]" : "")}}
+                                              public partial class TravelQuery : {{(inherited ? "IProcessor" : processor)}}
+                                              {
+                                                  public string State => "state";
+                                                  public JRK.JevRunner.Annotation.INoulQuestionDefinition<string> Budget { get; } = new Question();
+                                                  {{implementation}}
+                                              }
+                                              {{(inherited ? $"public interface IProcessor : {processor} {{ }}" : "")}}
+                                              public class Question : JRK.JevRunner.Annotation.INoulQuestionDefinition<string>
+                                              {
+                                                  public string Instructions => "instructions";
+                                                  public string Yes => null;
+                                                  public string No => null;
+                                              }
+                                          }
+                                          public static class Consumer
+                                          {
+                                              public static bool Verify()
+                                              {
+                                                  var query = new TestNamespace.TravelQuery();
+                                                  var unprocessed = query.GetRequest();
+                                                  if (query.Calls != 0 || unprocessed.State != "state") return false;
+                                                  var runner = new JRK.JevRunner.JevRunner();
+                                                  using var cancellation = new System.Threading.CancellationTokenSource();
+                                                  var result = query.Execute(runner, cancellation.Token).GetAwaiter().GetResult();
+                                                  return query.Calls == 1
+                                                      && object.ReferenceEquals(query.ProcessedRequest, runner.LastRequest)
+                                                      && runner.LastRequest.State == "processed state"
+                                                      && runner.LastRequest.Model == "processed model"
+                                                      && runner.LastRequest.Questions.Count == 1
+                                                      && runner.LastCancellationToken == cancellation.Token
+                                                      && object.ReferenceEquals(result.Response, runner.Response);
+                                              }
+                                          }
+                                          """);
+
+        var generated = AssertSuccessful(result, output);
+        Assert.Contains($"((global::{processor})this).ProcessRequestBeforeExecution(", generated);
+        AssertConsumerSucceeds(output);
+    }
+
+    /// <summary>A failing processor propagates its exception without invoking the runner.</summary>
+    [Fact]
+    public void RequestProcessorExceptionPreventsRunnerExecution()
+    {
+        var (result, output) = Generate("""
+                                        public partial class Query : JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution
+                                        {
+                                            public string State => "state";
+                                            public System.Exception Failure { get; } = new System.InvalidOperationException("processing failed");
+                                            public JRK.JevRunner.Request ProcessRequestBeforeExecution(JRK.JevRunner.Request request) => throw Failure;
+                                        }
+                                        public static class Consumer
+                                        {
+                                            public static bool Verify()
+                                            {
+                                                var query = new Query();
+                                                var runner = new JRK.JevRunner.JevRunner();
+                                                try
+                                                {
+                                                    query.Execute(runner).GetAwaiter().GetResult();
+                                                    return false;
+                                                }
+                                                catch (System.InvalidOperationException exception)
+                                                {
+                                                    return object.ReferenceEquals(exception, query.Failure) && runner.LastRequest == null;
+                                                }
+                                            }
+                                        }
+                                        """);
+
+        AssertSuccessful(result, output);
+        AssertConsumerSucceeds(output);
+    }
+
+    /// <summary>Interface-only queries follow the same partial declaration and state requirements as annotated queries.</summary>
+    [Theory]
+    [InlineData("class", "public string State => \"state\";", "JEV001")]
+    [InlineData("partial class", "", "JEV002")]
+    public void InterfaceOnlyQueriesValidateRequiredContract(string declaration, string state, string diagnosticId)
+    {
+        AssertRejected($$"""
+                         public {{declaration}} Query : JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution
+                         {
+                             {{state}}
+                             public JRK.JevRunner.Request ProcessRequestBeforeExecution(JRK.JevRunner.Request request) => request;
+                         }
+                         """, diagnosticId);
+    }
+
     [Theory]
     [InlineData("(string Name, int Age)", true)]
     [InlineData("(string, int)", true)]
@@ -90,7 +212,7 @@ public class JevQueryGeneratorTests
         Assert.Contains("Item1 and Item2", diagnostic.GetMessage());
         Assert.Contains("record or anonymous object", diagnostic.GetMessage());
         var property = Assert.Single(diagnostic.Location.SourceTree!.GetRoot(TestContext.Current.CancellationToken)
-            .DescendantNodes().OfType<PropertyDeclarationSyntax>(),
+                .DescendantNodes().OfType<PropertyDeclarationSyntax>(),
             declaration => declaration.Identifier.ValueText == member.Split('.')[0]);
         Assert.Equal(property.Span, diagnostic.Location.SourceSpan);
     }
@@ -266,7 +388,8 @@ public class JevQueryGeneratorTests
         Assert.Contains("/// <param name=\"runner\">The runner used to execute the request.</param>", generated);
         Assert.Contains("/// <param name=\"cancellationToken\">The cancellation token forwarded to the runner.</param>",
             generated);
-        Assert.Contains("/// <returns>A task whose result wraps the runner's response and exposes typed answers.</returns>",
+        Assert.Contains(
+            "/// <returns>A task whose result wraps the runner's response and exposes typed answers.</returns>",
             generated);
         Assert.Contains("Execute(global::JRK.JevRunner.IJevRunner runner,", generated);
         AssertConsumerSucceeds(output);
@@ -1001,6 +1124,8 @@ public class JevQueryGeneratorTests
                                            {
                                                [System.AttributeUsage(System.AttributeTargets.Class)]
                                                public sealed class JevQueryAttribute : System.Attribute { }
+                                               public interface IJevQueryProcessRequestBeforeExecution
+                                               { JRK.JevRunner.Request ProcessRequestBeforeExecution(JRK.JevRunner.Request request); }
                                                public interface INoulQuestionDefinition<out T>
                                                { T Instructions { get; } string Yes { get; } string No { get; } }
                                                public interface IChoiceQuestionDefinition<out T>

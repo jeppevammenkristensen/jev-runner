@@ -33,7 +33,8 @@ foreach (var responseAnswer in response.Response.Answers)
 
 var boxAnswers = response.Response.Answers.Select(x => x.Answer).OnlyBoxAnswer().Where(x => x.Confidence.Value >= 0.65);
 
-var rendered = new BoxRenderer().DrawBox(imagePath, boxAnswers, SKColors.Green);
+var rendered = new BoxRenderer()
+    .DrawBox(imagePath, boxAnswers, SKColors.Green);
 
 var outputPng = imagePath / ".." / "output3.png";
 await outputPng.WriteAllBytesAsync(rendered, CancellationToken.None);
@@ -95,7 +96,7 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
 }
 
 [JevQuery]
-public partial class JevQuery
+public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 {
     public static readonly StateReference Photo = nameof(Photo);
     
@@ -129,4 +130,8 @@ public partial class JevQuery
     public INoulQuestionDefinition<FormattableString> HasBeard { get; }
     public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
+    public Request ProcessRequestBeforeExecution(Request request)
+    {
+        return request.EnableLongContext();
+    }
 }
