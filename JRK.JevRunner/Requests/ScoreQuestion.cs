@@ -13,7 +13,7 @@ public record ScoreQuestion(string Name, JevMessage Instructions, JevMessage[] C
     /// <summary>
     /// Gets the JSON representation of the score question, including its instructions and criteria array.
     /// </summary>
-    public JsonNode? Node
+    public JsonNode Node
     {
         get
         {

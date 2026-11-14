@@ -14,7 +14,7 @@ public record BoxQuestion(string Name, JevMessage Instructions) : IQuestion
     /// <summary>
     /// Gets the question payload containing the box type and serialized instructions.
     /// </summary>
-    public JsonNode? Node
+    public JsonNode Node
     {
         get
         {

@@ -51,10 +51,10 @@ public static class RequestExtensions
         /// </summary>
         /// <returns>The response returned by the runner.</returns>
         /// <param name="apiKey">The API key used to authenticate the request.</param>
-        /// <param name="logger">The optional logger used by the created runner.</param>
-        public async Task<Response> Execute(string apiKey, ILogger<JevRunner>? logger = null)
+        /// <param name="loggerFactory">The optional logger used by the created runner.</param>
+        public async Task<Response> Execute(string apiKey, ILoggerFactory? loggerFactory = null)
         {
-            return await JevRunner.Init(apiKey, logger).Execute(request);
+            return await JevRunner.Init(apiKey, loggerFactory).Execute(request);
         }
     }
 }

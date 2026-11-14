@@ -1,3 +1,4 @@
+// ReSharper disable InconsistentNaming
 namespace JRK.JevRunner.Requests;
 
 /// <summary>
