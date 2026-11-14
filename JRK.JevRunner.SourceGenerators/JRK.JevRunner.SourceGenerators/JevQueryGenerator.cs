@@ -16,6 +16,7 @@ namespace JRK.JevRunner.SourceGenerators;
 public sealed class JevQueryGenerator : IIncrementalGenerator
 {
     private const string QueryAttribute = "JRK.JevRunner.Annotation.JevQueryAttribute";
+    private const string RequestProcessorInterface = "JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution";
     private const string StatePropertyName = "State";
     private const string JevModelPropertyName = "JevModel";
 
@@ -42,14 +43,43 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         "JevQuery", DiagnosticSeverity.Warning, true);
 
     /// <summary>
-    /// Registers semantic discovery using the exact JevQuery attribute metadata name.
+    /// Registers semantic discovery of annotated queries and request-processing interface implementations.
     /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var queries = context.SyntaxProvider.ForAttributeWithMetadataName(QueryAttribute,
+        var queries = context.SyntaxProvider.CreateSyntaxProvider(
             static (node, _) => node is TypeDeclarationSyntax,
-            static (attributeContext, _) => attributeContext);
-        context.RegisterSourceOutput(queries, static (productionContext, query) => Generate(productionContext, query));
+            static (syntaxContext, cancellationToken) =>
+            {
+                var declaration = (TypeDeclarationSyntax) syntaxContext.Node;
+                
+                // If the declared symbol is not an INamedSymbol exit
+                if (syntaxContext.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not { } type)
+                    return null;
+
+                // Process each partial type once, including when its marker is on another declaration.
+                var first = type.DeclaringSyntaxReferences.FirstOrDefault();
+                if (first == null || first.SyntaxTree != declaration.SyntaxTree || first.Span != declaration.Span)
+                    return null;
+
+                var compilation = syntaxContext.SemanticModel.Compilation;
+                
+                var attribute = compilation.GetTypeByMetadataName(QueryAttribute);
+                var processor = compilation.GetTypeByMetadataName(RequestProcessorInterface);
+                
+                // Check if the given candidate implement IJevQueryProcessRequestBeforeExecution
+                var processesRequest = type.TypeKind != TypeKind.Interface && processor != null &&
+                                       type.AllInterfaces.Any(candidate =>
+                                           SymbolEqualityComparer.Default.Equals(candidate, processor));
+                
+                // Or if it's decorated with the JevQuery attribute
+                if (!processesRequest && (attribute == null || !type.GetAttributes().Any(candidate =>
+                        SymbolEqualityComparer.Default.Equals(candidate.AttributeClass, attribute))))
+                    return null;
+
+                return new QueryCandidate(type, compilation, declaration, processesRequest);
+            }).Where(static query => query != null);
+        context.RegisterSourceOutput(queries, static (productionContext, query) => Generate(productionContext, query!));
     }
 
     private static DiagnosticDescriptor Descriptor(string id, string title, string message) =>
@@ -58,11 +88,11 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
     /// <summary>
     /// Validates the query and its question mappings before emitting a complete partial declaration.
     /// </summary>
-    private static void Generate(SourceProductionContext context, GeneratorAttributeSyntaxContext query)
+    private static void Generate(SourceProductionContext context, QueryCandidate query)
     {
-        var type = (INamedTypeSymbol) query.TargetSymbol;
-        var compilation = query.SemanticModel.Compilation;
-        var location = query.TargetNode.GetLocation();
+        var type = query.Type;
+        var compilation = query.Compilation;
+        var location = query.Declaration.GetLocation();
         var containers = new Stack<INamedTypeSymbol>();
         for (var current = type; current != null; current = current.ContainingType)
         {
@@ -95,7 +125,8 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             else if (name == StatePropertyName && IsValueTuple(property.Type))
             {
                 context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
-                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
+                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken)
+                        .GetLocation()
                     ?? property.Locations.FirstOrDefault() ?? location, property.Name));
             }
         }
@@ -152,7 +183,8 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             // a warning
             if (IsValueTuple(match.Interface.TypeArguments[0]))
                 context.ReportDiagnostic(Diagnostic.Create(ValueTupleMessage,
-                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
+                    property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken)
+                        .GetLocation()
                     ?? propertyLocation,
                     property.Name + ".Instructions"));
 
@@ -207,9 +239,9 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             return;
 
         var source = JevQuerySourceCodeGenerator.GenerateSourceCode(type, containers, questions,
-            properties.Any(property => property.Name == JevModelPropertyName));
+            properties.Any(property => property.Name == JevModelPropertyName), query.ProcessesRequest);
         source += JevQuerySourceCodeGenerator.GenerateWrappedResponse(type, containers, questions);
-        var parseOptions = (CSharpParseOptions) query.TargetNode.SyntaxTree.Options;
+        var parseOptions = (CSharpParseOptions) query.Declaration.SyntaxTree.Options;
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(source, Encoding.UTF8), parseOptions,
             cancellationToken: context.CancellationToken);
         // Binding the emitted tree checks implicit conversions, constructor overloads, accessibility,
@@ -255,9 +287,12 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
 
     /// <summary>Recognizes tuple syntax, explicit ValueTuple types, and nullable value tuples.</summary>
     private static bool IsValueTuple(ITypeSymbol type) => type is INamedTypeSymbol named &&
-        (named.IsTupleType ||
-         (named.IsValueType && named.Name == "ValueTuple" && named.ContainingNamespace.ToDisplayString() == "System") ||
-         (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && IsValueTuple(named.TypeArguments[0])));
+                                                          (named.IsTupleType ||
+                                                           (named.IsValueType && named.Name == "ValueTuple" &&
+                                                            named.ContainingNamespace.ToDisplayString() == "System") ||
+                                                           (named.OriginalDefinition.SpecialType ==
+                                                            SpecialType.System_Nullable_T &&
+                                                            IsValueTuple(named.TypeArguments[0])));
 
     /// <summary>Enumerates distinct interface constructions, including the type itself and generic constraints.</summary>
     private static IEnumerable<INamedTypeSymbol> QuestionInterfaces(ITypeSymbol type)
@@ -285,9 +320,25 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         }
     }
 
+    /// <summary>Captures a query discovered through its attribute or request-processing interface.</summary>
+    /// <param name="Type">The query type symbol used to inspect its members and implemented interfaces.</param>
+    /// <param name="Compilation">The compilation used to resolve runtime contracts and validate generated code.</param>
+    /// <param name="Declaration">The query's first partial declaration, used for diagnostic locations and parse options.</param>
+    /// <param name="ProcessesRequest">Whether generated execution invokes the request-processing interface before calling the runner.</param>
+    private sealed record QueryCandidate(
+        INamedTypeSymbol Type,
+        Compilation Compilation,
+        TypeDeclarationSyntax Declaration,
+        bool ProcessesRequest);
+
     /// <summary>
     /// Describes the request and response API associated with a question definition interface.
     /// </summary>
+    /// <param name="Interface">The question definition interface symbol, or null when unavailable in the compilation.</param>
+    /// <param name="Builder">The metadata name of the runtime builder used to construct the question.</param>
+    /// <param name="Answer">The metadata name of the runtime answer type exposed by generated accessors.</param>
+    /// <param name="Accessor">The response method used to retrieve the required named answer.</param>
+    /// <param name="Configuration">The configuration strategy applied to the question builder.</param>
     private sealed record QuestionDefinition(
         INamedTypeSymbol? Interface,
         string Builder,

@@ -2,7 +2,9 @@
 
 `JevQueryGenerator` generates request construction, execution, response wrappers,
 and typed answer accessors for
-classes and record classes annotated with `JRK.JevRunner.Annotation.JevQueryAttribute`.
+classes and record classes annotated with `JRK.JevRunner.Annotation.JevQueryAttribute`
+or implementing `JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution`.
+Implementing the interface does not require the attribute; the same query contract applies.
 
 ## Query contract
 
@@ -61,6 +63,13 @@ the optional cancellation token to `JevRunner`, and returns
 `Task<{QueryName}ResponseWrapper>`. The wrapper exposes the original `Response`
 through `.Response` and a getter-only typed answer property for each question,
 using the same name as the query property.
+
+If the query implements `IJevQueryProcessRequestBeforeExecution`, generated execution
+calls `ProcessRequestBeforeExecution(request)` once after all questions have been added,
+immediately before invoking the runner. The returned request is passed to the runner,
+so the hook can modify the original request or return a replacement. Explicit interface
+implementations are supported. If the hook throws, the runner is not invoked.
+`GetRequest()` alone does not invoke the hook.
 
 For example, given an annotated `BudgetQuery` with a choice question named `Budget`:
 

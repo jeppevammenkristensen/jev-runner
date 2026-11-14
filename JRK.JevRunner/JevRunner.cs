@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using JRK.JevRunner.Infrastructure;
@@ -77,6 +78,9 @@ public partial class JevRunner : IJevRunner
             _ = message.AddLongContext();
         }
         
+        if (_logger.IsEnabled(LogLevel.Debug))
+            LogRequestHeaders(CreateSafeHeaderSnapshot(message));
+
         var response = await _client.SendAsync(message, cancellationToken: cancellationToken);
 
         try
@@ -102,6 +106,33 @@ public partial class JevRunner : IJevRunner
         catch (Exception e)
         {
             throw new InvalidOperationException("An unexpected error occurred when deserializing the response content", e);
+        }
+    }
+
+    /// <summary>Snapshots outgoing headers, applying request overrides and redacting credentials before logging.</summary>
+    /// <remarks>Includes client defaults and content headers, but not headers added later by HTTP handlers or the transport.</remarks>
+    private JsonObject CreateSafeHeaderSnapshot(HttpRequestMessage message)
+    {
+        var headers = new JsonObject(new JsonNodeOptions { PropertyNameCaseInsensitive = true });
+        AddHeaders(_client.DefaultRequestHeaders);
+        AddHeaders(message.Headers);
+        if (message.Content != null)
+            AddHeaders(message.Content.Headers);
+        return headers;
+
+        void AddHeaders(HttpHeaders source)
+        {
+            foreach (var header in source)
+            {
+                var sensitive = header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase) ||
+                                header.Key.Equals("Proxy-Authorization", StringComparison.OrdinalIgnoreCase) ||
+                                header.Key.Equals("Cookie", StringComparison.OrdinalIgnoreCase) ||
+                                header.Key.Equals("JevToken", StringComparison.OrdinalIgnoreCase) ||
+                                header.Key.Equals("X-Api-Key", StringComparison.OrdinalIgnoreCase);
+                headers[header.Key] = sensitive
+                    ? "[REDACTED]"
+                    : string.Join(", ", header.Value).Replace(_options.ApiKey, "[REDACTED]", StringComparison.Ordinal);
+            }
         }
     }
 
@@ -134,6 +165,10 @@ public partial class JevRunner : IJevRunner
     /// <param name="requestJson">The JSON payload about to be sent.</param>
     [LoggerMessage(LogLevel.Debug, "Request json {RequestJson}")]
     partial void LogRequestJsonRequestjson(JsonObject requestJson);
+
+    /// <summary>Logs only the sanitized snapshot of outgoing request headers at debug level.</summary>
+    [LoggerMessage(EventId = 1001, Level = LogLevel.Debug, Message = "Request headers {Headers}")]
+    partial void LogRequestHeaders(JsonObject headers);
 
     /// <summary>Logs a compatibility warning when the request is allowed to proceed.</summary>
     /// <param name="error">The validation failure description.</param>

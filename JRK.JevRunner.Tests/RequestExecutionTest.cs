@@ -17,6 +17,81 @@ namespace JRK.JevRunner.Tests;
 /// <summary>Verifies 0.7 request validation, model selection, logging, and request-scoped feature headers without network access.</summary>
 public class RequestExecutionTest
 {
+    /// <summary>Header diagnostics include effective feature, default, and content headers without exposing credentials.</summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task Execute_LogsOutgoingHeadersWithoutToken(bool images, bool longContext)
+    {
+        var logger = new RecordingLogger();
+        using var client = new HttpClient(new StubHandler(message =>
+        {
+            // Sanitizing diagnostics must not alter the actual authentication sent.
+            Assert.Equal("Bearer", message.Headers.Authorization!.Scheme);
+            Assert.Equal("test-api-key", message.Headers.Authorization.Parameter);
+            Assert.Equal("true", Assert.Single(message.Headers.GetValues("X-Test-Header")));
+            AssertHeader(message, DangerZones.Images, images);
+            AssertHeader(message, DangerZones.LongContext, longContext);
+            Assert.Contains(logger.Entries, entry => entry.Properties.ContainsKey("Headers"));
+            return Success();
+        }));
+        client.DefaultRequestHeaders.Add("X-Test-Header", "true");
+        client.DefaultRequestHeaders.Add("X-Multi-Value", new[] {"one", "two"});
+        client.DefaultRequestHeaders.Add("X-Token-Copy", "prefix-test-api-key-suffix");
+        client.DefaultRequestHeaders.Add("Cookie", "session=private-cookie");
+        client.DefaultRequestHeaders.Add("JevToken", "private-token");
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "default-private-token");
+        var request = new Request("state") {LongContextEnabled = longContext};
+        if (images)
+            request.AddQuestion(new BoxQuestion("box", "Find the object"));
+
+        await CreateRunner(client, logger).Execute(request, TestContext.Current.CancellationToken);
+
+        var log = Assert.Single(logger.Entries, entry => entry.Properties.ContainsKey("Headers"));
+        Assert.Equal(LogLevel.Debug, log.Level);
+        var headers = Assert.IsType<JsonObject>(log.Properties["Headers"]);
+        Assert.Equal("[REDACTED]", headers["Authorization"]!.GetValue<string>());
+        Assert.Equal("[REDACTED]", headers["Cookie"]!.GetValue<string>());
+        Assert.Equal("[REDACTED]", headers["JevToken"]!.GetValue<string>());
+        Assert.Equal("prefix-[REDACTED]-suffix", headers["X-Token-Copy"]!.GetValue<string>());
+        Assert.Equal("true", headers["X-Test-Header"]!.GetValue<string>());
+        Assert.Equal("one, two", headers["X-Multi-Value"]!.GetValue<string>());
+        Assert.Contains("application/json", headers["Content-Type"]!.GetValue<string>());
+        Assert.Equal(images, headers.ContainsKey(DangerZones.Images));
+        Assert.Equal(longContext, headers.ContainsKey(DangerZones.LongContext));
+        if (images)
+            Assert.Equal("true", headers[DangerZones.Images]!.GetValue<string>());
+        if (longContext)
+            Assert.Equal("true", headers[DangerZones.LongContext]!.GetValue<string>());
+        Assert.All(logger.Entries, entry =>
+        {
+            Assert.DoesNotContain("test-api-key", entry.Message);
+            Assert.DoesNotContain("private-cookie", entry.Message);
+            Assert.DoesNotContain("private-token", entry.Message);
+            Assert.All(entry.Properties.Values, value =>
+            {
+                Assert.DoesNotContain("test-api-key", value?.ToString() ?? "");
+                Assert.DoesNotContain("private-cookie", value?.ToString() ?? "");
+                Assert.DoesNotContain("private-token", value?.ToString() ?? "");
+            });
+        });
+    }
+
+    /// <summary>Disabling debug diagnostics suppresses header logs without affecting execution.</summary>
+    [Fact]
+    public async Task Execute_WithDebugLoggingDisabled_DoesNotLogHeaders()
+    {
+        var logger = new RecordingLogger {DebugEnabled = false};
+        using var client = new HttpClient(new StubHandler(_ => Success()));
+
+        await CreateRunner(client, logger).Execute(new Request("state"), TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(logger.Entries, entry => entry.Properties.ContainsKey("Headers"));
+    }
+
     /// <summary>The shared matcher recognizes danger-zone prefixes without matching headers containing them elsewhere.</summary>
     [Theory]
     [InlineData(DangerZones.Images, true)]
@@ -216,8 +291,9 @@ public class RequestExecutionTest
     private sealed class RecordingLogger : ILogger<JevRunner>
     {
         public List<LogEntry> Entries { get; } = [];
+        public bool DebugEnabled { get; init; } = true;
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.Debug || DebugEnabled;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
             Func<TState, Exception?, string> formatter) =>
