@@ -29,7 +29,7 @@ public static class ImageExtensions
         /// <exception cref="OperationCanceledException">Cancellation is requested when checked after validation.</exception>
         /// <exception cref="InvalidOperationException">No asset can be created because the image format could not be detected.</exception>
         public AssetAndStateReference CreateAssetWithAdjustments(StateReference stateName,
-            string? assetName,
+            string? assetName = null,
             CancellationToken token = default,
             IFileSystem? fileSystem = null)
         {
@@ -45,6 +45,7 @@ public static class ImageExtensions
             {
                 var filePathAsset = new FilePathAsset(path, fileSystem)
                     .WithFormat(valid.Format);
+                
                 if (!string.IsNullOrWhiteSpace(assetName))
                 {
                     filePathAsset = filePathAsset.WithAssetName(assetName);

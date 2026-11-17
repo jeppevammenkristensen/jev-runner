@@ -10,7 +10,7 @@ using Xunit;
 
 namespace JRK.JevRunner.SourceGenerators.Tests;
 
-public class JevQueryGeneratorTests
+public partial class JevQueryGeneratorTests
 {
     /// <summary>Interface discovery handles inherited and explicit implementations, with or without an attribute.</summary>
     [Theory]

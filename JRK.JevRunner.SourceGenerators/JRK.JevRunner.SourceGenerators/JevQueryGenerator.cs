@@ -19,14 +19,17 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
     /// Identifies the marker attribute used to discover query types by metadata name.
     /// </summary>
     private const string QueryAttribute = "JRK.JevRunner.Annotation.JevQueryAttribute";
+
     /// <summary>
     /// Identifies the request-processing interface that also opts a type into query generation.
     /// </summary>
     private const string RequestProcessorInterface = "JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution";
+
     /// <summary>
     /// Names the required query property supplying request state.
     /// </summary>
     private const string StatePropertyName = "State";
+
     /// <summary>
     /// Names the optional query property overriding the request's default model.
     /// </summary>
@@ -73,6 +76,14 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         "JevQuery", DiagnosticSeverity.Warning, true);
 
     /// <summary>
+    /// Warns when prepared assets cannot be registered in the declared state type.
+    /// </summary>
+    private static readonly DiagnosticDescriptor InvalidAssetState = new DiagnosticDescriptor(
+        "JEV007", "Asset properties require AssetState",
+        "Query '{0}' declares AssetAndStateReference properties, but State must inherit from JRK.JevRunner.Infrastructure.AssetState to register them automatically; asset properties will be ignored",
+        "JevQuery", DiagnosticSeverity.Warning, true);
+
+    /// <summary>
     /// Registers semantic discovery of annotated queries and request-processing interface implementations.
     /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -82,7 +93,7 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             static (syntaxContext, cancellationToken) =>
             {
                 var declaration = (TypeDeclarationSyntax) syntaxContext.Node;
-                
+
                 // If the declared symbol is not an INamedSymbol exit
                 if (syntaxContext.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not { } type)
                     return null;
@@ -93,15 +104,15 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
                     return null;
 
                 var compilation = syntaxContext.SemanticModel.Compilation;
-                
+
                 var attribute = compilation.GetTypeByMetadataName(QueryAttribute);
                 var processor = compilation.GetTypeByMetadataName(RequestProcessorInterface);
-                
+
                 // Check if the given candidate implement IJevQueryProcessRequestBeforeExecution
                 var processesRequest = type.TypeKind != TypeKind.Interface && processor != null &&
                                        type.AllInterfaces.Any(candidate =>
                                            SymbolEqualityComparer.Default.Equals(candidate, processor));
-                
+
                 // Or if it's decorated with the JevQuery attribute
                 if (!processesRequest && (attribute == null || !type.GetAttributes().Any(candidate =>
                         SymbolEqualityComparer.Default.Equals(candidate.AttributeClass, attribute))))
@@ -166,6 +177,30 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
                         .GetLocation()
                     ?? property.Locations.FirstOrDefault() ?? location, property.Name));
             }
+        }
+
+        var assetReference = compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.AssetAndStateReference");
+        var assets = properties.Where(property => assetReference != null &&
+                                                  SymbolEqualityComparer.Default.Equals(property.Type, assetReference))
+            .ToArray();
+        foreach (var asset in assets)
+        {
+            if (Readable(asset, type, compilation))
+                continue;
+            context.ReportDiagnostic(Diagnostic.Create(InvalidProperty, asset.Locations.FirstOrDefault() ?? location,
+                type.Name, $"'{asset.Name}' must be a readable, accessible instance property"));
+            valid = false;
+        }
+
+        var state = properties.FirstOrDefault(property => property.Name == StatePropertyName);
+        var assetState = compilation.GetTypeByMetadataName("JRK.JevRunner.Infrastructure.AssetState");
+        if (assets.Length != 0 && state != null && Readable(state, type, compilation) &&
+            (assetState == null || !InheritsFrom(state.Type, assetState)))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(InvalidAssetState,
+                state.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(context.CancellationToken).GetLocation()
+                ?? state.Locations.FirstOrDefault() ?? location, type.Name));
+            assets = Array.Empty<IPropertySymbol>();
         }
 
         var definitions = new[]
@@ -276,7 +311,7 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
             return;
 
         var source = JevQuerySourceCodeGenerator.GenerateSourceCode(type, containers, questions,
-            properties.Any(property => property.Name == JevModelPropertyName), query.ProcessesRequest);
+            assets, properties.Any(property => property.Name == JevModelPropertyName), query.ProcessesRequest);
         source += JevQuerySourceCodeGenerator.GenerateWrappedResponse(type, containers, questions);
         var parseOptions = (CSharpParseOptions) query.Declaration.SyntaxTree.Options;
         var tree = CSharpSyntaxTree.ParseText(SourceText.From(source, Encoding.UTF8), parseOptions,
@@ -298,6 +333,36 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         var hint = "JevQuery_" + string.Concat(identity.Select(character => ((int) character).ToString("X4"))) +
                    ".g.cs";
         context.AddSource(hint, SourceText.From(source, Encoding.UTF8));
+    }
+
+    /// <summary>
+    /// Recognizes the required base class, including through generic state constraints.
+    /// </summary>
+    /// <param name="type">The declared state type or one of its constraints.</param>
+    /// <param name="baseType">The runtime asset state class.</param>
+    /// <returns>Whether the state is assignable through class inheritance or a generic constraint.</returns>
+    private static bool InheritsFrom(ITypeSymbol type, INamedTypeSymbol baseType)
+    {
+        var seen = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        var pending = new Stack<ITypeSymbol>();
+        pending.Push(type);
+        while (pending.Count != 0)
+        {
+            var current = pending.Pop();
+            if (!seen.Add(current))
+                continue;
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+                return true;
+            if (current is ITypeParameterSymbol parameter)
+            {
+                foreach (var constraint in parameter.ConstraintTypes)
+                    pending.Push(constraint);
+            }
+            else if (current is INamedTypeSymbol {BaseType: { } parent})
+                pending.Push(parent);
+        }
+
+        return false;
     }
 
     /// <summary>

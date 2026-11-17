@@ -11,3 +11,4 @@ JEV003 | JevQuery | Error | Ambiguous definition interfaces or missing explicit 
 JEV004 | JevQuery | Error | Invalid generated API contract
 JEV005 | JevQuery | Error | Generated member conflict
 JEV006 | JevQuery | Warning | JevQueryGenerator
+JEV007 | JevQuery | Warning | Prepared asset properties require AssetState
