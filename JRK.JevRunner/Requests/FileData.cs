@@ -1,5 +1,8 @@
 namespace JRK.JevRunner.Requests;
 
+internal delegate Stream OpenReadDelegate();
+
+
 /// <summary>
 /// Represents file contents supplied as raw bytes or already base64-encoded text.
 /// </summary>

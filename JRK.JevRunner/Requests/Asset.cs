@@ -5,7 +5,7 @@ namespace JRK.JevRunner.Requests;
 /// <summary>
 /// Represents a named asset that can be included in a request.
 /// </summary>
-public union Asset(ImageAsset)
+public union Asset(ImageAsset, IImageStreamAsset)
 {
     /// <summary>
     /// Adds the asset's JSON representation to the supplied object under its name.
@@ -13,18 +13,35 @@ public union Asset(ImageAsset)
     /// <param name="obj">The request's assets object; an existing entry with the same name is replaced.</param>
     public void AddTo(JsonObject obj)
     {
-        if (this is ImageAsset imageAsset)
+        obj[AssetName] = Node();
+    }
+
+    internal JsonNode Node()
+    {
+        return this switch
         {
-            obj[imageAsset.Name] = imageAsset.Node;   
-        }
+            ImageAsset ia => ia.Node,
+            IImageStreamAsset imageStreamAsset => GenerateNodeFromImageStream(imageStreamAsset)
+        };
+    }
+
+    private JsonNode GenerateNodeFromImageStream(IImageStreamAsset imageStreamAsset)
+    {
+        var jsonObject = new JsonObject
+        {
+            ["type"] = "image",
+            ["format"] = imageStreamAsset.Format,
+            ["part"] = imageStreamAsset.Name
+        };
+        return jsonObject;
     }
 
     /// <summary>
     /// Gets the name used to reference the asset from request state.
     /// </summary>
-    public string Name => this switch
+    public string AssetName => this switch
     {
         ImageAsset im => im.Name,
-        _ => throw new NotImplementedException()
+        IImageStreamAsset s => s.AssetName,
     };
 }

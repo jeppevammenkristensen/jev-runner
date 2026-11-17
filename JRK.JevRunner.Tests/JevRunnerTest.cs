@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.IO.Abstractions.TestingHelpers;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -10,6 +13,7 @@ using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging.Abstractions;
+using TruePath;
 using Xunit;
 
 // ReSharper disable AccessToDisposedClosure
@@ -22,6 +26,112 @@ namespace JRK.JevRunner.Tests;
 [TestSubject(typeof(JevRunner))]
 public class JevRunnerTest
 {
+    /// <summary>Stream assets upload raw bytes while existing assets retain their Base64 representation.</summary>
+    [Fact]
+    public async Task Execute_StreamImage_UsesMultipartAndDisposesStream()
+    {
+        var stream = new MemoryStream(new byte[] {1, 2, 3});
+        var opened = false;
+        using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
+        {
+            Assert.True(opened);
+            Assert.Equal("true", Assert.Single(message.Headers.GetValues("TypeSafe-Danger-Zone-Images")));
+            var multipart = Assert.IsType<MultipartFormDataContent>(message.Content);
+            var parts = multipart.ToArray();
+            Assert.Equal(2, parts.Length);
+            Assert.Equal("request", parts[0].Headers.ContentDisposition!.Name!.Trim('"'));
+            Assert.Equal("application/json", parts[0].Headers.ContentType!.MediaType);
+            var json = JsonNode.Parse(await parts[0].ReadAsStringAsync(cancellationToken))!;
+            Assert.Equal("custom-stream-part", json["assets"]!["stream-ref"]!["part"]!.GetValue<string>());
+            Assert.Null(json["assets"]!["stream-ref"]!["data_base64"]);
+            Assert.Equal("AQID", json["assets"]!["inline-ref"]!["data_base64"]!.GetValue<string>());
+            Assert.Equal("custom-stream-part", parts[1].Headers.ContentDisposition!.Name!.Trim('"'));
+            Assert.Equal(new byte[] {1, 2, 3}, await parts[1].ReadAsByteArrayAsync(cancellationToken));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """{"answers":{},"usage":{"input_tokens":1,"output_tokens":0}}""",
+                    Encoding.UTF8, "application/json")
+            };
+        }));
+        var request = new Request(new {photo = "stream-ref", other = "inline-ref"}, JevModel.Latest)
+            .AddQuestion(new NoulQuestion("visible", "Is a person visible in `photo`?", null));
+        request.Assets.Add((IImageStreamAsset) new TestImageStreamAsset("stream-ref", "jpg", "custom-stream-part", () =>
+        {
+            opened = true;
+            return stream;
+        }));
+        request.Assets.Add(new ImageAsset("inline-ref", "jpg", new Base64String("AQID")));
+        Assert.False(opened);
+
+        await CreateRunner(client).Execute(request, TestContext.Current.CancellationToken);
+
+        Assert.False(stream.CanRead);
+    }
+
+    /// <summary>File-backed assets propagate their derived metadata and configured part names to multipart uploads.</summary>
+    [Theory]
+    [InlineData(null, "img-photo")]
+    [InlineData("custom-part", "custom-part")]
+    public async Task Execute_FilePathImage_UsesFileMetadataAndPartName(string? partName, string expectedPartName)
+    {
+        var fileSystem = new MockFileSystem();
+        var path = new AbsolutePath(@"C:\images\photo.jpg");
+        fileSystem.AddFile(path.Value, new MockFileData(new byte[] {1, 2, 3}));
+        var asset = new FilePathAsset(path, fileSystem);
+        if (partName is not null)
+            asset.WithPathName(partName);
+
+        using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
+        {
+            var parts = Assert.IsType<MultipartFormDataContent>(message.Content).ToArray();
+            Assert.Equal(2, parts.Length);
+            var json = JsonNode.Parse(await parts[0].ReadAsStringAsync(cancellationToken))!;
+            Assert.Equal("photo", json["state"]!["photo"]!.GetValue<string>());
+            Assert.Equal("image", json["assets"]!["photo"]!["type"]!.GetValue<string>());
+            Assert.Equal("jpg", json["assets"]!["photo"]!["format"]!.GetValue<string>());
+            Assert.Equal(expectedPartName, json["assets"]!["photo"]!["part"]!.GetValue<string>());
+            Assert.Null(json["assets"]!["photo"]!["data_base64"]);
+            Assert.Equal(expectedPartName, parts[1].Headers.ContentDisposition!.Name!.Trim('"'));
+            Assert.Equal("image.jpg", parts[1].Headers.ContentDisposition!.FileName!.Trim('"'));
+            Assert.Equal(new byte[] {1, 2, 3}, await parts[1].ReadAsByteArrayAsync(cancellationToken));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"answers":{},"usage":{"input_tokens":1,"output_tokens":0}}""",
+                    Encoding.UTF8, "application/json")
+            };
+        }));
+        var request = new Request(new {photo = "photo"}, JevModel.Latest);
+        request.Assets.Add((IImageStreamAsset) asset);
+
+        await CreateRunner(client).Execute(request, TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Already-opened image streams are disposed if another asset fails to open before sending.</summary>
+    [Fact]
+    public async Task Execute_StreamOpeningFails_DisposesPreviouslyOpenedStreamsWithoutSending()
+    {
+        using var stream = new MemoryStream(new byte[] {1, 2, 3});
+        var failure = new IOException("Cannot open image");
+        var sent = false;
+        using var client = new HttpClient(new FakeHttpMessageHandler((_, _) =>
+        {
+            sent = true;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        }));
+        var request = new Request("state", JevModel.Latest);
+        request.Assets.Add((IImageStreamAsset) new TestImageStreamAsset("first", "jpg", "first-part", () => stream));
+        request.Assets.Add(
+            (IImageStreamAsset) new TestImageStreamAsset("second", "jpg", "second-part", () => throw failure));
+
+        var actual = await Assert.ThrowsAsync<IOException>(() =>
+            CreateRunner(client).Execute(request, TestContext.Current.CancellationToken));
+
+        Assert.Same(failure, actual);
+        Assert.False(sent);
+        Assert.False(stream.CanRead);
+    }
+
     /// <summary>Box questions trigger experimental opt-in and their documented answers survive the HTTP pipeline.</summary>
     /// <remarks>The asset-free case verifies header selection only; the live API still requires an image.</remarks>
     [Theory]
@@ -49,7 +159,8 @@ public class JevRunnerTest
         using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
         {
             Assert.Equal("true", Assert.Single(message.Headers.GetValues("TypeSafe-Danger-Zone-Images")));
-            var body = JsonNode.Parse(await message.Content!.ReadAsStringAsync(cancellationToken))!;
+            Assert.Equal("application/json", message.Content!.Headers.ContentType!.MediaType);
+            var body = JsonNode.Parse(await message.Content.ReadAsStringAsync(cancellationToken))!;
             Assert.Equal("jev-1.14.0", body["model"]!.GetValue<string>());
             Assert.Equal("box", body["questions"]!["mug"]!["type"]!.GetValue<string>());
             if (includeAsset)
@@ -306,6 +417,26 @@ public class JevRunnerTest
         new(new JevOptions("test-api-key"), client, NullLogger<JevRunner>.Instance);
 
     private static Request CreateRequest() => new("request state", JevModel.Latest);
+
+    /// <summary>Supplies image metadata and a tracked stream factory without file-system access.</summary>
+    private sealed class TestImageStreamAsset(
+        string name,
+        string format,
+        string partName,
+        Func<Stream> openRead) : IImageStreamAsset
+    {
+        /// <summary>Gets the asset name referenced by request state.</summary>
+        public string Name { get; } = name;
+
+        /// <summary>Gets the image format used in request metadata.</summary>
+        public string Format { get; } = format;
+
+        /// <summary>Gets the multipart identifier referenced by request metadata.</summary>
+        public string PartName { get; } = partName;
+
+        /// <summary>Invokes the factory so the test can track opening and disposal.</summary>
+        public Stream OpenRead() => openRead();
+    }
 
     /// <summary>
     /// Supplies a per-test HTTP response or failure through the injected client's normal send pipeline.
