@@ -1,5 +1,7 @@
 ﻿using JRK.JevRunner.Annotation;
 using JRK.JevRunner;
+using JRK.JevRunner.Image;
+using TruePath;
 
 namespace FileImageAnalyzer;
 
@@ -8,26 +10,28 @@ namespace FileImageAnalyzer;
 public partial class ImageQuery
 {
     /// <summary>Creates a query using the supplied image asset state.</summary>
-    public ImageQuery(PhotoAssetState state)
+    public ImageQuery(PhotoAssetState state, AbsolutePath file)
     {
         State = state;
+        Photo = file.CreateAssetWithAdjustments("Photo");
     }
 
     /// <summary>Gets the asset state containing the image to analyze.</summary>
     public PhotoAssetState State { get; }
 
     /// <summary>Gets the question asking whether the image contains a pet.</summary>
-    public GenericNoulQuestionDefinition<FormattableString> HasPet => new($"{PhotoAssetState.PhotoAssetName} has a Pet in the image", null, null);
+    public GenericNoulQuestionDefinition<FormattableString> HasPet => new($"{Photo} has a Pet in the image", null, null);
+
+    public GenericNoulQuestionDefinition<FormattableString> HasCoupleKissing =>
+        new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a couple kissing", null, null); 
     
     /// <summary>Gets the question asking whether the image contains a child.</summary>
     public GenericNoulQuestionDefinition<FormattableString> HasChild =>
-        new($"{PhotoAssetState.PhotoAssetName} has a Child in the image", null, null);
+        new($"{Photo} has a Child in the image", null, null);
     
     /// <summary>Gets the question asking whether the image is a screenshot.</summary>
-    public GenericNoulQuestionDefinition<string> IsScreenShot => new ($"{PhotoAssetState.PhotoAssetName.Value} is a ScreenShot image", null, null);
+    public GenericNoulQuestionDefinition<FormattableString> IsScreenShot => new ($"{Photo} is a ScreenShot image", null, null);
     
-    public GenericBoxQuestionDefinition<string> ChildBox => new (Escape.Interpolated($"Find a Child in {PhotoAssetState.PhotoAssetName}"));
-    
-    
-    
+    public GenericBoxQuestionDefinition<string> ChildBox => new (Escape.Interpolated($"Find a Child in {Photo}"));
+    public AssetAndStateReference Photo { get; set; }
 }

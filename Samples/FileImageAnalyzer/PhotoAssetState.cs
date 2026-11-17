@@ -16,9 +16,6 @@ public class PhotoAssetState : AssetState
     {
         _path = path;
     }
-    
-    /// <summary>The asset name used to reference the image in query questions.</summary>
-    public static readonly StateReference PhotoAssetName = "Photo";
 
     /// <summary>
     /// This is here just to signal that a AssetState can also contain additional properties

@@ -53,10 +53,10 @@ public class DirectoryAnalysisOperation
                 // The file is evaluated and added to the state. Using the PhotoAssetName. The
                 // Photo is used in questions in the ImageQuery as a reference to search in
                 // If you wanted to you modify the PhotoAssetState to do the file evaluation for you
-                await state.AddImageAssetWithAutoAdjustment(PhotoAssetState.PhotoAssetName, "File", file);
+                //state.AddImageAssetWithAutoAdjustment(PhotoAssetState.PhotoAssetName, "File", file);
                 
                 // Initialize the Image query and execute it
-                var query = new ImageQuery(state);
+                var query = new ImageQuery(state, file);
                 var result = await query.Execute(_runner);
               
                 
@@ -65,12 +65,13 @@ public class DirectoryAnalysisOperation
 
                 AnsiConsole.MarkupLineInterpolated($"[dim]Has pet {result.HasPet.Noul.Value}[/]");
                 AnsiConsole.MarkupLineInterpolated($"[dim]Has child {result.HasChild.Noul.Value}[/]");
+                AnsiConsole.MarkupLineInterpolated($"[dim]Has couple kissing {result.HasCoupleKissing.Noul.Value}[/]");
                 AnsiConsole.MarkupLineInterpolated($"[dim]Is Screenshot {result.IsScreenShot.Noul.Value}[/]");
 
-                // Example of getting the registered image as Bytes
-                var imageAsBytes = state.GetRequiredImageAsset(PhotoAssetState.PhotoAssetName).FileData.Bytes;
-                
-                
+
+                var imageAsBytes = query.Photo.Asset.ReadAsBytes();
+
+
                 if (result.HasChild.Noul.Value > 0.65)
                 {
                     imageAsBytes = new BoxRenderer().DrawBox(file, result.ChildBox, SKColors.Black, 20f);
