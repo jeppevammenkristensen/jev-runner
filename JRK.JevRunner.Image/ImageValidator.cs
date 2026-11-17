@@ -24,6 +24,9 @@ public sealed class ImageValidator
     /// <summary>Inclusive maximum encoded file size before base64 conversion: 16 MiB.</summary>
     public const long MaximumFileSizeBytes = 16L * 1024 * 1024;
 
+    /// <summary>
+    /// Provides file streams for inspecting image contents, size, and dimensions.
+    /// </summary>
     private readonly IFileSystem _fileSystem;
 
     /// <summary>Creates a validator using the local file system.</summary>

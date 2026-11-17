@@ -10,6 +10,9 @@ namespace JRK.JevRunner.Requests;
 /// </summary>
 public union JevMessage(string, object[],object, FormattableString)
 {
+    /// <summary>
+    /// Includes value tuple fields so their runtime item names are preserved during serialization.
+    /// </summary>
     private static readonly JsonSerializerOptions TupleJsonOptions = new()
     {
         IncludeFields = true
@@ -33,6 +36,13 @@ public union JevMessage(string, object[],object, FormattableString)
         }
     }
 
+    /// <summary>
+    /// Serializes one message item, handling asset state, value tuples, and escaped interpolation.
+    /// </summary>
+    /// <param name="item">The message item to serialize; null is allowed when serializing array elements.</param>
+    /// <param name="throwIfNull">Whether a null item is rejected instead of represented as JSON null.</param>
+    /// <returns>The serialized item, or null when the item is null and rejection is disabled.</returns>
+    /// <exception cref="NotImplementedException">The item is null and rejection is enabled.</exception>
     private static JsonNode? SerializeSingleItem(object item, bool throwIfNull)
     {
         return item switch

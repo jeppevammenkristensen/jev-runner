@@ -14,8 +14,17 @@ namespace JRK.JevRunner;
 /// </summary>
 public partial class JevRunner : IJevRunner
 {
+    /// <summary>
+    /// Holds the API credentials used to authenticate outgoing requests.
+    /// </summary>
     private readonly JevOptions _options;
+    /// <summary>
+    /// Sends API requests using the caller-owned HTTP client.
+    /// </summary>
     private readonly HttpClient _client;
+    /// <summary>
+    /// Receives request diagnostics, validation warnings, and failures.
+    /// </summary>
     private readonly ILogger<JevRunner> _logger;
 
     /// <summary>
@@ -230,6 +239,12 @@ public partial class JevRunner : IJevRunner
     [LoggerMessage(LogLevel.Error, "Known validation error {Type}")]
     partial void LogKnownValidationErrorType(Exception ex, RequestValidationError type);
 
+    /// <summary>
+    /// Logs the metadata of an image being added as a multipart octet-stream part at debug level.
+    /// </summary>
+    /// <param name="name">The multipart field name identifying the uploaded image.</param>
+    /// <param name="fileName">The file name reported in the multipart part's headers.</param>
+    /// <param name="format">The image format reported in the request metadata.</param>
     [LoggerMessage(LogLevel.Debug, "Adding octet-stream {Name} {FileName} {Format}")]
     partial void LogAddingOctetStreamPartnameFilename(string name, string fileName, string format);
 }

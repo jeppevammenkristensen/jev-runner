@@ -34,6 +34,9 @@ public interface IImageStreamAsset
     /// </summary>
     string AssetName { get; }
     
+    /// <summary>
+    /// Gets the image format, such as <c>png</c> or <c>jpg</c>, without a leading dot.
+    /// </summary>
     string Format { get; }
     
     /// <summary>Opens a readable stream containing the image data.</summary>
@@ -41,8 +44,14 @@ public interface IImageStreamAsset
     Stream OpenRead();
 }
 
+/// <summary>
+/// Creates random hexadecimal prefixes for multipart image field names.
+/// </summary>
 internal static class RandomHexGenerator
 {
+    /// <summary>
+    /// Gets a fresh eight-character lowercase hexadecimal string from four random bytes.
+    /// </summary>
     public static string RandomHex => Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant();
 }
 
@@ -86,6 +95,7 @@ public class FilePathAsset : IImageStreamAsset
     /// <summary>
     /// Gets or sets the asset reference, initially a random hexadecimal prefix followed by the source file name without its extension.
     /// </summary>
+    /// <remarks>By default this will be the a 8 digit Hex and the filename without extensions</remarks>
     public string Name { get; set; }
 
     /// <summary>
@@ -105,6 +115,11 @@ public class FilePathAsset : IImageStreamAsset
         return this;
     }
 
+    /// <summary>
+    /// Sets the image format reported in request metadata without converting the source file.
+    /// </summary>
+    /// <param name="format">The image format, such as <c>png</c> or <c>jpg</c>, without a leading dot.</param>
+    /// <returns>This asset for further configuration.</returns>
     public FilePathAsset WithFormat(string format)
     {
         Format = format;

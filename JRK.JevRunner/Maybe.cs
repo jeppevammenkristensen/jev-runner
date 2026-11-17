@@ -12,6 +12,9 @@ internal union Maybe<T>(T,NoneValue)
         return new Maybe<T>(value);
     }
 
+    /// <summary>
+    /// Gets an optional result representing the absence of a value.
+    /// </summary>
     internal Maybe<T> None => NoneValue.New;
 
     /// <summary>Invokes the callback corresponding to the stored value or empty case.</summary>

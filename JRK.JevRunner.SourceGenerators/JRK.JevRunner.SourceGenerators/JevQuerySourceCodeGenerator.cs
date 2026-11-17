@@ -56,6 +56,11 @@ internal static class JevQuerySourceCodeGenerator
         return source.ToString();
     }
 
+    /// <summary>
+    /// Creates the escaped identifier for a query's sibling response wrapper.
+    /// </summary>
+    /// <param name="type">The query type whose name forms the wrapper name.</param>
+    /// <returns>The query name suffixed with <c>ResponseWrapper</c> and escaped as a C# identifier.</returns>
     private static string GenerateWrapperName(INamedTypeSymbol type)
     {
         return Identifier(type.Name + "ResponseWrapper");
@@ -93,6 +98,12 @@ internal static class JevQuerySourceCodeGenerator
         return source.ToString();
     }
 
+    /// <summary>
+    /// Appends closing braces for the emitted types and their optional namespace.
+    /// </summary>
+    /// <param name="type">The query type whose namespace determines whether a namespace brace is needed.</param>
+    /// <param name="containers">The declarations whose count matches the emitted type scopes to close.</param>
+    /// <param name="source">The source buffer receiving the closing braces.</param>
     private static void CloseContainers(INamedTypeSymbol type, IReadOnlyCollection<INamedTypeSymbol> containers,
         StringBuilder source)
     {

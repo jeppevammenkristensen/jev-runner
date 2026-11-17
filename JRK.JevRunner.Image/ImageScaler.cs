@@ -9,6 +9,9 @@ namespace JRK.JevRunner.Image;
 /// Extreme aspect ratios may leave the other dimension outside the API limits.</remarks>
 public sealed class ImageScaler
 {
+    /// <summary>
+    /// Provides read access to the source images used for proportional scaling.
+    /// </summary>
     private readonly IFileSystem _fileSystem;
 
     /// <summary>Creates a scaler using the local file system.</summary>

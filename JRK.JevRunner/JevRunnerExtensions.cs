@@ -6,6 +6,9 @@ namespace JRK.JevRunner;
 /// <summary>Provides convenience initialization for runners using a shared HTTP client.</summary>
 public static class JevRunnerExtensions 
 {
+    /// <summary>
+    /// Reuses HTTP connections across runners created by the convenience initialization methods.
+    /// </summary>
     private static readonly HttpClient SharedClient = new();
     
     extension(JevRunner)
@@ -68,6 +71,14 @@ public static class JevRunnerExtensions
         }
         
 
+        /// <summary>
+        /// Reads an API key from the environment and passes it to the supplied runner initializer.
+        /// </summary>
+        /// <param name="environmentVariableName">The environment variable containing the API key.</param>
+        /// <param name="initializer">The callback that creates a runner from the retrieved key.</param>
+        /// <param name="getEnvironmentVariableDelegate">An optional environment lookup; defaults to the process environment.</param>
+        /// <returns>The runner created by the initializer.</returns>
+        /// <exception cref="InvalidOperationException">The environment lookup returns null.</exception>
         internal static JevRunner InitFromEnvironmentVariable(string environmentVariableName, JevRunnerInitializerDelegate initializer,
             GetEnvironmentVariableDelegate? getEnvironmentVariableDelegate = null)
         {
@@ -83,13 +94,26 @@ public static class JevRunnerExtensions
         
     }
     
+    /// <summary>
+    /// Gets the default lookup that reads environment variables from the current process.
+    /// </summary>
     internal static GetEnvironmentVariableDelegate DefaultDelegate => Environment.GetEnvironmentVariable;
     
     
 }
 
+/// <summary>
+/// Looks up an environment variable when initializing a runner.
+/// </summary>
+/// <param name="environmentVariableName">The name of the variable to retrieve.</param>
+/// <returns>The variable's value, or null when it is not defined.</returns>
 internal delegate string? GetEnvironmentVariableDelegate(string environmentVariableName);
 
+/// <summary>
+/// Creates a runner using an API key obtained from the environment.
+/// </summary>
+/// <param name="apiKey">The API key to use for authentication.</param>
+/// <returns>The initialized runner.</returns>
 internal delegate JevRunner JevRunnerInitializerDelegate(string apiKey);
 
 

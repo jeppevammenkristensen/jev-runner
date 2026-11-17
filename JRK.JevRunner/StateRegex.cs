@@ -6,6 +6,9 @@ namespace JRK.JevRunner;
 /// <summary>Validates state references and paths before they are quoted in instructions.</summary>
 internal static partial class StateRegex
 {
+    /// <summary>
+    /// Gets the expression matching nonempty state identifiers without whitespace or backticks.
+    /// </summary>
     [GeneratedRegex("^[^`\\s]+\\z")]
     internal static partial Regex ValidPathName { get; }
 

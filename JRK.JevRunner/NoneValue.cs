@@ -9,5 +9,8 @@ internal class NoneValue
         
     }
     
+    /// <summary>
+    /// Gets a fresh marker representing the empty case of an optional result.
+    /// </summary>
     public static NoneValue New => new NoneValue();
 }

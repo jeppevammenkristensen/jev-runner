@@ -20,6 +20,10 @@ public class StateReference : IBackTick
     /// <returns>A reference containing the supplied name.</returns>
     public static implicit operator StateReference(string value) => new(value);
 
+    /// <summary>
+    /// Gets the validated, unquoted name identifying a field in request state.
+    /// </summary>
     public string Value { get; }
+    /// <inheritdoc/>
     public string BackTickQuoted => $"`{Value}`";
 }
