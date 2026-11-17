@@ -1,4 +1,5 @@
 ﻿using System.IO.Abstractions;
+using JRK.JevRunner.Annotation;
 using JRK.JevRunner.Requests;
 using TruePath;
 
@@ -14,6 +15,18 @@ public static class Extensions
     /// <param name="state">The state receiving the image asset and its reference.</param>
     extension<TAssetState>(TAssetState state) where TAssetState : AssetState
     {
+        /// <summary>
+        /// Registers a prepared asset and its state reference while preserving the concrete state type.
+        /// </summary>
+        /// <param name="assetAndStateReference">The asset and state field to register together.</param>
+        /// <returns>The same state instance for further configuration.</returns>
+        /// <exception cref="ArgumentException">The state already contains the supplied field name.</exception>
+        public TAssetState AddAssetStateAndReference(AssetAndStateReference assetAndStateReference)
+        {
+            state.AddAsset(assetAndStateReference.Reference, assetAndStateReference.Asset);
+            return state;
+        }
+        
         /// <summary>
         /// Reads an image file, base64-encodes its bytes, and adds the image asset and its state reference.
         /// </summary>

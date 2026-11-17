@@ -60,13 +60,13 @@ public static class AssetImageExtensions
         /// <param name="stateName">The state field containing the asset reference.</param>
         /// <param name="assetName">The reference identifying the image in the request's assets map.</param>
         /// <param name="path">The source image, which is never modified.</param>
-        /// <param name="token">Cancels byte loading before the asset is registered.</param>
+        /// <param name="token">Checks for cancellation after validation, before creating or resizing the asset.</param>
         /// <param name="fileSystem">Optional file access used for validation, loading, and resizing.</param>
         /// <returns>The same state instance.</returns>
         /// <remarks>Unchanged images retain their detected format and bytes. Resized images are encoded as PNG.
         /// A single resize is attempted without revalidating its output; scaling suggestions consider only
         /// dimension violations. File access and scaling failures propagate without registering an asset.</remarks>
-        public async Task<TAssetState> AddImageAssetWithAutoAdjustment(StateReference stateName, string assetName, AbsolutePath path,
+        public TAssetState AddImageAssetWithAutoAdjustment(StateReference stateName, string assetName, AbsolutePath path,
             CancellationToken token = default, IFileSystem? fileSystem = null)
         {
             fileSystem ??= new FileSystem();

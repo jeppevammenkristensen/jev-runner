@@ -13,6 +13,45 @@ namespace JRK.JevRunner.Tests.Infrastructure;
 /// <summary>Verifies image loading, asset references, and runtime and generated request serialization.</summary>
 public partial class AssetStateTest
 {
+    /// <summary>
+    /// Prepared assets register under their state field and preserve the derived state's fluent return type.
+    /// </summary>
+    [Fact]
+    public void AddAssetStateAndReference_PreservesDerivedStateAndRegistersAsset()
+    {
+        var state = new PhotoState();
+        Asset asset = new ImageAsset("image-ref", "png", new Base64String("AQID"));
+        var prepared = new AssetAndStateReference("photo", asset);
+
+        PhotoState returned = state.AddAssetStateAndReference(prepared);
+
+        Assert.Same(state, returned);
+        Assert.Equal("image-ref", state["photo"]);
+        Assert.Equal(asset, state.GetRequiredAsset("photo"));
+        Assert.Equal(asset, Assert.Single(new Request(state).Assets));
+        var (reference, registered) = prepared;
+        Assert.Same(prepared.Reference, reference);
+        Assert.Equal(asset, registered);
+    }
+
+    /// <summary>
+    /// A duplicate prepared reference fails without replacing the original asset or state entry.
+    /// </summary>
+    [Fact]
+    public void AddAssetStateAndReference_DuplicateField_PreservesOriginal()
+    {
+        Asset original = new ImageAsset("original", "png", new Base64String("AQID"));
+        var state = new PhotoState();
+        state.AddAssetStateAndReference(new AssetAndStateReference("photo", original));
+
+        Assert.Throws<ArgumentException>(() => state.AddAssetStateAndReference(
+            new AssetAndStateReference("photo", new ImageAsset("replacement", "png", new Base64String("BAUG")))));
+
+        Assert.Equal("original", state["photo"]);
+        Assert.Equal(original, state.GetRequiredAsset("photo"));
+        Assert.Equal(original, Assert.Single(new Request(state).Assets));
+    }
+
     /// <summary>An image asset supplies the API's image fields without changing the encoded bytes.</summary>
     [Fact]
     public void ImageAsset_Node_SerializesImageFields()

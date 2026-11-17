@@ -136,14 +136,41 @@ public class FilePathAssetTest
     }
     
     /// <summary>
-    /// Changing the upload file name leaves the source path, format, and references unchanged.
+    /// Changing the asset reference leaves multipart metadata and the source path unchanged.
     /// </summary>
     [Fact]
-    public void WithAssetName_ReturnsSameAssetAndOverridesOnlyUploadFileName()
+    public void WithAssetName_ReturnsSameAssetAndOverridesOnlyAssetReference()
     {
         var asset = new FilePathAsset(new AbsolutePath(@"C:\images\photo.jpg"), new MockFileSystem());
+        var name = asset.Name;
 
         Assert.Same(asset, asset.WithAssetName("changed_assetname"));
         Assert.Equal("changed_assetname", asset.AssetName);
+        Assert.Equal(name, asset.Name);
+        Assert.Equal("photo.jpg", asset.FileName);
+        Assert.Equal("jpg", asset.Format);
+        Assert.Equal(new AbsolutePath(@"C:\images\photo.jpg"), asset.Path);
+    }
+
+    /// <summary>
+    /// Overriding the declared format changes metadata without changing source bytes or the file name.
+    /// </summary>
+    [Fact]
+    public void WithFormat_ReturnsSameAssetAndPreservesSourceBytes()
+    {
+        var fs = new MockFileSystem();
+        var path = AbsolutePath.Create("C:/images/photo.jpg");
+        byte[] bytes = [1, 2, 3];
+        fs.AddFile(path.Value, new MockFileData(bytes));
+        var asset = new FilePathAsset(path, fs);
+        var name = asset.Name;
+
+        Assert.Same(asset, asset.WithFormat("png"));
+        Assert.Equal("png", asset.Format);
+        Assert.Equal("photo.jpg", asset.FileName);
+        Assert.Equal(name, asset.Name);
+        Assert.Equal(name, asset.AssetName);
+        Asset wrapped = (IImageStreamAsset)asset;
+        Assert.Equal(bytes, wrapped.ReadAsBytes());
     }
 }

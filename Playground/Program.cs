@@ -11,15 +11,16 @@ using Playground;
 using SkiaSharp;
 using JRK.JevRunner;
 using Spectre.Console;
+using TruePath;
 
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Img_1929.png";
+var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
 
 var jevQuery =
-    new JevQuery((await new FileData("Some.txt", "bla bla bla")
-        .AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
+    new JevQuery(new FileData("Some.txt", "bla bla bla"), imagePath);
+        
 
 var response = await jevQuery.Execute(jevRunner);
 
@@ -96,18 +97,24 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
 
 
 
+
+
 [JevQuery]
 public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 {
-    public static readonly StateReference Photo = nameof(Photo);
+    public AssetAndStateReference Photo { get; }
     
-    public JevQuery(FileData state)
+    public JevQuery(FileData state, AbsolutePath photo)
     {
+        Photo = photo.CreateAssetWithAdjustments("Photo", null);
         State = state;
+
+        state.AddAssetStateAndReference(Photo);
+        
         var fooBar = "Happy";
 
         HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person in it", null, null);
-        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} `{fooBar}` ");
+        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} ");
         FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(

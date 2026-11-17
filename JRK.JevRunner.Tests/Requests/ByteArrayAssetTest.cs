@@ -9,6 +9,24 @@ namespace JRK.JevRunner.Tests.Requests;
 /// <summary>Verifies byte-backed stream contents, metadata, validation, and multipart references.</summary>
 public class ByteArrayAssetTest
 {
+    /// <summary>
+    /// Reading a stream-backed asset returns all bytes in an independent array, including an empty image buffer.
+    /// </summary>
+    [Fact]
+    public void ReadAsBytes_ReturnsCopiedImageBytes()
+    {
+        foreach (byte[] bytes in new byte[][] { [], [0, 1, 2, 253, 254, 255] })
+        {
+            Asset asset = (IImageStreamAsset)new ByteArrayAsset(bytes, "part", "photo.png", "photo", "png");
+
+            var result = asset.ReadAsBytes();
+
+            Assert.Equal(bytes, result);
+            if (bytes.Length > 0)
+                Assert.NotSame(bytes, result);
+        }
+    }
+
     /// <summary>Constructor metadata is used for the asset entry and multipart reference, not Base64 encoding.</summary>
     [Fact]
     public void Constructor_PreservesMetadataAndSerializesMultipartReference()

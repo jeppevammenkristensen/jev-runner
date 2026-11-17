@@ -1,13 +1,6 @@
 namespace JRK.JevRunner.Requests;
 
 /// <summary>
-/// Opens a readable stream containing file data.
-/// </summary>
-/// <returns>A readable stream containing the file contents.</returns>
-internal delegate Stream OpenReadDelegate();
-
-
-/// <summary>
 /// Represents file contents supplied as raw bytes or already base64-encoded text.
 /// </summary>
 public union FileData(byte[], Base64String)

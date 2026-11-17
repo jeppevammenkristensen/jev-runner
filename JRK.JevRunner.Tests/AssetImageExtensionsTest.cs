@@ -3,7 +3,6 @@ using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Threading;
-using System.Threading.Tasks;
 using JRK.JevRunner.Image;
 using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
@@ -16,11 +15,15 @@ namespace JRK.JevRunner.Tests;
 /// <summary>Verifies automatic image preparation with mock files and correctly labelled encoded bytes.</summary>
 public class AssetImageExtensionsTest
 {
-    /// <summary>Unchanged files preserve their bytes and detected format, independently of the extension.</summary>
+    /// <summary>
+    /// Unchanged files preserve their bytes and detected format, independently of the extension.
+    /// </summary>
+    /// <param name="format">The format encoded in the source fixture.</param>
+    /// <param name="expectedFormat">The detected format expected in the registered asset.</param>
     [Theory]
     [InlineData(SKEncodedImageFormat.Jpeg, "jpg")]
     [InlineData(SKEncodedImageFormat.Png, "png")]
-    public async Task AddImageAssetWithAutoAdjustment_ValidImage_PreservesBytesAndFormat(
+    public void AddImageAssetWithAutoAdjustment_ValidImage_PreservesBytesAndFormat(
         SKEncodedImageFormat format, string expectedFormat)
     {
         var fs = new MockFileSystem();
@@ -29,7 +32,7 @@ public class AssetImageExtensionsTest
         fs.AddFile(path.ToString(), new MockFileData(original));
         var state = new AssetState();
 
-        var returned = await state.AddImageAssetWithAutoAdjustment("photo", "image-id", path,
+        var returned = state.AddImageAssetWithAutoAdjustment("photo", "image-id", path,
             token: TestContext.Current.CancellationToken, fileSystem: fs);
 
         Assert.Same(state, returned);
@@ -43,11 +46,17 @@ public class AssetImageExtensionsTest
         Assert.Single(fs.AllFiles);
     }
 
-    /// <summary>Both resizing directions produce PNG-labelled PNG data using only the injected file system.</summary>
+    /// <summary>
+    /// Both resizing directions produce PNG-labelled PNG data using only the injected file system.
+    /// </summary>
+    /// <param name="width">The source width triggering resizing.</param>
+    /// <param name="height">The source height triggering resizing.</param>
+    /// <param name="expectedWidth">The expected resized width.</param>
+    /// <param name="expectedHeight">The expected resized height.</param>
     [Theory]
     [InlineData(100, 200, 280, 560)]
     [InlineData(2000, 1000, 1568, 784)]
-    public async Task AddImageAssetWithAutoAdjustment_ResizesJpeg_RegistersPng(
+    public void AddImageAssetWithAutoAdjustment_ResizesJpeg_RegistersPng(
         int width, int height, int expectedWidth, int expectedHeight)
     {
         var fs = new MockFileSystem();
@@ -56,7 +65,7 @@ public class AssetImageExtensionsTest
         fs.AddFile(path.ToString(), new MockFileData(original));
         var state = new AssetState();
 
-        await state.AddImageAssetWithAutoAdjustment("photo", "image-id", path,
+        state.AddImageAssetWithAutoAdjustment("photo", "image-id", path,
             token: TestContext.Current.CancellationToken, fileSystem: fs);
 
         var asset = GetImageAsset(state);
@@ -74,11 +83,14 @@ public class AssetImageExtensionsTest
         Assert.Single(fs.AllFiles);
     }
 
-    /// <summary>Unsupported or opposing errors fail without registering an asset.</summary>
+    /// <summary>
+    /// Unsupported or opposing errors fail without registering an asset.
+    /// </summary>
+    /// <param name="opposingDimensions">Whether to encode an image with conflicting size violations instead of invalid bytes.</param>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task AddImageAssetWithAutoAdjustment_InvalidImage_DoesNotRegister(bool opposingDimensions)
+    public void AddImageAssetWithAutoAdjustment_InvalidImage_DoesNotRegister(bool opposingDimensions)
     {
         var fs = new MockFileSystem();
         var path = AbsolutePath.Create("C:/mock-images/source.png");
@@ -86,7 +98,7 @@ public class AssetImageExtensionsTest
         fs.AddFile(path.ToString(), new MockFileData(bytes));
         var state = new AssetState();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        Assert.Throws<InvalidOperationException>(() =>
             state.AddImageAssetWithAutoAdjustment("photo", "image-id", path,
                 token: TestContext.Current.CancellationToken, fileSystem: fs));
 
@@ -96,14 +108,14 @@ public class AssetImageExtensionsTest
 
     /// <summary>Cancellation does not register a partially prepared image.</summary>
     [Fact]
-    public async Task AddImageAssetWithAutoAdjustment_Cancelled_DoesNotRegister()
+    public void AddImageAssetWithAutoAdjustment_Cancelled_DoesNotRegister()
     {
         var fs = new MockFileSystem();
         var path = AbsolutePath.Create("C:/mock-images/source.png");
         fs.AddFile(path.ToString(), new MockFileData(CreateImage(SKEncodedImageFormat.Png, 280, 280)));
         var state = new AssetState();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => state.AddImageAssetWithAutoAdjustment(
+        Assert.ThrowsAny<OperationCanceledException>(() => state.AddImageAssetWithAutoAdjustment(
             "photo", "image-id", path, token: new CancellationToken(true), fileSystem: fs));
 
         Assert.Empty(state);

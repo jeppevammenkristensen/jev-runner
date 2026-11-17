@@ -5,10 +5,6 @@ using TruePath;
 
 namespace JRK.JevRunner.Image;
 
-/// <summary>Wraps an image validation result.</summary>
-public union ImageValidation(ImageValidationResult);
-
-
 /// <summary>Checks image files against TypeSafe's per-image upload requirements without modifying them.</summary>
 /// <remarks>Inspects actual contents independently of the filename. Request body size, processed-image
 /// size, expanded references, and model context limits require separate request-level checks.
