@@ -37,6 +37,12 @@ public class BackTickInterpolationTests
                                             }
                                         }
                                     }
+                                    namespace JRK.JevRunner.Annotation
+                                    {
+                                        public record AssetAndStateReference(JRK.JevRunner.StateReference Reference, object Asset);
+                                        public record DerivedAssetReference(JRK.JevRunner.StateReference Reference, object Asset)
+                                            : AssetAndStateReference(Reference, Asset);
+                                    }
                                     """;
 
     [Theory]
@@ -52,6 +58,16 @@ public class BackTickInterpolationTests
     [InlineData("object hidden = reference; string text = $\"{hidden}\";", 0)]
     [InlineData("Consume($\"Describe {reference}.\");", 1)]
     [InlineData("Preserve($\"Describe {reference}.\");", 0)]
+    [InlineData("string text = $\"Describe {asset}.\";", 1)]
+    [InlineData("string text = $\"`{asset}`\";", 1)]
+    [InlineData("object text = $@\"Describe {asset}.\";", 1)]
+    [InlineData("Consume($$\"\"\"Describe {{asset}}.\"\"\");", 1)]
+    [InlineData("string text = $\"{asset,20} {reference}\";", 2)]
+    [InlineData("System.FormattableString text = $\"Describe {asset}.\";", 0)]
+    [InlineData("System.IFormattable text = $\"Describe {asset}.\";", 0)]
+    [InlineData("Preserve($\"Describe {asset}.\");", 0)]
+    [InlineData("string text = $\"{asset.Reference.Value} {asset.ToString()}\";", 0)]
+    [InlineData("object hidden = asset; string text = $\"{hidden}\";", 0)]
     public async Task ReportsOnlyPlainStringInterpolations(string statement, int count)
     {
         using var workspace = new AdhocWorkspace();
@@ -71,6 +87,11 @@ public class BackTickInterpolationTests
     [InlineData("string Generic<T>(T value) where T : JRK.JevRunner.IBackTick => $\"{value}\";")]
     [InlineData("string Generic<T>(T value) where T : JRK.JevRunner.StateReference => $\"{value}\";")]
     [InlineData("string Generic<T, U>(T value) where T : U where U : JRK.JevRunner.StateReference => $\"{value}\";")]
+    [InlineData("string Direct(JRK.JevRunner.Annotation.DerivedAssetReference value) => $\"{value}\";")]
+    [InlineData("string Generic<T>(T value) where T : JRK.JevRunner.Annotation.AssetAndStateReference => $\"{value}\";")]
+    [InlineData("string Generic<T, U>(T value) where T : U where U : JRK.JevRunner.Annotation.DerivedAssetReference => $\"{value}\";")]
+    [InlineData("System.FormattableString Direct(JRK.JevRunner.Annotation.DerivedAssetReference value) => $\"`{value}`\";")]
+    [InlineData("System.FormattableString Generic<T, U>(T value) where T : U where U : JRK.JevRunner.Annotation.AssetAndStateReference => $\"`{value}`\";")]
     public async Task RecognizesMarkerAndGenericConstraints(string member)
     {
         using var workspace = new AdhocWorkspace();
@@ -97,6 +118,12 @@ public class BackTickInterpolationTests
     [InlineData("Preserve($\"`{reference}\");", 0)]
     [InlineData("Preserve($\"{reference}`\");", 0)]
     [InlineData("Preserve($\"` {reference} `\");", 0)]
+    [InlineData("Preserve($\"Describe `{asset}`.\");", 1)]
+    [InlineData("System.IFormattable text = $@\"`{asset}`\";", 1)]
+    [InlineData("Preserve($$\"\"\"`{{asset}}`\"\"\");", 1)]
+    [InlineData("Preserve($\"`{asset,20}` `{reference}`\");", 2)]
+    [InlineData("Preserve($\"`{asset.Reference.Value}`\");", 0)]
+    [InlineData("Preserve($\"` {asset} `\");", 0)]
     public async Task ReportsRedundantBackticksOnlyForPreservedMarkerArguments(string statement, int count)
     {
         using var workspace = new AdhocWorkspace();
@@ -120,6 +147,9 @@ public class BackTickInterpolationTests
     [InlineData("Preserve($$\"\"\"`{{path}}`\"\"\");", "Preserve($$\"\"\"{{path}}\"\"\");")]
     [InlineData("Preserve($\"`{reference,20}`\");", "Preserve($\"{reference,20}\");")]
     [InlineData("Preserve($\"\\u0060{reference}\\U00000060\");", "Preserve($\"{reference}\");")]
+    [InlineData("Preserve($\"Describe `{asset}`.\");", "Preserve($\"Describe {asset}.\");")]
+    [InlineData("Preserve($$\"\"\"`{{asset}}`\"\"\");", "Preserve($$\"\"\"{{asset}}\"\"\");")]
+    [InlineData("Preserve($\"`{asset,20}`\");", "Preserve($\"{asset,20}\");")]
     public async Task FixRemovesOnlyTheAdjacentBackticks(string statement, string expected)
     {
         using var workspace = new AdhocWorkspace();
@@ -151,11 +181,65 @@ public class BackTickInterpolationTests
         Assert.Empty(await Analyze(document));
     }
 
+    /// <summary>
+    /// Keeps unrelated asset types outside both diagnostics even when runtime symbols are available.
+    /// </summary>
+    [Fact]
+    public async Task IgnoresUnrelatedAssetWithSameShortName()
+    {
+        using var workspace = new AdhocWorkspace();
+        var document = CreateDocument(workspace, Contract + """
+            namespace Other
+            {
+                class AssetAndStateReference { }
+                class C
+                {
+                    void M(AssetAndStateReference asset)
+                    {
+                        string plain = $"{asset}";
+                        System.FormattableString preserved = $"`{asset}`";
+                    }
+                }
+            }
+            """);
+        Assert.Empty(await Analyze(document));
+    }
+
+    /// <summary>
+    /// Recognizes prepared assets independently of whether the marker interface is available.
+    /// </summary>
+    [Fact]
+    public async Task RecognizesAssetWithoutBackTickMarker()
+    {
+        using var workspace = new AdhocWorkspace();
+        var document = CreateDocument(workspace, """
+            namespace JRK.JevRunner.Annotation
+            {
+                public record AssetAndStateReference(object Reference, object Asset);
+            }
+            class C
+            {
+                void M(JRK.JevRunner.Annotation.AssetAndStateReference asset)
+                {
+                    string plain = $"{asset}";
+                    System.FormattableString preserved = $"`{asset}`";
+                }
+            }
+            """);
+        var diagnostics = await Analyze(document);
+        Assert.Equal(2, diagnostics.Length);
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Id == "JEV100");
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Id == "JEV101");
+    }
+
     [Theory]
     [InlineData("string text = $\"Describe {reference}.\";")]
     [InlineData("string text = $\"{reference} {path}\";")]
     [InlineData("string text = $$\"\"\"Describe {{reference}}.\"\"\";")]
     [InlineData("Consume($\"Describe {reference}.\");")]
+    [InlineData("string text = $\"Describe {asset}.\";")]
+    [InlineData("string text = $\"{asset} {reference}\";")]
+    [InlineData("Consume($$\"\"\"Describe {{asset}}.\"\"\");")]
     public async Task FixFormatsEntireInterpolationAndStillCompiles(string statement)
     {
         using var workspace = new AdhocWorkspace();
@@ -239,7 +323,7 @@ public class BackTickInterpolationTests
                                                                  {
                                                                      void Consume(string value) { }
                                                                      void Preserve(System.FormattableString value) { }
-                                                                     void M(JRK.JevRunner.StateReference reference, JRK.JevRunner.StatePath path, JRK.JevRunner.DerivedReference derived)
+                                                                     void M(JRK.JevRunner.StateReference reference, JRK.JevRunner.StatePath path, JRK.JevRunner.DerivedReference derived, JRK.JevRunner.Annotation.AssetAndStateReference asset)
                                                                      {
                                                                  """ + statement + "\n} }";
 

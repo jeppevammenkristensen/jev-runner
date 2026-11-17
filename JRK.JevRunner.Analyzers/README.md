@@ -16,7 +16,7 @@ There are two production projects and one shared test project.
 
 ## JEV101: Remove redundant backticks
 
-Warns when an `IBackTick` argument in a `FormattableString` or `IFormattable`
+Warns when an `IBackTick` or `AssetAndStateReference` argument in a `FormattableString` or `IFormattable`
 interpolation has explicit backticks immediately on both sides. JevRunner adds
 its own backticks when formatting the argument, so the explicit pair duplicates
 the quoting:
@@ -46,6 +46,16 @@ StateReference field = new("name");
 string incorrect = $"Describe {field}."; // JEV100
 FormattableString instructions = $"Describe {field}."; // Preserves arguments
 // Pass instructions to JevRunner, or use instructions.Escaped to format it.
+```
+
+The same rule and code fix cover `JRK.JevRunner.Annotation.AssetAndStateReference`,
+including derived records and generic constraints. JevRunner formats these values
+using their `Reference`, not their asset metadata:
+
+```csharp
+string incorrect = $"Describe {preparedAsset}."; // JEV100
+string correct = Escape.Interpolated($"Describe {preparedAsset}.");
+FormattableString redundant = $"Describe `{preparedAsset}`."; // JEV101
 ```
 
 `FormattableString` and `IFormattable` targets are allowed. Preserving the arguments
