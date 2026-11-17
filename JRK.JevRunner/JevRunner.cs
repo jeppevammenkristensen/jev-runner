@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using JRK.JevRunner.Infrastructure;
@@ -14,6 +16,14 @@ namespace JRK.JevRunner;
 /// </summary>
 public partial class JevRunner : IJevRunner
 {
+    /// <summary>
+    /// Keeps backtick references readable in standalone JSON payloads, which are not embedded in HTML.
+    /// </summary>
+    private static readonly JsonSerializerOptions RequestJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     /// <summary>
     /// Holds the API credentials used to authenticate outgoing requests.
     /// </summary>
@@ -65,7 +75,7 @@ public partial class JevRunner : IJevRunner
 
         var validateRequest = ValidateRequest(request);
 
-        var json = JsonTranslator.CreateRequestJson(request);
+        var json = JsonTranslator.CreateRequestJson(request).ToJsonString(RequestJsonOptions);
         LogRequestJsonRequestjson(json);
         
         using var message = new HttpRequestMessage(
@@ -119,9 +129,14 @@ public partial class JevRunner : IJevRunner
         }
     }
 
-    /// <summary>Uses multipart for stream-backed images, retaining JSON uploads for other requests.</summary>
+    /// <summary>
+    /// Uses multipart for stream-backed images and sends the same serialized JSON for either upload mode.
+    /// </summary>
+    /// <param name="request">The request whose stream-backed assets are uploaded alongside the JSON.</param>
+    /// <param name="json">The serialized UTF-8 JSON payload, also used for request logging.</param>
     /// <remarks>JSON is the first part. Disposing the content also disposes the opened streams.</remarks>
-    private  HttpContent CreateRequestContent(Request request, JsonObject json)
+    /// <returns>JSON content or multipart content owning the opened image streams.</returns>
+    private HttpContent CreateRequestContent(Request request, string json)
     {
         // Check the assets to see if there are any IImageStreamAssets
         var images = request.Assets
@@ -130,12 +145,12 @@ public partial class JevRunner : IJevRunner
             .ToArray();
         
         if (images.Length == 0)
-            return JsonContent.Create(json);
+            return new StringContent(json, Encoding.UTF8, "application/json");
 
         var multipart = new MultipartFormDataContent();
         try
         {
-            multipart.Add(JsonContent.Create(json), "request");
+            multipart.Add(new StringContent(json, Encoding.UTF8, "application/json"), "request");
             foreach (var image in images)
             {
                 // Starter implementation: existing byte/Base64 assets remain inline in JSON.
@@ -213,10 +228,12 @@ public partial class JevRunner : IJevRunner
         }
     }
 
-    /// <summary>Logs the serialized request at debug level.</summary>
+    /// <summary>
+    /// Logs the serialized outgoing request at debug level with literal backtick references.
+    /// </summary>
     /// <param name="requestJson">The JSON payload about to be sent.</param>
     [LoggerMessage(LogLevel.Debug, "Request json {RequestJson}")]
-    partial void LogRequestJsonRequestjson(JsonObject requestJson);
+    partial void LogRequestJsonRequestjson(string requestJson);
 
     /// <summary>Logs only the sanitized snapshot of outgoing request headers at debug level.</summary>
     [LoggerMessage(EventId = 1001, Level = LogLevel.Debug, Message = "Request headers {Headers}")]

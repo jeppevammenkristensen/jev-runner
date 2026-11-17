@@ -13,6 +13,7 @@ using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using TruePath;
 using Xunit;
 
@@ -26,6 +27,52 @@ namespace JRK.JevRunner.Tests;
 [TestSubject(typeof(JevRunner))]
 public class JevRunnerTest
 {
+    /// <summary>
+    /// Outgoing JSON and request logs preserve backticks while quotes, backslashes, and controls still round-trip.
+    /// </summary>
+    /// <param name="multipart">Whether the JSON is sent as a multipart request part.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Execute_JsonPreservesLiteralBackticks(bool multipart)
+    {
+        const string instructions = "Inspect `photo` and \"quoted text\" at C:\\images.\nLiteral escape: \\u0060";
+        const string stateText = "State with `reference`, \"quotes\", \\ and \t.";
+        string? sentJson = null;
+        using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
+        {
+            var content = multipart
+                ? Assert.IsType<MultipartFormDataContent>(message.Content).First()
+                : message.Content!;
+            Assert.Equal("application/json", content.Headers.ContentType!.MediaType);
+            sentJson = await content.ReadAsStringAsync(cancellationToken);
+            Assert.Contains("`photo`", sentJson);
+            Assert.Contains("`reference`", sentJson);
+            Assert.DoesNotContain(@"\u0060photo\u0060", sentJson);
+            var parsed = JsonNode.Parse(sentJson)!;
+            Assert.Equal(stateText, parsed["state"]!["text"]!.GetValue<string>());
+            Assert.Equal(instructions, parsed["questions"]!["visible"]!["instructions"]!.GetValue<string>());
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """{"answers":{},"usage":{"input_tokens":1,"output_tokens":0}}""",
+                    Encoding.UTF8, "application/json")
+            };
+        }));
+        var logger = new RequestJsonLogger();
+        var request = new Request(new {text = stateText}, JevModel.Latest)
+            .AddQuestion(new NoulQuestion("visible", instructions, null));
+        if (multipart)
+            request.Assets.Add((IImageStreamAsset)new TestImageStreamAsset(
+                "image", "png", "image-part", () => new MemoryStream([1, 2, 3])));
+
+        await new JevRunner(new JevOptions("test-api-key"), client, logger)
+            .Execute(request, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(sentJson);
+        Assert.Equal("Request json " + sentJson, logger.RequestMessage);
+    }
+
     /// <summary>Stream assets upload raw bytes while existing assets retain their Base64 representation.</summary>
     [Fact]
     public async Task Execute_StreamImage_UsesMultipartAndDisposesStream()
@@ -416,6 +463,24 @@ public class JevRunnerTest
 
         Assert.Same(original, exception);
         Assert.Null(exception.StatusCode);
+    }
+
+    /// <summary>
+    /// Captures the formatted request JSON log to verify it matches the outgoing payload.
+    /// </summary>
+    private sealed class RequestJsonLogger : ILogger<JevRunner>
+    {
+        public string? RequestMessage { get; private set; }
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var message = formatter(state, exception);
+            if (message.StartsWith("Request json ", StringComparison.Ordinal))
+                RequestMessage = message;
+        }
     }
 
     private static JevRunner CreateRunner(HttpClient client) =>

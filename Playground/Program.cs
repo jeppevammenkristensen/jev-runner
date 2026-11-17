@@ -17,9 +17,10 @@ var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
 var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
+var imagePath2 = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "IMG_0321.jpg";
 
 var jevQuery =
-    new JevQuery(new FileData("Some.txt", "bla bla bla"), imagePath);
+    new JevQuery(new FileData("Some.txt", "bla bla bla"), imagePath, imagePath2);
         
 
 var response = await jevQuery.Execute(jevRunner);
@@ -99,21 +100,22 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
 
 
 
-[JevQuery]
+//[JevQuery]
 public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 {
     public AssetAndStateReference Photo { get; }
     
-    public JevQuery(FileData state, AbsolutePath photo)
-    {
+    public JevQuery(FileData state, AbsolutePath photo, AbsolutePath photo2)
+    {  
         Photo = photo.CreateAssetWithAdjustments("Photo", null);
+        Photo2 = photo2.CreateAssetWithAdjustments("Photo2", null);
         State = state;
 
         var fooBar = "Happy";
 
-        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person in it", null, null);
-        FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} ");
-        FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
+        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo2} has a person in it", null, null);
+        // FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} ");
+        // FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
@@ -127,9 +129,11 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
             "The text provides specific, useful details.");
     }
 
-    public GenericBoxQuestionDefinition<FormattableString> FindMustache { get; set; }
+    public AssetAndStateReference Photo2 { get; set; }
 
-    public GenericBoxQuestionDefinition<FormattableString> FindPerson { get; private set; }
+    // public GenericBoxQuestionDefinition<FormattableString> FindMustache { get; set; }
+    //
+    // public GenericBoxQuestionDefinition<FormattableString> FindPerson { get; private set; }
 
     private FileData State { get; }
     public INoulQuestionDefinition<FormattableString> HasBeard { get; }
