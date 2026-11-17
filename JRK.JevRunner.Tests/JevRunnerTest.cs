@@ -69,31 +69,36 @@ public class JevRunnerTest
         Assert.False(stream.CanRead);
     }
 
-    /// <summary>File-backed assets propagate their derived metadata and configured part names to multipart uploads.</summary>
+    /// <summary>
+    /// File-backed assets preserve their state reference when the multipart field name changes.
+    /// </summary>
+    /// <param name="partName">An optional multipart field name overriding the generated default.</param>
     [Theory]
-    [InlineData(null, "img-photo")]
-    [InlineData("custom-part", "custom-part")]
-    public async Task Execute_FilePathImage_UsesFileMetadataAndPartName(string? partName, string expectedPartName)
+    [InlineData(null)]
+    [InlineData("custom-part")]
+    public async Task Execute_FilePathImage_UsesFileMetadataAndPartName(string? partName)
     {
         var fileSystem = new MockFileSystem();
         var path = new AbsolutePath(@"C:\images\photo.jpg");
         fileSystem.AddFile(path.Value, new MockFileData(new byte[] {1, 2, 3}));
         var asset = new FilePathAsset(path, fileSystem);
+        var assetName = asset.AssetName;
         if (partName is not null)
-            asset.WithPathName(partName);
+            asset.WithName(partName);
+        var expectedPartName = partName ?? assetName;
 
         using var client = new HttpClient(new FakeHttpMessageHandler(async (message, cancellationToken) =>
         {
             var parts = Assert.IsType<MultipartFormDataContent>(message.Content).ToArray();
             Assert.Equal(2, parts.Length);
             var json = JsonNode.Parse(await parts[0].ReadAsStringAsync(cancellationToken))!;
-            Assert.Equal("photo", json["state"]!["photo"]!.GetValue<string>());
-            Assert.Equal("image", json["assets"]!["photo"]!["type"]!.GetValue<string>());
-            Assert.Equal("jpg", json["assets"]!["photo"]!["format"]!.GetValue<string>());
-            Assert.Equal(expectedPartName, json["assets"]!["photo"]!["part"]!.GetValue<string>());
-            Assert.Null(json["assets"]!["photo"]!["data_base64"]);
+            Assert.Equal(assetName, json["state"]!["photo"]!.GetValue<string>());
+            Assert.Equal("image", json["assets"]![assetName]!["type"]!.GetValue<string>());
+            Assert.Equal("jpg", json["assets"]![assetName]!["format"]!.GetValue<string>());
+            Assert.Equal(expectedPartName, json["assets"]![assetName]!["part"]!.GetValue<string>());
+            Assert.Null(json["assets"]![assetName]!["data_base64"]);
             Assert.Equal(expectedPartName, parts[1].Headers.ContentDisposition!.Name!.Trim('"'));
-            Assert.Equal("image.jpg", parts[1].Headers.ContentDisposition!.FileName!.Trim('"'));
+            Assert.Equal("photo.jpg", parts[1].Headers.ContentDisposition!.FileName!.Trim('"'));
             Assert.Equal(new byte[] {1, 2, 3}, await parts[1].ReadAsByteArrayAsync(cancellationToken));
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -101,7 +106,7 @@ public class JevRunnerTest
                     Encoding.UTF8, "application/json")
             };
         }));
-        var request = new Request(new {photo = "photo"}, JevModel.Latest);
+        var request = new Request(new {photo = assetName}, JevModel.Latest);
         request.Assets.Add((IImageStreamAsset) asset);
 
         await CreateRunner(client).Execute(request, TestContext.Current.CancellationToken);
@@ -418,21 +423,36 @@ public class JevRunnerTest
 
     private static Request CreateRequest() => new("request state", JevModel.Latest);
 
-    /// <summary>Supplies image metadata and a tracked stream factory without file-system access.</summary>
+    /// <summary>
+    /// Supplies distinct state and multipart references and a tracked stream factory without file-system access.
+    /// </summary>
+    /// <param name="assetName">The asset reference stored in request state.</param>
+    /// <param name="format">The encoded image format.</param>
+    /// <param name="name">The multipart field name.</param>
+    /// <param name="openRead">The factory used to open the tracked stream.</param>
     private sealed class TestImageStreamAsset(
-        string name,
+        string assetName,
         string format,
-        string partName,
+        string name,
         Func<Stream> openRead) : IImageStreamAsset
     {
-        /// <summary>Gets the asset name referenced by request state.</summary>
+        /// <summary>
+        /// Gets the multipart field name.
+        /// </summary>
         public string Name { get; } = name;
+
+        /// <summary>
+        /// Gets the asset name referenced by request state.
+        /// </summary>
+        public string AssetName { get; } = assetName;
+
+        /// <summary>
+        /// Gets the file name reported in the multipart upload.
+        /// </summary>
+        public string FileName => "photo.jpg";
 
         /// <summary>Gets the image format used in request metadata.</summary>
         public string Format { get; } = format;
-
-        /// <summary>Gets the multipart identifier referenced by request metadata.</summary>
-        public string PartName { get; } = partName;
 
         /// <summary>Invokes the factory so the test can track opening and disposal.</summary>
         public Stream OpenRead() => openRead();

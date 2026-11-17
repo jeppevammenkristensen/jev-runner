@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Threading;
@@ -34,9 +35,10 @@ public class AssetImageExtensionsTest
         Assert.Same(state, returned);
         Assert.Equal("image-id", state["photo"]);
         var asset = GetImageAsset(state);
-        Assert.Equal("image-id", asset.Name);
+        Assert.IsType<FilePathAsset>(asset);
+        Assert.Equal("image-id", asset.AssetName);
         Assert.Equal(expectedFormat, asset.Format);
-        Assert.Equal(original, asset.FileData.Bytes);
+        Assert.Equal(original, ReadBytes(asset));
         Assert.Equal(original, path.ReadAllBytes(fs));
         Assert.Single(fs.AllFiles);
     }
@@ -58,8 +60,12 @@ public class AssetImageExtensionsTest
             token: TestContext.Current.CancellationToken, fileSystem: fs);
 
         var asset = GetImageAsset(state);
+        Assert.IsType<ByteArrayAsset>(asset);
+        Assert.EndsWith("source", state["photo"]);
+        Assert.EndsWith("source", asset.AssetName);
+        Assert.Equal("source.png", asset.FileName);
         Assert.Equal("png", asset.Format);
-        var bytes = asset.FileData.Bytes;
+        var bytes = ReadBytes(asset);
         Assert.Equal(new byte[] {137, 80, 78, 71, 13, 10, 26, 10}, bytes[..8]);
         using var image = SKBitmap.Decode(bytes);
         Assert.Equal(expectedWidth, image.Width);
@@ -104,16 +110,32 @@ public class AssetImageExtensionsTest
         Assert.Empty(new Request(state).Assets);
     }
 
-    /// <summary>Reads the registered image through the same request construction used by callers.</summary>
-    private static ImageAsset GetImageAsset(AssetState state)
+    /// <summary>
+    /// Reads the registered stream image through the same request construction used by callers.
+    /// </summary>
+    /// <param name="state">The state containing the prepared image.</param>
+    /// <returns>The image's multipart stream provider.</returns>
+    private static IImageStreamAsset GetImageAsset(AssetState state)
     {
         var asset = Assert.Single(new Request(state).Assets);
-        Assert.True(asset is ImageAsset);
         return asset switch
         {
-            ImageAsset image => image,
-            _ => throw new InvalidOperationException("Expected an image asset.")
+            IImageStreamAsset image => image,
+            _ => throw new InvalidOperationException("Expected a stream image asset.")
         };
+    }
+
+    /// <summary>
+    /// Reads prepared image bytes without assuming a file-backed or byte-backed implementation.
+    /// </summary>
+    /// <param name="asset">The prepared image whose stream is read and disposed.</param>
+    /// <returns>The encoded image bytes.</returns>
+    private static byte[] ReadBytes(IImageStreamAsset asset)
+    {
+        using var stream = asset.OpenRead();
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return buffer.ToArray();
     }
 
     /// <summary>Encodes a source fixture in memory without touching the physical file system.</summary>

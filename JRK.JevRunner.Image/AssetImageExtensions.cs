@@ -82,7 +82,8 @@ public static class AssetImageExtensions
 
             if (validationResult is ValidImageResult valid)
             {
-                asset = new FilePathAsset(path, fileSystem);
+                asset = new FilePathAsset(path, fileSystem)
+                    .WithAssetName(assetName).WithFormat(valid.Format);
             }
             else if (validationResult is InvalidImageResult invalidImageResult)
             {

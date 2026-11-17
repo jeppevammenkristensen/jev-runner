@@ -13,12 +13,14 @@ public class ByteArrayAssetTest
     [Fact]
     public void Constructor_PreservesMetadataAndSerializesMultipartReference()
     {
-        var image = new ByteArrayAsset([1, 2, 3], "photo", "custom-part", "jpg");
+        var image = new ByteArrayAsset([1, 2, 3], "custom-part", "photo.jpg", "photo", "jpg");
 
-        Assert.Equal("photo", image.Name);
-        Assert.Equal("custom-part", image.PartName);
+        Assert.Equal("custom-part", image.Name);
+        Assert.Equal("photo.jpg", image.FileName);
+        Assert.Equal("photo", image.AssetName);
         Assert.Equal("jpg", image.Format);
         Asset asset = (IImageStreamAsset) image;
+        Assert.Equal("photo", asset.AssetName);
         var assets = new JsonObject();
         asset.AddTo(assets);
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(
@@ -30,7 +32,7 @@ public class ByteArrayAssetTest
     public void OpenRead_ReturnsOriginalBytesInReadOnlyStream()
     {
         byte[] bytes = [0, 1, 2, 253, 254, 255];
-        var asset = new ByteArrayAsset(bytes, "photo", "part", "png");
+        var asset = new ByteArrayAsset(bytes, "part", "photo.png", "photo", "png");
 
         using var stream = asset.OpenRead();
         using var buffer = new MemoryStream();
@@ -46,7 +48,7 @@ public class ByteArrayAssetTest
     [Fact]
     public void OpenRead_ReturnsIndependentStreamsAndSupportsReopeningAfterDisposal()
     {
-        var asset = new ByteArrayAsset([1, 2, 3], "photo", "part", "jpg");
+        var asset = new ByteArrayAsset([1, 2, 3], "part", "photo.jpg", "photo", "jpg");
         using var first = asset.OpenRead();
         using var second = asset.OpenRead();
 
@@ -63,7 +65,7 @@ public class ByteArrayAssetTest
     [Fact]
     public void OpenRead_EmptyArray_ReturnsEmptyStream()
     {
-        var asset = new ByteArrayAsset([], "photo", "part", "jpg");
+        var asset = new ByteArrayAsset([], "part", "photo.jpg", "photo", "jpg");
 
         using var stream = asset.OpenRead();
         Assert.True(stream.CanRead);
@@ -75,12 +77,15 @@ public class ByteArrayAssetTest
     [Fact]
     public void Constructor_RejectsNullBytes()
     {
-        var error = Assert.Throws<ArgumentNullException>(() => new ByteArrayAsset(null!, "photo", "part", "jpg"));
+        var error = Assert.Throws<ArgumentNullException>(() => new ByteArrayAsset(null!, "part", "photo.jpg", "photo", "jpg"));
 
         Assert.Equal("bytes", error.ParamName);
     }
 
-    /// <summary>Every metadata field must contain a non-whitespace value.</summary>
+    /// <summary>
+    /// Every metadata field must contain a non-whitespace value.
+    /// </summary>
+    /// <param name="value">The invalid metadata value applied to each constructor parameter.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -88,10 +93,12 @@ public class ByteArrayAssetTest
     public void Constructor_RejectsInvalidMetadata(string? value)
     {
         Assert.Equal("name", Assert.ThrowsAny<ArgumentException>(() =>
-            new ByteArrayAsset([], value!, "part", "jpg")).ParamName);
-        Assert.Equal("partName", Assert.ThrowsAny<ArgumentException>(() =>
-            new ByteArrayAsset([], "photo", value!, "jpg")).ParamName);
+            new ByteArrayAsset([], value!, "photo.jpg", "photo", "jpg")).ParamName);
+        Assert.Equal("fileName", Assert.ThrowsAny<ArgumentException>(() =>
+            new ByteArrayAsset([], "part", value!, "photo", "jpg")).ParamName);
+        Assert.Equal("assetName", Assert.ThrowsAny<ArgumentException>(() =>
+            new ByteArrayAsset([], "part", "photo.jpg", value!, "jpg")).ParamName);
         Assert.Equal("format", Assert.ThrowsAny<ArgumentException>(() =>
-            new ByteArrayAsset([], "photo", "part", value!)).ParamName);
+            new ByteArrayAsset([], "part", "photo.jpg", "photo", value!)).ParamName);
     }
 }
