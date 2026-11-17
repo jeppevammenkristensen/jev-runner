@@ -8,7 +8,7 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 
 // Spectre.Console.Cli handles command-line parsing and validation before starting the quiz.
-var commandApp = new CommandApp<RunCommand>().WithDescription("Enter the description here");
+var commandApp = new CommandApp<RunCommand>().WithDescription("Guess a hidden animal using yes/no questions or animal names.");
 commandApp.Configure(ctx =>
 {
     ctx.UseAssemblyInformationalVersion();

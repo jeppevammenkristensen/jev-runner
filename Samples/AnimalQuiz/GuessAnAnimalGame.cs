@@ -1,11 +1,10 @@
 ﻿using JRK.JevRunner;
-using JRK.JevRunner.Responses;
 using Spectre.Console;
 
 namespace AnimalQuiz;
 
 /// <summary>
-/// Runs one console round in which the player uses yes-or-no questions to discover a hidden animal.
+/// Runs one console round using factual yes-or-no questions and positive animal identity guesses.
 /// Jev evaluates each input against the animal's name instead of using a hard-coded list of animal facts.
 /// </summary>
 /// <param name="name">The hidden animal's English name, supplied as context to Jev.</param>
@@ -18,10 +17,11 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
     /// </summary>
     public async Task Run()
     {
-        Noul animalGuessed = new Noul(0.1);
         AnsiConsole.Write(new FigletText("Want to play a game?"));
+        AnsiConsole.MarkupLine("Ask one factual yes/no question, or guess an animal (for example, 'Dolphin').");
+        AnsiConsole.MarkupLine("Use the specific animal name; synonyms and translations count. Type 'I give up' to reveal it.");
         
-        while (!animalGuessed.Success)
+        while (true)
         {
             var guess = await AnsiConsole.PromptAsync(new TextPrompt<string>("Ask a question or make a guess"));
             // One request carries both the hidden animal and the player's input, with several judgments to evaluate.
@@ -34,13 +34,13 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
 
             if (guessQuestionType is GuessQuestionType.NotAQuestion)
             {
-                AnsiConsole.MarkupLineInterpolated($"[red]The Text must be formulated as a question[/]");
+                AnsiConsole.MarkupLine("[red]Ask an animal question, name one animal, or type 'I give up'.[/]");
                 continue;
             }
 
             if (guessQuestionType is GuessQuestionType.OtherQuestion)
             {
-                AnsiConsole.MarkupLineInterpolated($"[red]The question must be a yes or no question[/]");
+                AnsiConsole.MarkupLine("[red]Ask one factual yes/no question about a typical adult animal, or make one positive animal guess.[/]");
                 continue;
             }
 
@@ -50,24 +50,35 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
                 break;
             }
 
-            var questionIsCorrect = guessQuery.GetAskedQuestionIsCorrectAnswer(response);
-            
             if (guessQuestionType is GuessQuestionType.DirectQuestion)
             {
-                if (questionIsCorrect.Noul == true)
+                var identityAnswer = guessQuery.GetUserGuessTheAnimalAnswer(response);
+                var identified = AnswerPolicy.Evaluate(identityAnswer.Noul);
+                if (identified is true)
                 {
                     AnsiConsole.MarkupLineInterpolated($"[green]Correct. The animal was {name} [/]");
                     break;
                 }
+                else if (identified is false)
+                {
+                    AnsiConsole.MarkupLine("[red]That is not the specific animal I'm thinking of.[/]");
+                }
                 else
                 {
-                    AnsiConsole.MarkupLineInterpolated($"[red]That is not the animal I'm thinking off [/]");
-                    continue;
+                    AnsiConsole.MarkupLine("[yellow]I'm not sure that identifies the animal. Try a more specific name.[/]");
                 }
+                continue;
             }
 
-            // Show both the yes/no decision and its underlying numeric value for this sample.
-            AnsiConsole.MarkupLineInterpolated($"[dim]The answer is: {questionIsCorrect.Noul.Success} ({questionIsCorrect.Noul.Value})[/]");
+            var questionIsCorrect = guessQuery.GetAskedQuestionIsCorrectAnswer(response);
+            var answer = AnswerPolicy.Evaluate(questionIsCorrect.Noul);
+            var answerText = answer switch
+            {
+                true => "Yes",
+                false => "No",
+                null => "I'm not sure; please rephrase the question"
+            };
+            AnsiConsole.MarkupLineInterpolated($"[dim]{answerText} (yes probability: {questionIsCorrect.Noul.Value})[/]");
             
         }
 

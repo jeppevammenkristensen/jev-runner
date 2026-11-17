@@ -65,9 +65,7 @@ public class DirectoryAnalysisOperation
 
                 AnsiConsole.MarkupLineInterpolated($"[dim]Has pet {result.HasPet.Noul.Value}[/]");
                 AnsiConsole.MarkupLineInterpolated($"[dim]Has child {result.HasChild.Noul.Value}[/]");
-                AnsiConsole.MarkupLineInterpolated($"[dim]Has couple kissing {result.HasCoupleKissing.Noul.Value}[/]");
                 AnsiConsole.MarkupLineInterpolated($"[dim]Is Screenshot {result.IsScreenShot.Noul.Value}[/]");
-
 
                 var imageAsBytes = query.Photo.Asset.ReadAsBytes();
 
