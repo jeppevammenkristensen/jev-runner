@@ -1,3 +1,5 @@
+using JRK.JevRunner.Annotation;
+
 namespace JRK.JevRunner;
 
 /// <summary>Formats instructions with backtick-quoted state references and paths.</summary>
@@ -20,6 +22,7 @@ public static class FormattableStringExtensions
                 {
                     object? obj = argument switch
                     {
+                        AssetAndStateReference assetAndStateReference => assetAndStateReference.Reference.BackTickQuoted,
                         IBackTick name => name.BackTickQuoted,
                         _ => argument
                     };

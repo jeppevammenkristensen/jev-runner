@@ -1,5 +1,7 @@
 using System;
 using JetBrains.Annotations;
+using JRK.JevRunner.Annotation;
+using JRK.JevRunner.Requests;
 using Xunit;
 
 namespace JRK.JevRunner.Tests;
@@ -8,6 +10,18 @@ namespace JRK.JevRunner.Tests;
 [TestSubject(typeof(FormattableStringExtensions))]
 public class FormattableStringExtensionsTest
 {
+    /// <summary>
+    /// Prepared assets interpolate as their quoted state field rather than their asset name or record representation.
+    /// </summary>
+    [Fact]
+    public void Escaped_AssetAndStateReference_UsesQuotedStateReference()
+    {
+        var prepared = new AssetAndStateReference("photo", new ImageAsset("image-id", "png", new Base64String("AQID")));
+        FormattableString message = $"Inspect {prepared} and {prepared}.";
+
+        Assert.Equal("Inspect `photo` and `photo`.", message.Escaped);
+    }
+
     [Fact]
     public void Escaped_QuotesReferencesAndPathsAndPreservesOtherArguments()
     {
