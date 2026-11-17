@@ -8,12 +8,23 @@
 - `IJevQueryProcessRequestBeforeExecution` enables source generation without `[JevQuery]`. Generated execution invokes the hook once after adding questions and immediately before calling the runner, using the returned request. Explicit implementations and inherited interfaces are supported; `GetRequest()` alone does not invoke the hook, and hook failures prevent runner execution.
 - Debug-level outgoing header diagnostics include client defaults, request overrides, and content headers. Credential headers and occurrences of the configured API key in other header values are redacted before logging; actual outgoing headers are unchanged. Headers added later by handlers or the transport are not included.
 - Regression tests for initialization overloads, invalid and missing keys, query discovery and preprocessing, cancellation forwarding, header diagnostics, credential redaction, and disabled debug logging.
+- Multipart image uploads through `IImageStreamAsset`, with `FilePathAsset` for deferred file reads and `ByteArrayAsset` for in-memory bytes. The JSON `request` part precedes binary image parts; inline `ImageAsset` values can coexist with multipart assets. Opened upload streams are disposed with the request content.
+- `AssetAndStateReference`, `AssetState.AddAssetStateAndReference(...)`, and `AbsolutePath.CreateAssetWithAdjustments(...)` for preparing and registering images independently. `Asset.ReadAsBytes()` reads either inline or stream-backed images.
+- Generated queries automatically register non-null `AssetAndStateReference` properties before constructing the request. Identical registrations are reused; conflicts throw. `JEV007` warns when the declared `State` type does not inherit from `AssetState`.
+- Preserved interpolations quote `AssetAndStateReference` using its state reference. Regression coverage includes multipart payloads, stream disposal, asset byte reading, image preparation, and generated asset registration.
 
 ### Changed
 
 - **Breaking:** `Request.Execute(apiKey, ...)` accepts `ILoggerFactory` instead of `ILogger<JevRunner>`. Pass a factory, or create a runner with `JevRunner.Init(apiKey, logger)` and call `runner.Execute(request, cancellationToken)`.
 - Playground demonstrates enabling long context through the query preprocessing hook.
 - Added XML parameter documentation for the generator's query candidates and question mappings.
+- **Breaking:** `AddImageAsset` now requires a `base64Encode` argument and returns `ValueTask<TAssetState>`. Pass `true` for inline Base64 or `false` for file-backed multipart upload. The file-backed branch generates its own asset reference rather than using the supplied `assetName`.
+- **Breaking:** `AddImageAssetWithAutoAdjustment` is synchronous; remove `await`. Unchanged images remain file-backed, while resized images use byte-backed PNG assets. `Asset.Name` is now `Asset.AssetName`; stream assets use `Name` separately for the multipart field.
+- Expanded XML API documentation and made non-exhaustive switch expressions (`CS8509`) build errors.
+
+### Fixed
+
+- Serialize request JSON once and send it directly as UTF-8 JSON, including inside multipart requests, instead of serializing the payload again as a JSON string. Debug request logging uses that same JSON with literal backtick references rather than Unicode-escaped backticks.
 
 ## [0.7.1]
 

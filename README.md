@@ -4,12 +4,15 @@
 
 A .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
 
-## Upcoming changes (0.7.2)
+## Upcoming changes (unreleased)
 
 - Initialize runners with a logger factory, a typed logger, or an environment-variable API key.
 - Implement `IJevQueryProcessRequestBeforeExecution` to customize generated requests
   immediately before execution; `[JevQuery]` is optional for these queries.
 - Inspect outgoing headers at debug level without exposing the Jev token in header diagnostics.
+- Upload file-backed or byte-backed images as multipart data, or retain inline Base64.
+- Prepare images independently and let generated queries register prepared asset properties.
+- Send correctly serialized JSON with literal backtick references in payloads and debug logs.
 - **Breaking:** `request.Execute(apiKey, ...)` now accepts `ILoggerFactory` rather than
   `ILogger<JevRunner>`. See [initialization and logging](#initialization-and-logging) for migration.
 
@@ -216,9 +219,9 @@ and accuracy may change. Images can be used with Noul, Choice, Score, and Box
 questions. Box answers contain normalized `Top`, `Bottom`, `Left`, and `Right`
 edges and answer-level `Confidence`.
 
-Use `AssetState` to associate a state field with an image. `AddImageAsset` reads the
-file asynchronously, base64-encodes its bytes, and uses its extension as the image
-format. It accepts an optional `IFileSystem` for file access.
+Use `AssetState` to associate a state field with an image. `FilePathAsset` opens
+the file when executing the request and uploads it as multipart data. It uses the
+file extension as the format and accepts an optional `IFileSystem` for file access.
 
 Using the `runner` initialized in the quick start:
 
@@ -228,11 +231,10 @@ using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 using TruePath;
 
-var state = new AssetState();
-await state.AddImageAsset(
-    "photo",
-    Guid.NewGuid().ToString(),
-    AbsolutePath.Create(Path.GetFullPath("photo.jpg")));
+var imagePath = AbsolutePath.Create(Path.GetFullPath("photo.jpg"));
+var image = new FilePathAsset(imagePath)
+    .WithAssetName(Guid.NewGuid().ToString());
+var state = new AssetState().AddAsset("photo", image);
 
 var request = new Request(state, JevModel.Latest)
     .AddQuestion(new NoulQuestionBuilder(
@@ -244,17 +246,40 @@ Console.WriteLine(response.GetRequiredNoulAnswer("person_present").Noul);
 ```
 
 Populate the state **before** constructing the request: its assets are collected
-by the constructor. A generated `[JevQuery]` can likewise expose an `AssetState`
-as its `State` property; populate it before calling `GetRequest()` or `Execute()`.
+by the constructor. Keep file-backed sources available until execution completes.
+A generated query can register prepared asset properties automatically; see
+[prepared assets in generated queries](#prepared-assets-in-generated-queries).
 
-For manual configuration, add an `ImageAsset(reference, format, base64)` to
+For manual configuration, add an `ImageAsset(reference, format, bytes)` to
 `request.Assets` and place the same reference in the state, instructions, or
 criteria. Use unique references such as UUIDs to avoid accidental text matches.
+For already encoded data, pass `new Base64String(base64)` instead of bytes.
 Base64 must contain only the encoded bytes, without a `data:` prefix.
 
 Requests containing assets automatically send
-`TypeSafe-Danger-Zone-Images: true`. Images are sent in the JSON `assets` map,
-not as multipart uploads. A filename or image URL alone does not upload an image.
+`TypeSafe-Danger-Zone-Images: true`. `ImageAsset` embeds Base64 in the JSON `assets`
+map. `FilePathAsset`, `ByteArrayAsset`, and custom `IImageStreamAsset` implementations
+trigger multipart upload: the first part is JSON named `request`, followed by
+`application/octet-stream` image parts. Inline and stream-backed assets can coexist.
+The runner disposes opened upload streams. A filename or image URL alone does not
+upload an image.
+
+Stream asset `AssetName` identifies the entry in state and the JSON assets map;
+`Name` identifies the multipart field referenced by the JSON `part` value.
+Use `Asset.AssetName` when working with the asset union, and `Asset.ReadAsBytes()`
+to read either inline or stream-backed contents.
+
+**Migration:** `AddImageAsset` now requires `base64Encode` and returns a
+`ValueTask`. Pass `true` to preserve inline Base64 behavior:
+
+```csharp
+await state.AddImageAsset("anotherPhoto", Guid.NewGuid().ToString(),
+    imagePath, base64Encode: true);
+```
+
+Passing `false` creates a file-backed asset with a generated reference; that branch
+does not use the supplied `assetName`. For an explicit reference, use
+`FilePathAsset.WithAssetName(...)` as above.
 
 Prepare PNG or JPEG images before sending: each dimension must be 280–1568 pixels,
 each file at most 16 MiB, and the request body at most 32 MiB. Base64 increases the
@@ -285,7 +310,21 @@ var state = new AssetState().AddAsset("photo",
 
 `ImageScaler` returns PNG bytes. `ImageAsset` accepts them through `FileData`,
 which exposes `Bytes` and `Base64`; the constructor does not validate or convert
-the supplied format.
+the supplied format. For multipart upload instead, use:
+
+```csharp
+var reference = Guid.NewGuid().ToString();
+var multipartState = new AssetState().AddAsset("photo",
+    new ByteArrayAsset(imageBytes, "photoPart", "photo.png", reference, "png"));
+```
+
+The optional image package also provides synchronous
+`path.CreateAssetWithAdjustments("photo")`: it validates and attempts one suggested
+resize, returning an `AssetAndStateReference` without registering it. Unchanged
+images remain file-backed; resized images become byte-backed PNGs. Use
+`state.AddAssetStateAndReference(prepared)` to register the result manually.
+Adjusted output is not revalidated. `AddImageAssetWithAutoAdjustment` is now
+synchronous too; remove `await` from existing calls.
 
 ### Locate objects with Box questions
 
@@ -426,6 +465,39 @@ execution and answer lookup. Wrapper answer properties throw if an answer is
 missing or has a mismatched type.
 Criteria are generated only when both `Yes` and `No` are non-null; otherwise
 criteria remain unset.
+
+### Prepared assets in generated queries
+
+Expose readable `AssetAndStateReference` properties and declare `State` as
+`AssetState` (or a derived type). Generated `GetRequest()` registers non-null
+properties before constructing the request:
+
+```csharp
+using JRK.JevRunner.Annotation;
+using JRK.JevRunner.Image;
+using JRK.JevRunner.Infrastructure;
+using TruePath;
+
+[JevQuery]
+public partial class PhotoQuery
+{
+    public AssetState State { get; } = new();
+    public AssetAndStateReference Photo { get; } =
+        AbsolutePath.Create(Path.GetFullPath("photo.jpg"))
+            .CreateAssetWithAdjustments("photo");
+}
+```
+
+Add question-definition properties as with other queries. For their instructions,
+`Escape.Interpolated($"Describe {Photo}.")` produces ``Describe `photo`.``.
+Repeated calls reuse identical registrations; different assets or values at the
+same state field throw `InvalidOperationException`. Keep prepared properties
+stable rather than creating a new asset on each getter call.
+
+`JEV007` warns when the declared `State` type does not inherit from `AssetState`;
+the generator then ignores prepared asset properties. Derived state types and
+generic state types constrained to `AssetState` are supported. Calling `GetRequest()`
+registers assets but does not invoke the preprocessing hook below.
 
 ### Customize a generated request before execution
 
