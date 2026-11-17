@@ -109,8 +109,6 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
         Photo = photo.CreateAssetWithAdjustments("Photo", null);
         State = state;
 
-        state.AddAssetStateAndReference(Photo);
-        
         var fooBar = "Happy";
 
         HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person in it", null, null);
