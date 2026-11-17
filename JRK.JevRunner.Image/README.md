@@ -122,11 +122,11 @@ using JRK.JevRunner.Infrastructure;
 using JRK.JevRunner.Requests;
 
 byte[] png = new ImageScaler().Downscale(path);
-var asset = ImageAsset.FromByteArray(Guid.NewGuid().ToString(), "png", png);
+var asset = new ImageAsset(Guid.NewGuid().ToString(), "png", png);
 var state = new AssetState().AddAsset("photo", asset);
 ```
 
-`FromByteArray` encodes bytes as standard base64; it does not detect the format,
+`ImageAsset` encodes bytes as standard base64; it does not detect the format,
 convert pixels, or validate them. The supplied format must match the actual bytes.
 Populate `AssetState` before constructing the request or executing a generated query.
 
@@ -163,15 +163,18 @@ request-wide API limits.
 
 ```csharp
 var state = new AssetState();
-await state.AddImageAssetWithAutoAdjustment(
+state.AddImageAssetWithAutoAdjustment(
     "photo", Guid.NewGuid().ToString(),
     AbsolutePath.Create(@"C:\images\photo.png"));
 ```
 
 The helper validates the file, attempts one `Upscale` or `Downscale` when suggested,
-and registers the resulting bytes. Unchanged images retain their detected format
-and original bytes, while resized images are encoded as PNG. Validation, byte loading,
-and scaling all use the supplied `IFileSystem` (or the local file system by default).
+and registers the resulting asset. The method is synchronous; remove `await` from
+older calls. Unchanged images retain their detected format as a `FilePathAsset`,
+read again at execution time; resized images become PNG-backed `ByteArrayAsset`
+values. Both use multipart upload. Keep unchanged source files available until
+execution completes. Validation, file access, and scaling all use the supplied
+`IFileSystem` (or the local file system by default).
 If validation fails with `None` or
 `ScalingNotPossible`, it throws `InvalidOperationException` containing the validation
 errors instead. Source files are unchanged.
@@ -180,6 +183,29 @@ errors instead. Source files are unchanged.
 non-dimension errors. A resize can leave the other axis outside the limits, so this
 helper is not a guarantee of API acceptance. For strict validation, revalidate the
 prepared bytes before registering them explicitly.
+
+## Prepare an asset without registering it
+
+```csharp
+using JRK.JevRunner.Annotation;
+using JRK.JevRunner.Infrastructure;
+
+AssetAndStateReference prepared = path.CreateAssetWithAdjustments("photo");
+var state = new AssetState().AddAssetStateAndReference(prepared);
+byte[] imageBytes = prepared.Asset.ReadAsBytes();
+```
+
+`CreateAssetWithAdjustments` is synchronous and follows the same validation,
+single-resize, and file-lifetime rules as the automatic adjustment helper.
+Its optional `assetName` overrides the generated asset reference. Preparation
+alone does not register the asset. `ReadAsBytes()` supports inline and stream-backed
+assets and disposes streams it opens.
+
+Alternatively, expose the prepared value as a readable `AssetAndStateReference`
+property on a generated query whose declared `State` derives from `AssetState`.
+Generated `GetRequest()` registers non-null asset properties before constructing
+the request, reuses identical registrations, and rejects conflicts. See
+[generated query assets](../README.md#prepared-assets-in-generated-queries).
 
 ## Draw a Box answer
 

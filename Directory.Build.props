@@ -9,7 +9,7 @@
   </PropertyGroup>
   <PropertyGroup>    
     <IsPackable>false</IsPackable>
-    <VersionPrefix>0.7.2</VersionPrefix>
+    <VersionPrefix>0.8.0</VersionPrefix>
     <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev-01</VersionSuffix>    
   </PropertyGroup>
 </Project> 

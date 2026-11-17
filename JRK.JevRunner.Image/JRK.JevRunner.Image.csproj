@@ -17,9 +17,13 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>Runner-Icon.png</PackageIcon>
-        <PackageReleaseNotes>0.7.1: Usage analyzer integration
-- Usage analyzers and code fixes flow through JRK.JevRunner to its JRK.JevRunner.Analyzers dependency; neither core nor Image embeds duplicate tooling assemblies.
-- Explicit analyzer and code-fix project references enable diagnostics during local image-library development without adding runtime dependencies.</PackageReleaseNotes>
+        <PackageReleaseNotes>Standalone image preparation and multipart-backed assets
+- CreateAssetWithAdjustments validates an image and attempts one suggested resize, returning an AssetAndStateReference without registering it.
+- Unchanged images remain file-backed; resized images become byte-backed PNG assets. Both support multipart upload through JRK.JevRunner. Keep file-backed sources available until execution completes.
+- Register prepared assets manually with AddAssetStateAndReference, or expose them as generated query properties with AssetState.
+- Breaking: AddImageAssetWithAutoAdjustment is now synchronous; remove await from existing calls.
+- Asset.ReadAsBytes reads inline or stream-backed image contents and disposes opened streams.
+- Adjusted output is not revalidated; preparation does not guarantee API acceptance or check request-wide limits.</PackageReleaseNotes>
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
 

@@ -29,6 +29,22 @@ published release notes.
 - Regression tests cover initialization, missing and invalid keys, interface-only
   query discovery, preprocessing order and failures, request replacement,
   cancellation forwarding, and credential-safe header logging.
+- Multipart image uploads using `FilePathAsset`, `ByteArrayAsset`, or a custom
+  `IImageStreamAsset`. A JSON `request` part is followed by binary image parts;
+  existing inline `ImageAsset` values can be included in the same request.
+  The request content owns and disposes opened upload streams.
+- Standalone image preparation with `AbsolutePath.CreateAssetWithAdjustments(...)`,
+  returning an `AssetAndStateReference` without registering it. Register manually
+  with `AddAssetStateAndReference(...)`, or expose it on a generated query.
+  `Asset.ReadAsBytes()` reads inline or stream-backed image contents.
+- Generated queries register non-null `AssetAndStateReference` properties in
+  `AssetState` before constructing the request. Repeated identical registrations
+  are reused; conflicting registrations throw `InvalidOperationException`.
+  `JEV007` warns and skips automatic registration if the declared state type does
+  not inherit from `AssetState` (including through a generic constraint).
+- Preserved interpolations automatically backtick-quote the state reference in
+  `AssetAndStateReference`. Added regression coverage for multipart upload,
+  stream ownership, image preparation, byte reading, and generated registration.
 
 ### Changed
 
@@ -37,6 +53,25 @@ published release notes.
   `JevRunner.Init(apiKey, logger)` and call `runner.Execute(request, cancellationToken)`.
 - Playground demonstrates enabling long context through the query processing hook.
 - Documented the generator's query-candidate and question-definition parameters.
+- **Breaking:** `AddImageAsset` requires `base64Encode` and returns
+  `ValueTask<TAssetState>`. Use `true` to keep inline Base64, or `false` for a
+  file-backed multipart asset. In the latter branch, `assetName` is not used;
+  use `new FilePathAsset(path).WithAssetName(...)` when a specific reference is needed.
+- **Breaking:** `AddImageAssetWithAutoAdjustment` now returns the state
+  synchronously; remove `await`. Unchanged images use file-backed assets and
+  resized images use byte-backed PNG assets. Keep source files available until
+  execution completes.
+- **Breaking:** replace `Asset.Name` with `Asset.AssetName`. For stream assets,
+  `AssetName` identifies the asset in state and the JSON assets map, while `Name`
+  identifies its multipart field.
+- Expanded XML summaries across public APIs. Repository builds now treat
+  non-exhaustive switch expressions (`CS8509`) as errors.
+
+### Fixed
+
+- Request bodies are serialized once and sent directly as UTF-8 JSON rather than
+  being serialized again as a JSON string. JSON-only and multipart requests use
+  the same payload, and debug logs preserve literal backtick references.
 
 ## 0.7.0
 
