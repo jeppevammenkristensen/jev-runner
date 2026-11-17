@@ -69,6 +69,9 @@ published release notes.
 
 ### Fixed
 
+- `JEV100` and `JEV101` now cover `AssetAndStateReference`, including derived
+  records and generic constraints. Existing code fixes preserve interpolation
+  arguments or remove redundant backticks, matching runtime formatting.
 - Request bodies are serialized once and sent directly as UTF-8 JSON rather than
   being serialized again as a JSON string. JSON-only and multipart requests use
   the same payload, and debug logs preserve literal backtick references.

@@ -28,7 +28,7 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         "JevRunner.Usage",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Explicit backticks around an StateReference or StatePath argument in a FormattableString produce duplicate quoting when JevRunner formats it.");
+        description: "Explicit backticks around an IBackTick or AssetAndStateReference argument in a FormattableString produce duplicate quoting when JevRunner formats it.");
 
     /// <summary>
     /// Reports string interpolation that discards automatic quoting of state references and paths.
@@ -40,7 +40,7 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         "JevRunner.Usage",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Use Escape.Interpolated to preserve interpolation arguments as a FormattableString and apply automatic backtick quoting to state references and paths.");
+        description: "Use Escape.Interpolated to preserve interpolation arguments as a FormattableString and apply automatic backtick quoting to IBackTick and AssetAndStateReference values.");
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RedundantBackticksRule);
@@ -53,21 +53,30 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(startContext =>
         {
             var backTick = startContext.Compilation.GetTypeByMetadataName("JRK.JevRunner.IBackTick");
-            if (backTick is null)
+            var assetReference = startContext.Compilation.GetTypeByMetadataName("JRK.JevRunner.Annotation.AssetAndStateReference");
+            if (backTick is null && assetReference is null)
                 return;
 
             var formattableString = startContext.Compilation.GetTypeByMetadataName("System.FormattableString");
             var formattable = startContext.Compilation.GetTypeByMetadataName("System.IFormattable");
             startContext.RegisterSyntaxNodeAction(nodeContext =>
-                AnalyzeInterpolation(nodeContext, backTick, formattableString, formattable),
+                AnalyzeInterpolation(nodeContext, backTick, assetReference, formattableString, formattable),
                 SyntaxKind.InterpolatedStringExpression);
         });
     }
 
-    /// <summary>Finds lost quoting in strings and redundant explicit quoting in preserved interpolations.</summary>
+    /// <summary>
+    /// Finds lost quoting in strings and redundant explicit quoting in preserved interpolations.
+    /// </summary>
+    /// <param name="context">The interpolation's syntax and semantic analysis context.</param>
+    /// <param name="backTick">The runtime quoting marker, if available.</param>
+    /// <param name="assetReference">The runtime prepared asset type, if available.</param>
+    /// <param name="formattableString">The type preserving interpolation arguments.</param>
+    /// <param name="formattable">The interface preserving interpolation arguments.</param>
     private static void AnalyzeInterpolation(
         SyntaxNodeAnalysisContext context,
-        INamedTypeSymbol backTick,
+        INamedTypeSymbol? backTick,
+        INamedTypeSymbol? assetReference,
         INamedTypeSymbol? formattableString,
         INamedTypeSymbol? formattable)
     {
@@ -84,7 +93,7 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         foreach (var interpolation in expression.Contents.OfType<InterpolationSyntax>())
         {
             var type = context.SemanticModel.GetTypeInfo(interpolation.Expression, context.CancellationToken).Type;
-            if (type is null || !IsBackTick(type, backTick))
+            if (type is null || !IsAutomaticallyQuoted(type, backTick, assetReference))
                 continue;
 
             if (!preservesArguments)
@@ -105,13 +114,28 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
             after.TextToken.ValueText.StartsWith("`", System.StringComparison.Ordinal);
     }
 
-    /// <summary>Recognizes the marker itself, inherited implementations, and constrained type parameters.</summary>
-    private static bool IsBackTick(ITypeSymbol type, INamedTypeSymbol backTick,
+    /// <summary>
+    /// Recognizes marker implementations and prepared assets, including inheritance and generic constraints.
+    /// </summary>
+    /// <param name="type">The interpolated argument's type or a generic constraint.</param>
+    /// <param name="backTick">The runtime quoting marker, if available.</param>
+    /// <param name="assetReference">The runtime prepared asset type, if available.</param>
+    /// <param name="visited">Type parameters already examined to avoid cyclic constraint traversal.</param>
+    /// <returns>Whether the runtime formatter automatically quotes values of this type.</returns>
+    private static bool IsAutomaticallyQuoted(ITypeSymbol type, INamedTypeSymbol? backTick,
+        INamedTypeSymbol? assetReference,
         HashSet<ITypeSymbol>? visited = null)
     {
         if (SymbolEqualityComparer.Default.Equals(type, backTick) ||
             type.AllInterfaces.Any(candidate => SymbolEqualityComparer.Default.Equals(candidate, backTick)))
             return true;
+
+        // The runtime formatter also matches prepared assets and any derived records.
+        for (var candidate = type as INamedTypeSymbol; candidate != null; candidate = candidate.BaseType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, assetReference))
+                return true;
+        }
 
         if (type is not ITypeParameterSymbol parameter)
             return false;
@@ -119,6 +143,7 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         // Class constraints can supply the marker through their inherited interfaces.
         // Track visited parameters so incomplete or cyclic constraints cannot recurse forever.
         visited ??= new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
-        return visited.Add(type) && parameter.ConstraintTypes.Any(constraint => IsBackTick(constraint, backTick, visited));
+        return visited.Add(type) && parameter.ConstraintTypes.Any(constraint =>
+            IsAutomaticallyQuoted(constraint, backTick, assetReference, visited));
     }
 }

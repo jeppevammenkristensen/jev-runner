@@ -10,9 +10,11 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <Description>Compile-time diagnostics for JRK.JevRunner.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>0.8.0: Version alignment with JRK.JevRunner
+    <PackageReleaseNotes>0.8.0: Prepared asset interpolation support and version alignment
 - Released alongside JRK.JevRunner and JRK.JevRunner.Image with the shared package version.
-- Retains JEV100 and JEV101 interpolation diagnostics and their IDE code fixes; no new usage diagnostics or code fixes in this release.
+- JEV100 now detects AssetAndStateReference interpolations that lose automatic backtick quoting when converted to plain strings. The existing code fix wraps the interpolation in Escape.Interpolated.
+- JEV101 now detects redundant explicit backticks around AssetAndStateReference arguments in preserved interpolations. The existing code fix removes only the adjacent backticks.
+- Both rules recognize derived asset records and transitive generic constraints, matching the runtime formatter's use of the asset's StateReference.
 - Automatically installed through the JRK.JevRunner package dependency.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>

@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Existing `JEV100` and `JEV101` analyzers now recognize `AssetAndStateReference`, derived records, and generic constraints, reusing the interpolation-preservation and redundant-backtick code fixes.
 - Serialize request JSON once and send it directly as UTF-8 JSON, including inside multipart requests, instead of serializing the payload again as a JSON string. Debug request logging uses that same JSON with literal backtick references rather than Unicode-escaped backticks.
 
 ## [0.7.1]
