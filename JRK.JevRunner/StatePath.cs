@@ -4,6 +4,9 @@ namespace JRK.JevRunner;
 /// <remarks>Validates the text, but does not resolve the path against request state.</remarks>
 public class StatePath : IBackTick
 {
+    /// <summary>
+    /// Gets the validated, unquoted path identifying a field in request state.
+    /// </summary>
     public string Path { get; }
 
     /// <summary>Creates a state path without whitespace or backticks.</summary>
@@ -17,6 +20,7 @@ public class StatePath : IBackTick
         Path = path;
     }
 
+    /// <inheritdoc/>
     string IBackTick.Value => Path;
     
 }

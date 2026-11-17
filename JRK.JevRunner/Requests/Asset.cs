@@ -16,6 +16,10 @@ public union Asset(ImageAsset, IImageStreamAsset)
         obj[AssetName] = Node();
     }
 
+    /// <summary>
+    /// Creates asset metadata using inline Base64 data or a multipart part reference.
+    /// </summary>
+    /// <returns>The asset's JSON representation without its asset name.</returns>
     internal JsonNode Node()
     {
         return this switch
@@ -25,6 +29,11 @@ public union Asset(ImageAsset, IImageStreamAsset)
         };
     }
 
+    /// <summary>
+    /// Creates image metadata referring to a multipart field without opening the image stream.
+    /// </summary>
+    /// <param name="imageStreamAsset">The image supplying the format and multipart field name.</param>
+    /// <returns>A JSON object describing the image and its multipart part reference.</returns>
     private JsonNode GenerateNodeFromImageStream(IImageStreamAsset imageStreamAsset)
     {
         var jsonObject = new JsonObject

@@ -18,6 +18,9 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
     /// <summary>The diagnostic identifier for explicit backticks around an automatically quoted argument.</summary>
     public const string RedundantBackticksDiagnosticId = "JEV101";
 
+    /// <summary>
+    /// Reports explicit backticks around interpolation arguments that are already quoted automatically.
+    /// </summary>
     private static readonly DiagnosticDescriptor RedundantBackticksRule = new(
         RedundantBackticksDiagnosticId,
         "Remove redundant backticks around state interpolation",
@@ -27,6 +30,9 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Explicit backticks around an StateReference or StatePath argument in a FormattableString produce duplicate quoting when JevRunner formats it.");
 
+    /// <summary>
+    /// Reports string interpolation that discards automatic quoting of state references and paths.
+    /// </summary>
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Preserve backtick quoting in interpolated instructions",

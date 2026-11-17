@@ -15,28 +15,58 @@ namespace JRK.JevRunner.SourceGenerators;
 [Generator]
 public sealed class JevQueryGenerator : IIncrementalGenerator
 {
+    /// <summary>
+    /// Identifies the marker attribute used to discover query types by metadata name.
+    /// </summary>
     private const string QueryAttribute = "JRK.JevRunner.Annotation.JevQueryAttribute";
+    /// <summary>
+    /// Identifies the request-processing interface that also opts a type into query generation.
+    /// </summary>
     private const string RequestProcessorInterface = "JRK.JevRunner.Annotation.IJevQueryProcessRequestBeforeExecution";
+    /// <summary>
+    /// Names the required query property supplying request state.
+    /// </summary>
     private const string StatePropertyName = "State";
+    /// <summary>
+    /// Names the optional query property overriding the request's default model.
+    /// </summary>
     private const string JevModelPropertyName = "JevModel";
 
+    /// <summary>
+    /// Reports query or containing type declarations that cannot be reopened by generated partial code.
+    /// </summary>
     private static readonly DiagnosticDescriptor InvalidType = Descriptor("JEV001", "Invalid query declaration",
         "Query '{0}' must be a non-static partial class or record class; all containing types must also be non-file-local partial classes or record classes");
 
+    /// <summary>
+    /// Reports missing, inaccessible, or otherwise invalid query property contracts.
+    /// </summary>
     private static readonly DiagnosticDescriptor InvalidProperty = Descriptor("JEV002", "Invalid query property",
         "Query '{0}' has an invalid property contract: {1}");
 
+    /// <summary>
+    /// Reports ambiguous question definitions or unavailable builder and answer lookup contracts.
+    /// </summary>
     private static readonly DiagnosticDescriptor UnsupportedMapping = Descriptor("JEV003",
         "Unsupported question mapping",
         "Question property '{0}' has an unsupported mapping: {1}");
 
+    /// <summary>
+    /// Reports compilation errors in the generated request and response API.
+    /// </summary>
     private static readonly DiagnosticDescriptor InvalidContract = Descriptor("JEV004",
         "Invalid generated API contract",
         "Query '{0}' cannot use the request/response API: {1}");
 
+    /// <summary>
+    /// Reports existing query members whose names conflict with generated methods.
+    /// </summary>
     private static readonly DiagnosticDescriptor MemberConflict = Descriptor("JEV005", "Generated member conflict",
         "Query '{0}' already declares a member named '{1}' required by the generator");
 
+    /// <summary>
+    /// Warns that value tuple message serialization uses runtime field names rather than element names.
+    /// </summary>
     private static readonly DiagnosticDescriptor ValueTupleMessage = new DiagnosticDescriptor(
         "JEV006", "Value tuple element names are not preserved",
         "'{0}' uses a value tuple converted to JevMessage; JSON uses runtime field names such as Item1 and Item2, not tuple element names. Use a record or anonymous object to preserve meaningful names.",
@@ -82,6 +112,13 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(queries, static (productionContext, query) => Generate(productionContext, query!));
     }
 
+    /// <summary>
+    /// Creates an enabled error diagnostic in the query generator's category.
+    /// </summary>
+    /// <param name="id">The stable diagnostic identifier.</param>
+    /// <param name="title">The short diagnostic title displayed by development tools.</param>
+    /// <param name="message">The message format populated when the diagnostic is reported.</param>
+    /// <returns>An error descriptor enabled by default in the <c>JevQuery</c> category.</returns>
     private static DiagnosticDescriptor Descriptor(string id, string title, string message) =>
         new DiagnosticDescriptor(id, title, message, "JevQuery", DiagnosticSeverity.Error, true);
 
@@ -281,6 +318,13 @@ public sealed class JevQueryGenerator : IIncrementalGenerator
         }
     }
 
+    /// <summary>
+    /// Checks whether generated query code can read an ordinary instance property.
+    /// </summary>
+    /// <param name="property">The property whose getter and declaration are inspected.</param>
+    /// <param name="within">The query type from which the getter must be accessible.</param>
+    /// <param name="compilation">The compilation used to evaluate getter accessibility.</param>
+    /// <returns>True for an accessible instance getter that is neither an indexer nor an explicit interface implementation.</returns>
     private static bool Readable(IPropertySymbol property, INamedTypeSymbol within, Compilation compilation) =>
         !property.IsStatic && !property.IsIndexer && property.ExplicitInterfaceImplementations.Length == 0 &&
         property.GetMethod != null && compilation.IsSymbolAccessibleWithin(property.GetMethod, within);

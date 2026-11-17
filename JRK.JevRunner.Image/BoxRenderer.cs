@@ -7,6 +7,9 @@ namespace JRK.JevRunner.Image;
 /// <summary>Draws Jev bounding boxes on images and returns the annotated images as PNG bytes.</summary>
 public sealed class BoxRenderer
 {
+    /// <summary>
+    /// Provides read access to source images without modifying the original files.
+    /// </summary>
     private readonly IFileSystem _fileSystem;
 
     /// <summary>Creates a renderer using the local file system.</summary>

@@ -36,6 +36,9 @@ public sealed class ByteArrayAsset : IImageStreamAsset
         Format = format;
     }
 
+    /// <summary>
+    /// Gets or sets the name used to reference this asset from request state.
+    /// </summary>
     public string AssetName { get; set; }
 
     /// <summary>
