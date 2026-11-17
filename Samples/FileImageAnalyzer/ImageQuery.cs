@@ -21,9 +21,6 @@ public partial class ImageQuery
 
     /// <summary>Gets the question asking whether the image contains a pet.</summary>
     public GenericNoulQuestionDefinition<FormattableString> HasPet => new($"{Photo} has a Pet in the image", null, null);
-
-    public GenericNoulQuestionDefinition<FormattableString> HasCoupleKissing =>
-        new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a couple kissing", null, null); 
     
     /// <summary>Gets the question asking whether the image contains a child.</summary>
     public GenericNoulQuestionDefinition<FormattableString> HasChild =>
