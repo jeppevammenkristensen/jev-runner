@@ -77,6 +77,7 @@ public class FilePathAsset : IImageStreamAsset
         Name = RandomHexGenerator.RandomHex + Path.GetFilenameWithoutExtension();
         FileName = Path.FileName;
         AssetName = Name;
+        Format = Path.GetExtensionWithoutDot();
     }
 
     /// <inheritdoc/>
@@ -103,6 +104,23 @@ public class FilePathAsset : IImageStreamAsset
         FileName = fileName;
         return this;
     }
+
+    public FilePathAsset WithFormat(string format)
+    {
+        Format = format;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the <see cref="AssetName"/>
+    /// </summary>
+    /// <param name="assetName"></param>
+    /// <returns></returns>
+    public FilePathAsset WithAssetName(string assetName)
+    {
+        AssetName = assetName;
+        return this;
+    }
     
 
     /// <summary>
@@ -115,11 +133,11 @@ public class FilePathAsset : IImageStreamAsset
         Name = name;
         return this;
     }
-    
+
     /// <summary>
     /// Gets the image format from the source file extension without its leading dot.
     /// </summary>
-    public string Format => Path.GetExtensionWithoutDot();
+    public string Format { get; set; } 
 
     /// <summary>
     /// Opens the source image file using the configured mode, access, sharing permissions, and file system.

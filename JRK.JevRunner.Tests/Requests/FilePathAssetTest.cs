@@ -19,9 +19,10 @@ public class FilePathAssetTest
         var asset = new FilePathAsset(path, fileSystem);
 
         Assert.Equal(path, asset.Path);
-        Assert.Equal("image", asset.Name);
+        Assert.Matches("^[0-9a-f]{8}image$", asset.Name);
+        Assert.Equal(asset.Name, asset.AssetName);
+        Assert.Equal("image.png", asset.FileName);
         Assert.Equal("png", asset.Format);
-        Assert.Equal("img-image", asset.PartName);
         Assert.Equal(FileMode.Open, asset.Mode);
         Assert.Equal(FileAccess.Read, asset.FileAccess);
         Assert.Equal(FileShare.Read, asset.FileShare);
@@ -92,33 +93,57 @@ public class FilePathAssetTest
         foreach (var asset in new[] {defaultAsset, nullFileSystemAsset})
         {
             Assert.Equal(path, asset.Path);
-            Assert.Equal("photo", asset.Name);
+            Assert.Matches("^[0-9a-f]{8}photo$", asset.Name);
+            Assert.Equal(asset.Name, asset.AssetName);
+            Assert.Equal("photo.jpg", asset.FileName);
             Assert.Equal("jpg", asset.Format);
-            Assert.Equal("img-photo", asset.PartName);
         }
     }
 
-    /// <summary>Overriding the multipart name preserves file-derived asset metadata.</summary>
+    /// <summary>
+    /// Overriding the multipart name preserves the state reference and file-derived metadata.
+    /// </summary>
     [Fact]
-    public void WithPathName_ReturnsSameAssetAndOverridesOnlyPartName()
+    public void WithName_ReturnsSameAssetAndOverridesOnlyMultipartName()
     {
         var asset = new FilePathAsset(new AbsolutePath(@"C:\images\photo.jpg"), new MockFileSystem());
 
-        Assert.Same(asset, asset.WithPathName("custom-part"));
-        Assert.Equal("custom-part", asset.PartName);
-        Assert.Equal("photo", asset.Name);
+        var assetName = asset.AssetName;
+        Assert.Same(asset, asset.WithName("custom-part"));
+        Assert.Equal("custom-part", asset.Name);
+        Assert.Equal(assetName, asset.AssetName);
+        Assert.Equal("photo.jpg", asset.FileName);
         Assert.Equal("jpg", asset.Format);
     }
 
-    /// <summary>Invalid multipart names are rejected without changing the configured name.</summary>
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public void WithPathName_RejectsNullOrEmpty(string? partName)
+    /// <summary>
+    /// Changing the upload file name leaves the source path, format, and references unchanged.
+    /// </summary>
+    [Fact]
+    public void WithFileName_ReturnsSameAssetAndOverridesOnlyUploadFileName()
     {
         var asset = new FilePathAsset(new AbsolutePath(@"C:\images\photo.jpg"), new MockFileSystem());
 
-        Assert.ThrowsAny<ArgumentException>(() => asset.WithPathName(partName!));
-        Assert.Equal("img-photo", asset.PartName);
+        var name = asset.Name;
+        var assetName = asset.AssetName;
+
+        Assert.Same(asset, asset.WithFileName("upload.png"));
+        Assert.Equal("upload.png", asset.FileName);
+        Assert.Equal(new AbsolutePath(@"C:\images\photo.jpg"), asset.Path);
+        Assert.Equal("jpg", asset.Format);
+        Assert.Equal(name, asset.Name);
+        Assert.Equal(assetName, asset.AssetName);
+    }
+    
+    /// <summary>
+    /// Changing the upload file name leaves the source path, format, and references unchanged.
+    /// </summary>
+    [Fact]
+    public void WithAssetName_ReturnsSameAssetAndOverridesOnlyUploadFileName()
+    {
+        var asset = new FilePathAsset(new AbsolutePath(@"C:\images\photo.jpg"), new MockFileSystem());
+
+        Assert.Same(asset, asset.WithAssetName("changed_assetname"));
+        Assert.Equal("changed_assetname", asset.AssetName);
     }
 }
