@@ -10,6 +10,7 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <Description>Compile-time diagnostics for JRK.JevRunner.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Runner-Icon.png</PackageIcon>
     <PackageReleaseNotes>0.8.0: Prepared asset interpolation support and version alignment
 - Released alongside JRK.JevRunner and JRK.JevRunner.Image with the shared package version.
 - JEV100 now detects AssetAndStateReference interpolations that lose automatic backtick quoting when converted to plain strings. The existing code fix wraps the interpolation in Escape.Interpolated.
@@ -24,6 +25,7 @@
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
     <None Update="README.md" Pack="true" PackagePath="/" />
+    <None Include="..\JRK.JevRunner\assets\Runner-Icon.png" Pack="true" PackagePath="Runner-Icon.png" />
     <ProjectReference Include="../JRK.JevRunner.Analyzers.CodeFixes/JRK.JevRunner.Analyzers.CodeFixes.csproj"
                       ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
