@@ -78,37 +78,39 @@ public static class AssetImageExtensions
             Byte[] bytes = [];
             string format = string.Empty;
 
+            Asset? asset = null;
+
             if (validationResult is ValidImageResult valid)
             {
-                await using var input = path.OpenRead(fileSystem);
-                using var buffer = new MemoryStream();
-                await input.CopyToAsync(buffer, token);
-                bytes = buffer.ToArray();
-                format = valid.Format;
+                asset = new FilePathAsset(path, fileSystem);
             }
             else if (validationResult is InvalidImageResult invalidImageResult)
             {
                 var suggestedScaling = invalidImageResult.SuggestedScaling;
-
+                var filePathAsset = new FilePathAsset(path, fileSystem);
                 if (suggestedScaling == ImageSuggestedScaling.Upscale)
                 {
                     ImageScaler scaler = new ImageScaler(fileSystem);
-                    bytes = scaler.Upscale(path);
-                    format = "png";
+                    asset = new ByteArrayAsset(scaler.Upscale(path), filePathAsset.Name, path.WithExtension("png").FileName, filePathAsset.AssetName, "png");
                 }
                 else if (suggestedScaling == ImageSuggestedScaling.Downscale)
                 {
                     ImageScaler scaler = new ImageScaler(fileSystem);
-                    bytes = scaler.Downscale(path);
-                    format = "png";
+                    asset = new ByteArrayAsset(scaler.Downscale(path),filePathAsset.Name, path.WithExtension("png").FileName, filePathAsset.AssetName, "png");
                 }
                 else
                 {
                     ThrowHelper.Throw(invalidImageResult);
                 }
             }
+
+            if (asset == null)
+            {
+                throw new InvalidOperationException("The image format could not be detected.");
+            }
             
-            state.AddAsset(stateName, new ImageAsset(assetName, format ?? throw new InvalidOperationException("The image format could not be detected."), bytes));
+            
+            state.AddAsset(stateName, asset.Value);
             return state;
 
         }

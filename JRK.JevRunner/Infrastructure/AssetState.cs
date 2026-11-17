@@ -86,7 +86,7 @@ public class AssetState : Dictionary<string,string>
     /// <exception cref="ArgumentException">The state already contains the supplied field name.</exception>
     public AssetState AddAsset(StateReference name, Asset asset)
     {
-        Add(name.Value, asset.Name);
+        Add(name.Value, asset.AssetName);
         Assets[name.Value] = asset;
         return this;
     }

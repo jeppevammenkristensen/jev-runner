@@ -12,16 +12,15 @@ using SkiaSharp;
 using JRK.JevRunner;
 using Spectre.Console;
 
-
-
-
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
-var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Billede1.jpg";
+var imagePath = Environment.SpecialFolder.UserProfile.GetSpecialFolder() / "Pictures" / "Img_1929.png";
 
 var jevQuery =
-    new JevQuery((await new FileData("Some.txt", "bla bla bla").AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
+    new JevQuery((await new FileData("Some.txt", "bla bla bla")
+        .AddImageAssetWithAutoAdjustment(JevQuery.Photo, "person_image", imagePath)));
+
 var response = await jevQuery.Execute(jevRunner);
 
 foreach (var responseAnswer in response.Response.Answers)
@@ -95,6 +94,8 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
     public string[] Criterias { get; }
 }
 
+
+
 [JevQuery]
 public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 {
@@ -103,10 +104,9 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
     public JevQuery(FileData state)
     {
         State = state;
-        var str = Escape.Interpolated($"{Photo} has a person with a beard in it");
         var fooBar = "Happy";
 
-        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person with a beard in it", null, null);
+        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo} has a person in it", null, null);
         FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} `{fooBar}` ");
         FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 

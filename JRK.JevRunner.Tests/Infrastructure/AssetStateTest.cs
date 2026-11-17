@@ -24,7 +24,7 @@ public partial class AssetStateTest
         Asset asset = image;
         var assets = new JsonObject();
         asset.AddTo(assets);
-        Assert.Equal("image-ref", asset.Name);
+        Assert.Equal("image-ref", asset.AssetName);
         Assert.True(JsonNode.DeepEquals(image.Node, assets["image-ref"]));
     }
 
@@ -144,7 +144,8 @@ public partial class AssetStateTest
         fileSystem.AddFile(path.ToString(), new MockFileData(bytes));
         var state = new PhotoState();
 
-        PhotoState result = await state.AddImageAsset("photo", "image-ref", path, fileSystem);
+        PhotoState result =
+            await state.AddImageAsset("photo", "image-ref", path, base64Encode: true, fileSystem: fileSystem);
 
         Assert.Same(state, result);
         Assert.Equal("image-ref", state["photo"]);
@@ -163,8 +164,9 @@ public partial class AssetStateTest
         var state = new AssetState();
         var fileSystem = new MockFileSystem();
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => state.AddImageAsset(
-            "photo", "missing-ref", AbsolutePath.Create("C:/images/missing.jpg"), fileSystem));
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(async () => await state.AddImageAsset(
+            "photo", "missing-ref", AbsolutePath.Create("C:/images/missing.jpg"), base64Encode: true,
+            fileSystem: fileSystem));
 
         Assert.Equal("No image found at the given location", error.Message);
         Assert.Empty(state);
@@ -196,8 +198,10 @@ public partial class AssetStateTest
     {
         /// <summary>Gets the image-backed state.</summary>
         public PhotoState State => state;
+
         /// <summary>Gets the model used for the image question.</summary>
         public JevModel JevModel => global::JRK.JevRunner.Requests.JevModel.Latest;
+
         /// <summary>Gets the image presence question.</summary>
         public INoulQuestionDefinition<string> PersonPresent { get; } =
             new GenericNoulQuestionDefinition<string>("Is there a person in `photo`?", null, null);

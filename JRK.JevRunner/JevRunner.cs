@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using JRK.JevRunner.Infrastructure;
+using JRK.JevRunner.Requests;
 using JRK.JevRunner.Responses;
 using Microsoft.Extensions.Logging;
 
@@ -61,7 +62,7 @@ public partial class JevRunner : IJevRunner
         using var message = new HttpRequestMessage(
             HttpMethod.Post,
             "https://api.typesafe.ai/v1/systemone");
-        message.Content = JsonContent.Create(json);
+        message.Content = CreateRequestContent(request, json);
 
         message.Headers.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue(
@@ -106,6 +107,48 @@ public partial class JevRunner : IJevRunner
         catch (Exception e)
         {
             throw new InvalidOperationException("An unexpected error occurred when deserializing the response content", e);
+        }
+    }
+
+    /// <summary>Uses multipart for stream-backed images, retaining JSON uploads for other requests.</summary>
+    /// <remarks>JSON is the first part. Disposing the content also disposes the opened streams.</remarks>
+    private  HttpContent CreateRequestContent(Request request, JsonObject json)
+    {
+        // Check the assets to see if there are any IImageStreamAssets
+        var images = request.Assets
+            .Select(asset => asset.Value)
+            .OfType<IImageStreamAsset>()
+            .ToArray();
+        
+        if (images.Length == 0)
+            return JsonContent.Create(json);
+
+        var multipart = new MultipartFormDataContent();
+        try
+        {
+            multipart.Add(JsonContent.Create(json), "request");
+            foreach (var image in images)
+            {
+                // Starter implementation: existing byte/Base64 assets remain inline in JSON.
+                var content = new StreamContent(image.OpenRead());
+                try
+                {
+                    LogAddingOctetStreamPartnameFilename(image.Name, image.FileName, image.Format);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    multipart.Add(content: content, name: image.Name, fileName: image.FileName);
+                }
+                catch
+                {
+                    content.Dispose();
+                    throw;
+                }
+            }
+            return multipart;
+        }
+        catch
+        {
+            multipart.Dispose();
+            throw;
         }
     }
 
@@ -186,4 +229,7 @@ public partial class JevRunner : IJevRunner
     /// <param name="type">The compatibility error detected before submission.</param>
     [LoggerMessage(LogLevel.Error, "Known validation error {Type}")]
     partial void LogKnownValidationErrorType(Exception ex, RequestValidationError type);
+
+    [LoggerMessage(LogLevel.Debug, "Adding octet-stream {Name} {FileName} {Format}")]
+    partial void LogAddingOctetStreamPartnameFilename(string name, string fileName, string format);
 }
