@@ -12,16 +12,10 @@
     <Description>.NET client for Jev and the TypeSafe System One API that supports an approach using source generators.</Description>
     <PackageTags>jev;typesafe;ai;system-one;api-client;dotnet;source-generators</PackageTags>
     <PackageProjectUrl>https://github.com/jeppevammenkristensen/jev-runner</PackageProjectUrl>
-    <PackageReleaseNotes>Runner initialization, query preprocessing, multipart images, and safe header diagnostics
-- Initialize runners with ILoggerFactory or ILogger&lt;JevRunner&gt;, or read API keys from an environment variable (JEV_TOKEN by default).
-- Generate query APIs for IJevQueryProcessRequestBeforeExecution implementations without requiring JevQueryAttribute. Process the completed request immediately before execution and use the returned request.
-- Log outgoing request, client-default, and content headers at debug level, redacting credential headers and API-key occurrences before logging.
-- Breaking: Request.Execute(apiKey, ...) now accepts ILoggerFactory instead of ILogger&lt;JevRunner&gt;; use a factory or execute through an explicitly initialized runner.
-- Add regression coverage for initialization, query preprocessing, and credential-safe header diagnostics.
-- Upload file-backed and byte-backed images as multipart data alongside inline Base64 assets.
-- Prepare images independently with CreateAssetWithAdjustments, read assets with ReadAsBytes, and automatically register AssetAndStateReference query properties in AssetState. JEV007 warns about incompatible state types.
-- Breaking: AddImageAsset requires base64Encode; AddImageAssetWithAutoAdjustment is synchronous; Asset.Name is now Asset.AssetName.
-- Fix double-serialized request bodies and preserve literal backtick references in outgoing JSON and debug logs.
+    <PackageReleaseNotes>Reusable instructions, typed state paths, and question factories
+- Compose instructions with Instruction and InstructionWithState using GetInstructionPath, GetStatePath, and FormatInstruction for automatic backtick quoting.
+- Build property and constant array paths from typed selectors without reading values, including for root arrays.
+- Create Noul, Box, Choice, and Score definitions with QuestionDefinition factories; use the Interpolated variants to preserve reference arguments.
     </PackageReleaseNotes>
     <RepositoryUrl>https://github.com/jeppevammenkristensen/jev-runner</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

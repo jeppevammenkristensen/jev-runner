@@ -4,6 +4,20 @@
 
 ### Added
 
+- `Instruction` and `InstructionWithState<TState>` compose reusable instructions with `GetInstructionPath`, `GetStatePath`, and `FormatInstruction` for automatic backtick quoting.
+- Typed `StateExtensions.GetPath` selectors build property and constant array paths without evaluating the selector, including root arrays.
+- `QuestionDefinition` factories create Noul, Box, Choice, and Score definitions, with interpolation-preserving `*Interpolated` variants.
+
+### Changed
+
+- JEV100 also suggests targeting `FormattableString`; its code fix is unchanged.
+- The analyzer NuGet package uses the shared JevRunner icon.
+- Repository test commands use Microsoft.Testing.Platform.
+
+## [0.8.0] - 2026-11-17
+
+### Added
+
 - Runner initialization overloads accepting `ILoggerFactory` or `ILogger<JevRunner>`, with no-op logging when null, and environment-variable initialization using `JEV_TOKEN` by default or a custom variable name. Missing variables throw `InvalidOperationException`; invalid API keys retain constructor validation.
 - `IJevQueryProcessRequestBeforeExecution` enables source generation without `[JevQuery]`. Generated execution invokes the hook once after adding questions and immediately before calling the runner, using the returned request. Explicit implementations and inherited interfaces are supported; `GetRequest()` alone does not invoke the hook, and hook failures prevent runner execution.
 - Debug-level outgoing header diagnostics include client defaults, request overrides, and content headers. Credential headers and occurrences of the configured API key in other header values are redacted before logging; actual outgoing headers are unchanged. Headers added later by handlers or the transport are not included.

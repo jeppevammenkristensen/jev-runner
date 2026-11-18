@@ -11,12 +11,8 @@
     <Description>Compile-time diagnostics for JRK.JevRunner.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Runner-Icon.png</PackageIcon>
-    <PackageReleaseNotes>0.8.0: Prepared asset interpolation support and version alignment
-- Released alongside JRK.JevRunner and JRK.JevRunner.Image with the shared package version.
-- JEV100 now detects AssetAndStateReference interpolations that lose automatic backtick quoting when converted to plain strings. The existing code fix wraps the interpolation in Escape.Interpolated.
-- JEV101 now detects redundant explicit backticks around AssetAndStateReference arguments in preserved interpolations. The existing code fix removes only the adjacent backticks.
-- Both rules recognize derived asset records and transitive generic constraints, matching the runtime formatter's use of the asset's StateReference.
-- Automatically installed through the JRK.JevRunner package dependency.</PackageReleaseNotes>
+    <PackageReleaseNotes>JEV100 now suggests preserving the interpolation as a FormattableString as an alternative to Escape.Interpolated. The code fix is unchanged.
+- Uses the shared JevRunner NuGet icon.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>

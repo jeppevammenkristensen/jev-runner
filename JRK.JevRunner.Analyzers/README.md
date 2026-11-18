@@ -37,6 +37,11 @@ the tooling through the core package dependency; Image does not bundle it again.
 
 ## JEV100: Preserve backtick quoting
 
+JEV100 suggests either using `Escape.Interpolated(...)` for an immediate string
+result or keeping the interpolation as a `FormattableString` for later formatting.
+Inside a derived `Instruction` class, `FormatInstruction(...)` also preserves
+the arguments and applies quoting.
+
 Warns on each statically typed `JRK.JevRunner.IBackTick` argument (including
 `StateReference`, `StatePath`, derived types, and constrained type parameters)
 in an interpolation that becomes a plain string:
