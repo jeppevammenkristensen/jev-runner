@@ -4,10 +4,13 @@ using System.Reflection;
 
 namespace JRK.JevRunner;
 
-public static class StateExtensions 
+/// <summary>
+/// Builds references to state fields from property and array selectors.
+/// </summary>
+public static class StateExtensions
 {
     /// <summary>
-    /// Builds a state path from a property selector with optional constant array indexes.
+    /// Builds a <see cref="StatePath"/> from a property selector with optional constant array indexes.
     /// </summary>
     /// <typeparam name="T">The type of the root state.</typeparam>
     /// <typeparam name="TValue">The type of the selected value.</typeparam>
@@ -19,11 +22,13 @@ public static class StateExtensions
     /// </exception>
     /// <remarks>
     /// Selectors can chain instance properties and index arrays with non-negative integer constants.
+    /// If the state itself is an array, the path starts with the index.
     /// The selector is not executed. Examples:
     /// <list type="bullet">
     /// <item><description><c>x =&gt; x.Name</c> produces <c>Name</c>.</description></item>
     /// <item><description><c>x =&gt; x.Address.City</c> produces <c>Address.City</c>.</description></item>
     /// <item><description><c>x =&gt; x.Collection[1].Name</c> produces <c>Collection[1].Name</c>.</description></item>
+    /// <item><description><c>x =&gt; x[0].Name</c> produces <c>[0].Name</c>.</description></item>
     /// <item><description><c>x =&gt; x.Foo.Bar.Qux[1].Items[2]</c> produces <c>Foo.Bar.Qux[1].Items[2]</c>.</description></item>
     /// </list>
     /// </remarks>
@@ -35,35 +40,93 @@ public static class StateExtensions
         ArgumentNullException.ThrowIfNull(expression);
 
         var root = expression.Parameters[0];
-        
-        // Throw if it state => state
         if (ReferenceEquals(expression.Body, root))
             throw new ArgumentException("Select a property or array element.", nameof(expression));
 
-        return new StatePath(BuildPath(expression.Body));
+        return new StatePath(BuildPath(expression.Body, root));
+    }
 
-        string BuildPath(Expression node)
+    /// <summary>
+    /// Builds a <see cref="StatePath"/> from a property selector with optional constant array indexes.
+    /// </summary>
+    /// <typeparam name="T">The type of the root state.</typeparam>
+    /// <typeparam name="TValue">The type of the selected value.</typeparam>
+    /// <param name="source">The state that supplies the selector's root type; it is not read.</param>
+    /// <param name="expression">A selector rooted at its lambda parameter.</param>
+    /// <returns>The selected path without the lambda parameter name.</returns>
+    /// <exception cref="ArgumentException">
+    /// The selector is empty or contains an unsupported expression.
+    /// </exception>
+    /// <remarks>
+    /// Selectors can chain instance properties and index arrays with non-negative integer constants.
+    /// If the state itself is an array, the path starts with the index.
+    /// The selector is not executed. Examples:
+    /// <list type="bullet">
+    /// <item><description><c>x =&gt; x.Name</c> produces <c>Name</c>.</description></item>
+    /// <item><description><c>x =&gt; x.Address.City</c> produces <c>Address.City</c>.</description></item>
+    /// <item><description><c>x =&gt; x.Collection[1].Name</c> produces <c>Collection[1].Name</c>.</description></item>
+    /// <item><description><c>x =&gt; x[0].Name</c> produces <c>[0].Name</c>.</description></item>
+    /// <item><description><c>x =&gt; x.Foo.Bar.Qux[1].Items[2]</c> produces <c>Foo.Bar.Qux[1].Items[2]</c>.</description></item>
+    /// </list>
+    /// </remarks>
+    public static StatePath GetPath<T, TValue>(
+        // ReSharper disable once UnusedParameter.Global
+        Expression<Func<T, TValue>> expression)
+    {
+        ArgumentNullException.ThrowIfNull(expression);
+
+        var root = expression.Parameters[0];
+        if (ReferenceEquals(expression.Body, root))
+            throw new ArgumentException("Select a property or array element.", nameof(expression));
+
+        return new StatePath(BuildPath(expression.Body, root));
+    }
+
+    /// <summary>
+    /// Builds a <see cref="StatePath"/> from a selector rooted at the current instance.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the selected value.</typeparam>
+    /// <param name="expression">A chain of instance properties and non-negative constant array indexes.</param>
+    /// <returns>The selected path, such as <c>SomeProperty[0].Text</c>, without reading the instance.</returns>
+    /// <exception cref="ArgumentException">The selector does not identify a supported path.</exception>
+    public static StatePath GetPath<TValue>(Expression<Func<TValue>> expression)
+    {
+        ArgumentNullException.ThrowIfNull(expression);
+
+        return new StatePath(BuildPath(expression.Body, null));
+    }
+
+    /// <summary>
+    /// Walks a selector without evaluating it and omits its root from the resulting path.
+    /// </summary>
+    /// <param name="node">The expression representing the selected part of the state.</param>
+    /// <param name="root">The state parameter, or null when the selector uses the current instance.</param>
+    /// <returns>The unquoted path for the selected part of the state.</returns>
+    private static string BuildPath(Expression node, ParameterExpression? root)
+    {
+        switch (node)
         {
-            switch (node)
+            case MemberExpression { Member: PropertyInfo property, Expression: { } target }:
+                // A parameterless selector represents the current instance as a constant.
+                return ReferenceEquals(target, root) || (root is null && target is ConstantExpression)
+                    ? property.Name
+                    : $"{BuildPath(target, root)}.{property.Name}";
+
+            case BinaryExpression
             {
-                case MemberExpression { Member: PropertyInfo property, Expression: { } target }:
-                    return ReferenceEquals(target, root)
-                        ? property.Name
-                        : $"{BuildPath(target)}.{property.Name}";
+                NodeType: ExpressionType.ArrayIndex,
+                Left: var array,
+                Right: ConstantExpression { Value: int index }
+            } when index >= 0:
+                var prefix = ReferenceEquals(array, root) ? string.Empty : BuildPath(array, root);
+                return $"{prefix}[{index.ToString(CultureInfo.InvariantCulture)}]";
 
-                case BinaryExpression
-                {
-                    NodeType: ExpressionType.ArrayIndex, // Must be and array index. For instance [2] or[1]
-                    Left: var array,
-                    Right: ConstantExpression { Value: int index } // Catch the index
-                } when index >= 0:
-                    return $"{BuildPath(array)}[{index.ToString(CultureInfo.InvariantCulture)}]";
-
-                default:
-                    throw new ArgumentException(
-                        "Use instance properties and non-negative constant array indexes rooted at the lambda parameter.",
-                        nameof(expression));
-            }
+            default:
+                throw new ArgumentException(
+                    root is null
+                        ? "Use instance properties and non-negative constant array indexes rooted at the current instance."
+                        : "Use instance properties and non-negative constant array indexes rooted at the lambda parameter.",
+                    "expression");
         }
     }
 }

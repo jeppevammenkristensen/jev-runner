@@ -14,7 +14,6 @@ using Spectre.Console;
 using TruePath;
 using static JRK.JevRunner.Annotation.QuestionDefinition;
 
-
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
 
@@ -86,7 +85,17 @@ public class ScoreQuestionDefinition : IScoreQuestionDefinition<FormattableStrin
 
 
 
+public class CustomInstruction : InstructionWithState<FileData>
+{
+    public CustomInstruction(string name)
+    {
+        Name = name;
+        Question = FormatInstruction($"{GetInstructionPath(() => Name)} matches {GetStatePath(x => x.File)}");
+    }
 
+    public string Name { get; }
+    public string Question { get; private set; }
+}
 
 //[JevQuery]
 public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
@@ -104,6 +113,8 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
         HasBeard = NoulInterpolated($"{Photo2} has a person in it");
         // FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} ");
         // FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
+
+        CustomInstruction = Noul(new CustomInstruction("Some"));
 
         ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
             "Classify the text in the supplied file.",
@@ -127,6 +138,8 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
     public GenericNoulQuestionDefinition<FormattableString> HasBeard { get; }
     public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
+    public GenericNoulQuestionDefinition<CustomInstruction> CustomInstruction { get; set; }
+
     public Request ProcessRequestBeforeExecution(Request request)
     {
         return request.EnableLongContext();
