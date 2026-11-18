@@ -36,4 +36,7 @@ public class GenericNoulQuestionDefinition<TInstruction> : INoulQuestionDefiniti
 
     /// <inheritdoc/>
     public string? No { get; }
+    
+    
+    public static implicit operator GenericNoulQuestionDefinition<TInstruction>(TInstruction instructions) => new GenericNoulQuestionDefinition<TInstruction>(instructions, null, null);
 }

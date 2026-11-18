@@ -36,11 +36,11 @@ public sealed class BackTickInterpolationAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
         "Preserve backtick quoting in interpolated instructions",
-        "Interpolating '{0}' into a string loses automatic backtick quoting; use Escape.Interpolated to format it",
+        "Interpolating '{0}' into a string loses automatic backtick quoting; use Escape.Interpolated to format it or change the underlying type to FormattableString",
         "JevRunner.Usage",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Use Escape.Interpolated to preserve interpolation arguments as a FormattableString and apply automatic backtick quoting to IBackTick and AssetAndStateReference values.");
+        description: "Use Escape.Interpolated to preserve interpolation arguments as a FormattableString and apply automatic backtick quoting to IBackTick and AssetAndStateReference values. A possibility is also to convert the underlying type to FormattableString.");
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RedundantBackticksRule);
