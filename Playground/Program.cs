@@ -12,6 +12,8 @@ using SkiaSharp;
 using JRK.JevRunner;
 using Spectre.Console;
 using TruePath;
+using static JRK.JevRunner.Annotation.QuestionDefinition;
+
 
 var connector = new Connector().Prompt();
 var jevRunner = connector.GetRunner();
@@ -54,20 +56,6 @@ public class FileData : AssetState
     }
 }
 
-
-/// <summary>Provides instructions and optional yes/no criteria for evaluating file content.</summary>
-public class QuestionDefinition : INoulQuestionDefinition<string[]>
-{
-    public QuestionDefinition(string[] instructions)
-    {
-        Instructions = instructions;
-        Yes = "Hello";
-    }
-
-    public string[] Instructions { get; set; }
-    public string? Yes { get; }
-    public string? No { get; } = null;
-}
 
 
 /// <summary>Provides instructions and ordered choices for classifying file content.</summary>
@@ -113,7 +101,7 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 
         var fooBar = "Happy";
 
-        HasBeard = new GenericNoulQuestionDefinition<FormattableString>($"{Photo2} has a person in it", null, null);
+        HasBeard = NoulInterpolated($"{Photo2} has a person in it");
         // FindPerson = new GenericBoxQuestionDefinition<FormattableString>($"Find the head in the {Photo} ");
         // FindMustache = new GenericBoxQuestionDefinition<FormattableString>($"Find the mustache in the {Photo}");
 
@@ -123,7 +111,7 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
             new ChoiceCriteria("Meaningful",
                 "The text conveys meaningful information rather than placeholder content."));
         ScoreQuestionDefinition = new ScoreQuestionDefinition(
-            $"Score the information quality of {new StatePath(nameof(File))} the text in the supplied file.",
+            $"Score the information quality of {State.GetPath(x => x.File)} the text in the supplied file.",
             "The text conveys meaningful information rather than filler or placeholder content.",
             "The text is clear and understandable.",
             "The text provides specific, useful details.");
@@ -136,7 +124,7 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
     // public GenericBoxQuestionDefinition<FormattableString> FindPerson { get; private set; }
 
     private FileData State { get; }
-    public INoulQuestionDefinition<FormattableString> HasBeard { get; }
+    public GenericNoulQuestionDefinition<FormattableString> HasBeard { get; }
     public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
     public Request ProcessRequestBeforeExecution(Request request)
