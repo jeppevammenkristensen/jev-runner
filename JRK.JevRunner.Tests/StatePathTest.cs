@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using JetBrains.Annotations;
+using JRK.JevRunner.Requests;
 using Xunit;
 
 namespace JRK.JevRunner.Tests;
@@ -79,6 +80,20 @@ public class StatePathTest
     }
 
     /// <summary>
+    /// A root array can be indexed directly or followed by a property access or another index.
+    /// </summary>
+    [Fact]
+    public void GetPath_RootArraySelectors_StartWithIndex()
+    {
+        Item[] state = null!;
+        Item[][] jaggedState = null!;
+
+        Assert.Equal("[0]", state.GetPath(root => root[0]).Path);
+        Assert.Equal("[1].Name", state.GetPath(root => root[1].Name).Path);
+        Assert.Equal("[1][2].Name", jaggedState.GetPath(root => root[1][2].Name).Path);
+    }
+
+    /// <summary>
     /// Paths built from selectors receive the same backtick quoting as manually specified paths.
     /// </summary>
     [Fact]
@@ -151,6 +166,57 @@ public class StatePathTest
         Assert.Throws<ArgumentException>("expression", () => state.GetPath(root => root.Name.Trim()));
         Assert.Throws<ArgumentException>("expression", () => state.GetPath(root => state.Name));
     }
+
+    /// <summary>
+    /// Parameterless selectors omit the instruction instance and preserve property chains and indexes.
+    /// </summary>
+    [Fact]
+    public void GetPath_ParameterlessSelector_ReturnsPathWithoutReadingInstruction()
+    {
+        var instruction = new SampleInstruction();
+
+        Assert.Equal("SomeProperty", instruction.SelectArray().Path);
+        Assert.Equal("SomeProperty[0].Text", instruction.SelectText().Path);
+        Assert.Equal("SomeProperty[0]", instruction.SelectElement().Path);
+    }
+
+    /// <summary>
+    /// Parameterless selectors follow the same constant-index restriction as parameterized selectors.
+    /// </summary>
+    [Fact]
+    public void GetPath_ParameterlessSelector_RejectsNonConstantIndex()
+    {
+        Assert.Throws<ArgumentException>("expression", () => new SampleInstruction().SelectUsingIndex(0));
+    }
+
+    /// <summary>
+    /// Instruction interpolation wraps the parameterless state path in backticks.
+    /// </summary>
+    [Fact]
+    public void GetPath_ParameterlessSelector_QuotesPathInInstruction()
+    {
+        Assert.Equal("Evaluate `SomeProperty[0].Text`.", new SampleInstruction().Render());
+    }
+
+    /// <summary>
+    /// Exposes selectors over an instruction property that must not be evaluated.
+    /// </summary>
+    private sealed class SampleInstruction : Instruction
+    {
+        private TextItem[] SomeProperty => throw new InvalidOperationException("The selector must not read the state.");
+
+        public StatePath SelectArray() => StateExtensions.GetPath(() => SomeProperty);
+
+        public StatePath SelectText() => StateExtensions.GetPath(() => SomeProperty[0].Text);
+
+        public StatePath SelectElement() => StateExtensions.GetPath(() => SomeProperty[0]);
+
+        public StatePath SelectUsingIndex(int index) => StateExtensions.GetPath(() => SomeProperty[index]);
+
+        public string Render() => FormatInstruction($"Evaluate {GetInstructionPath(() => SomeProperty[0].Text)}.");
+    }
+
+    private sealed record TextItem(string Text);
 
     private sealed record SampleState(string Name, Item Primary, ItemGroup[] Groups, int Index);
     private sealed record ItemGroup(Item[] Items);
