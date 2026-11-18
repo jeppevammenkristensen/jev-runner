@@ -144,6 +144,42 @@ var runner = JevRunner.Init(apiKey, logger);
 var response = await runner.Execute(request, cancellationToken);
 ```
 
+## Reference properties in instructions
+
+Use `state.GetPath(s => s.Items[0].Name)` to build a reference from a property
+selector instead of typing the path by hand. For a root array, a selector such
+as `s => s[0].Name` produces `[0].Name`. Selectors support instance properties
+and non-negative constant array indexes. They are not executed, and the path
+uses CLR property names, so make sure those names match the JSON sent to Jev.
+
+For reusable instructions, derive from `Instruction` to reference properties
+on the instruction object, or use `InstructionWithState<TState>` to also
+reference properties on the request state:
+
+```csharp
+using JRK.JevRunner.Requests;
+
+public sealed record TicketState(string Subject);
+
+public sealed class MatchSubject : InstructionWithState<TicketState>
+{
+    public MatchSubject(string expectedSubject)
+    {
+        ExpectedSubject = expectedSubject;
+        Question = FormatInstruction(
+            $"Does {GetStatePath(state => state.Subject)} match {GetInstructionPath(() => ExpectedSubject)}?");
+    }
+
+    public string ExpectedSubject { get; }
+    public string Question { get; }
+}
+```
+
+`FormatInstruction` produces "Does `Subject` match `ExpectedSubject`?" without
+inserting either property value. Pass the instruction object, not just its
+`Question` string, to include `ExpectedSubject` alongside the question.
+Supply the `TicketState` separately as the request state.
+
 ## Custom backtick-quoted references
 
 The public `IBackTick` interface lets you create domain-specific reference types

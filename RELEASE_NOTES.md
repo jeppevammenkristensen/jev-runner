@@ -11,6 +11,25 @@ published release notes.
 
 ### Added
 
+- Compose reusable Jev instructions with `Instruction` and
+  `InstructionWithState<TState>`. Use `GetInstructionPath` for properties on
+  the instruction object, `GetStatePath` for properties on request state, and
+  `FormatInstruction` to wrap interpolated references in backticks.
+- Build state paths from property selectors, including paths with non-negative
+  constant array indexes such as `Items[0].Name` or `[0].Name`, without reading values.
+- Create Noul, Box, Choice, and Score definitions with `QuestionDefinition`
+  factories. The `*Interpolated` variants preserve references for automatic quoting.
+
+### Changed
+
+- JEV100 also suggests preserving interpolation as a `FormattableString`.
+  The existing `Escape.Interpolated` code fix is unchanged.
+- The analyzer NuGet package uses the shared JevRunner icon.
+
+## 0.8.0 (2026-11-17)
+
+### Added
+
 - Runner initialization with `ILoggerFactory` or `ILogger<JevRunner>` and
   environment-variable API keys (`JEV_TOKEN` by default, or a custom name).
   Null logging dependencies use no-op logging; missing variables and invalid

@@ -56,6 +56,24 @@ produce JEV002. Invalid interface implementations also produce ordinary C# compi
 errors (for example, a wrongly typed collection). Incompatible instruction types or
 runtime API signatures produce JEV004 through binding of the emitted code.
 
+### Create definitions with factories
+
+Use the `QuestionDefinition` factories in `JRK.JevRunner.Annotation` instead of
+writing a class for each question. `Noul`, `Box`, `Choice`, and `Score` accept
+plain text or other builder-compatible instructions. When interpolating state
+paths or prepared asset references, use the matching `*Interpolated` factory so
+JevRunner can add backticks:
+
+```csharp
+// Inside a generated query whose State has a Subject property.
+public GenericNoulQuestionDefinition<FormattableString> HasSubject =>
+    QuestionDefinition.NoulInterpolated($"Does {State.GetPath(s => s.Subject)} contain a subject?");
+```
+
+Import `JRK.JevRunner` for `GetPath` and `JRK.JevRunner.Annotation` for the
+factory and definition types. Give a Choice or Score factory at least one
+choice or scoring criterion, respectively.
+
 ### Generated execution and answers
 
 `Execute(runner, cancellationToken)` builds the query's request, forwards it and
