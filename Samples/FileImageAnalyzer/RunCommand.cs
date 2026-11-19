@@ -79,7 +79,7 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings> // For sync o
                     }
                 }
             
-                Runner = JevRunner.Init(JevApiKey, ConsoleLoggerFactory);
+                Runner = JevRunner.Init(JevApiKey).WithLoggerFactory(ConsoleLoggerFactory);
 
                 if (!string.IsNullOrWhiteSpace(Directory))
                 {

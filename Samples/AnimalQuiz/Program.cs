@@ -88,7 +88,7 @@ namespace AnimalQuiz
             /// <exception cref="InvalidOperationException">Neither the option nor the environment supplies an API key.</exception>
             protected override ValidationResult DoValidate()
             {
-                Runner = JevRunner.InitFromEnvironmentVariable(loggerFactory:null);
+                Runner = JevRunner.InitFromEnvironmentVariable();
                 return base.DoValidate();
             }
         }
