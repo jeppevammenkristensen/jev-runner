@@ -1,5 +1,4 @@
 ﻿using JRK.JevRunner.Annotation;
-using JRK.JevRunner;
 using JRK.JevRunner.Image;
 using TruePath;
 
@@ -29,6 +28,6 @@ public partial class ImageQuery
     /// <summary>Gets the question asking whether the image is a screenshot.</summary>
     public GenericNoulQuestionDefinition<FormattableString> IsScreenShot => new ($"{Photo} is a ScreenShot image", null, null);
     
-    public GenericBoxQuestionDefinition<string> ChildBox => new (Escape.Interpolated($"Find a Child in {Photo}"));
+    public GenericBoxQuestionDefinition<FormattableString> ChildBox => new ($"`Find a Child in {Photo}");
     public AssetAndStateReference Photo { get; set; }
 }
