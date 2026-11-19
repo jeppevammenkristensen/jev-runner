@@ -46,16 +46,14 @@ return;
 public class FileData : AssetState
 {
     public string File { get; set; }
-    public string Extension { get; set; }
+    public string FileText { get; set; }
 
-    public FileData(string file, string extension)
+    public FileData(string file, string fileText)
     {
         File = file;
-        Extension = extension;
+        FileText = fileText;
     }
 }
-
-
 
 /// <summary>Provides instructions and ordered choices for classifying file content.</summary>
 public class ChoiceQuestionDefinition : IChoiceQuestionDefinition<string>
@@ -116,13 +114,14 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 
         CustomInstruction = Noul(new CustomInstruction("Some"));
 
-        ChoiceQuestionDefinition = new ChoiceQuestionDefinition(
-            "Classify the text in the supplied file.",
+        ChoiceQuestionDefinition = ChoiceInterpolated(
+            $"Classify the {State.GetPath(x => x.FileText)} in the supplied file.",
             new ChoiceCriteria("Placeholder", "The text is filler or placeholder content, such as 'bla bla bla'."),
             new ChoiceCriteria("Meaningful",
                 "The text conveys meaningful information rather than placeholder content."));
+        
         ScoreQuestionDefinition = new ScoreQuestionDefinition(
-            $"Score the information quality of {State.GetPath(x => x.File)} the text in the supplied file.",
+            $"Score the information quality of {State.GetPath(x => x.FileText)}.",
             "The text conveys meaningful information rather than filler or placeholder content.",
             "The text is clear and understandable.",
             "The text provides specific, useful details.");
@@ -136,7 +135,7 @@ public partial class JevQuery : IJevQueryProcessRequestBeforeExecution
 
     private FileData State { get; }
     public GenericNoulQuestionDefinition<FormattableString> HasBeard { get; }
-    public ChoiceQuestionDefinition ChoiceQuestionDefinition { get; }
+    public GenericChoiceQuestionDefinition<FormattableString> ChoiceQuestionDefinition { get; }
     public ScoreQuestionDefinition ScoreQuestionDefinition { get; }
     public GenericNoulQuestionDefinition<CustomInstruction> CustomInstruction { get; set; }
 

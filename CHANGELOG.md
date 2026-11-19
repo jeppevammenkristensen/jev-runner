@@ -13,6 +13,7 @@
 - JEV100 also suggests targeting `FormattableString`; its code fix is unchanged.
 - The analyzer NuGet package uses the shared JevRunner icon.
 - Repository test commands use Microsoft.Testing.Platform.
+- **Breaking:** Removed logger and logger factory overloads from `JevRunner.Init` and `JevRunner.InitFromEnvironmentVariable`. Chain `.WithLogger(logger)` or `.WithLoggerFactory(factory)` after initialization.
 
 ## [0.8.0] - 2026-11-17
 

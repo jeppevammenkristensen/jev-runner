@@ -47,14 +47,20 @@ public static class RequestExtensions
         }
         
         /// <summary>
-        /// Creates a runner with the supplied API key and optional logger, then executes the request.
+        /// Creates a runner with the supplied API key, configures logging if a factory is supplied, then executes the request.
         /// </summary>
         /// <returns>The response returned by the runner.</returns>
         /// <param name="apiKey">The API key used to authenticate the request.</param>
-        /// <param name="loggerFactory">The optional logger used by the created runner.</param>
+        /// <param name="loggerFactory">The factory used to create the logger, or null for no-op logging.</param>
         public async Task<Response> Execute(string apiKey, ILoggerFactory? loggerFactory = null)
         {
-            return await JevRunner.Init(apiKey, loggerFactory).Execute(request);
+            var runner = JevRunner.Init(apiKey);
+            if (loggerFactory is not null)
+            {
+                runner.WithLoggerFactory(loggerFactory);
+            }
+
+            return await runner.Execute(request);
         }
     }
 }

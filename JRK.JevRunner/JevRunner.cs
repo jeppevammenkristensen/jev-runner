@@ -35,7 +35,7 @@ public partial class JevRunner : IJevRunner
     /// <summary>
     /// Receives request diagnostics, validation warnings, and failures.
     /// </summary>
-    private readonly ILogger<JevRunner> _logger;
+    private ILogger<JevRunner> _logger;
 
     /// <summary>
     /// Submits requests to the TypeSafe System One API and parses their named answers.
@@ -53,6 +53,28 @@ public partial class JevRunner : IJevRunner
         _options = options;
         _client = client;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Replaces the logger this runner uses for request diagnostics, validation warnings, and failures.
+    /// </summary>
+    /// <param name="logger">The logger to use for subsequent logging.</param>
+    /// <returns>The current runner instance, for chaining.</returns>
+    public JevRunner WithLogger(ILogger<JevRunner> logger)
+    {
+        _logger = logger;
+        return this;
+    }
+
+    /// <summary>
+    /// Replaces the current logger with one created by the supplied factory for the <see cref="JevRunner"/> category.
+    /// </summary>
+    /// <param name="logFactory">The factory used to create the replacement logger.</param>
+    /// <returns>The current runner instance, for chaining.</returns>
+    public JevRunner WithLoggerFactory(ILoggerFactory logFactory)
+    {
+        _logger = logFactory.CreateLogger<JevRunner>();
+        return this;
     }
     
     /// <summary>
