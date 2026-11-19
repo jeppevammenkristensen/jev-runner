@@ -3,6 +3,7 @@ using FileBasedApp.Toolkit;
 using FileBasedApp.Toolkit.CommandCli;
 using JetBrains.Annotations;
 using JRK.JevRunner;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using TruePath;
@@ -27,6 +28,11 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings> // For sync o
         /// <summary>Accepts the API key and directory and prepares the Jev client before image analysis runs.</summary>
         public class Settings : ExtendedCommandSettings
         {
+            /// <summary>
+            /// Provides console logging for runners for the lifetime of the application.
+            /// </summary>
+            private static readonly ILoggerFactory ConsoleLoggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+
             /// <summary>Gets or sets the API key supplied with <c>--api-key</c>, falling back to <c>JEV_TOKEN</c>.</summary>
             [CommandOption("--api-key")]
             private string JevApiKey { get; set; } = string.Empty;
@@ -73,7 +79,7 @@ public sealed class RunCommand : AsyncCommand<RunCommand.Settings> // For sync o
                     }
                 }
             
-                Runner = JevRunner.Init(JevApiKey);
+                Runner = JevRunner.Init(JevApiKey).WithLoggerFactory(ConsoleLoggerFactory);
 
                 if (!string.IsNullOrWhiteSpace(Directory))
                 {

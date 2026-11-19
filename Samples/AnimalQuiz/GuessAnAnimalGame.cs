@@ -26,11 +26,10 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
             var guess = await AnsiConsole.PromptAsync(new TextPrompt<string>("Ask a question or make a guess"));
             // One request carries both the hidden animal and the player's input, with several judgments to evaluate.
             var guessQuery = new GuessQuery(new GuessQueryState(name, guess));
-            var response = await runner.Execute(guessQuery.GetRequest());
+            var response = await guessQuery.Execute(runner);
             // Generated answer helpers read each named judgment from the same response.
-            var questionTypeAnswer = guessQuery.GetQuestionTypeAnswer(response);
+            var questionTypeAnswer = response.QuestionType;
             var guessQuestionType = guessQuery.QuestionType.GetQuestionType(questionTypeAnswer.Choice);
-
 
             if (guessQuestionType is GuessQuestionType.NotAQuestion)
             {
@@ -52,7 +51,7 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
 
             if (guessQuestionType is GuessQuestionType.DirectQuestion)
             {
-                var identityAnswer = guessQuery.GetUserGuessTheAnimalAnswer(response);
+                var identityAnswer = response.UserGuessTheAnimal;
                 var identified = AnswerPolicy.Evaluate(identityAnswer.Noul);
                 if (identified is true)
                 {
@@ -70,7 +69,7 @@ public class GuessAnAnimalGame(string name, JevRunner runner)
                 continue;
             }
 
-            var questionIsCorrect = guessQuery.GetAskedQuestionIsCorrectAnswer(response);
+            var questionIsCorrect = response.AskedQuestionIsCorrect;
             var answer = AnswerPolicy.Evaluate(questionIsCorrect.Noul);
             var answerText = answer switch
             {

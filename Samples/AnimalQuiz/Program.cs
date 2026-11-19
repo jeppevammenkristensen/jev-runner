@@ -4,6 +4,7 @@ using AnimalQuiz;
 using FileBasedApp.Toolkit;
 using FileBasedApp.Toolkit.CommandCli;
 using JRK.JevRunner;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -87,20 +88,7 @@ namespace AnimalQuiz
             /// <exception cref="InvalidOperationException">Neither the option nor the environment supplies an API key.</exception>
             protected override ValidationResult DoValidate()
             {
-                if (string.IsNullOrWhiteSpace(JevApiKey))
-                {
-                    var token = Environment.GetEnvironmentVariable("JEV_TOKEN");
-                    if (!string.IsNullOrWhiteSpace(token))
-                    {
-                        JevApiKey = token;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("No Api key defined or found as environment variable");
-                    }
-                }
-            
-                Runner = JevRunner.Init(JevApiKey);
+                Runner = JevRunner.InitFromEnvironmentVariable();
                 return base.DoValidate();
             }
         }
