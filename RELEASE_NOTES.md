@@ -25,6 +25,10 @@ published release notes.
 - JEV100 also suggests preserving interpolation as a `FormattableString`.
   The existing `Escape.Interpolated` code fix is unchanged.
 - The analyzer NuGet package uses the shared JevRunner icon.
+- **Breaking:** Removed the `ILoggerFactory` and `ILogger<JevRunner>` overloads
+  of `JevRunner.Init` and `JevRunner.InitFromEnvironmentVariable`. Chain
+  `.WithLoggerFactory(factory)` or `.WithLogger(logger)` after initialization.
+  Omit that call to keep no-op logging.
 
 ## 0.8.0 (2026-11-17)
 

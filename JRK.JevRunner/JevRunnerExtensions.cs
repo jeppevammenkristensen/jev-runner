@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using Microsoft.Extensions.Logging.Abstractions;
 
 namespace JRK.JevRunner;
 
@@ -14,60 +13,26 @@ public static class JevRunnerExtensions
     extension(JevRunner)
     {
         /// <summary>
-        /// Convenience method to create a runner
+        /// Creates a runner with a shared HTTP client and no-op logging.
         /// </summary>
-        /// <param name="apiKey"></param>
-        /// <returns></returns>
+        /// <param name="apiKey">The API key sent as a bearer token with each request.</param>
+        /// <returns>A new runner.</returns>
+        /// <exception cref="ArgumentException">The API key is null, empty, or whitespace.</exception>
         public static JevRunner Init(string apiKey)
         {
-            return JevRunner.Init(apiKey, NullLoggerFactory.Instance);
+            return new JevRunner(new JevOptions(apiKey), SharedClient, NullLogger<JevRunner>.Instance);
         }
 
         /// <summary>
-        /// Convenience method to create a runner
+        /// Creates a runner with no-op logging using an API key from the process environment.
         /// </summary>
-        /// <param name="apiKey">The API key sent as a bearer token with each request.</param>
-        /// <param name="logFactory">An optional logFactory.</param>
-        /// <returns>A new <see cref="JevRunner"/> instance</returns>
-        /// <remarks>This is quick usage. If you want to use dependency injection consider using the public constructor</remarks>
-        public static JevRunner Init(string apiKey, ILoggerFactory? logFactory)
+        /// <param name="environmentVariableName">The variable containing the API key. Defaults to <c>JEV_TOKEN</c>.</param>
+        /// <returns>A new runner.</returns>
+        /// <exception cref="InvalidOperationException">The environment variable is not set.</exception>
+        /// <exception cref="ArgumentException">The retrieved API key is empty or whitespace.</exception>
+        public static JevRunner InitFromEnvironmentVariable(string environmentVariableName = "JEV_TOKEN")
         {
-            var logger = (logFactory ?? new NullLoggerFactory()).CreateLogger<JevRunner>();
-
-            return new JevRunner(new JevOptions(apiKey), SharedClient, logger);
-        }
-
-        /// <summary>
-        /// Creates a runner using the supplied apikey and an optional logger
-        /// </summary>
-        /// <param name="apiKey">The API key sent as a bearer token with each request.</param>
-        /// <param name="logger">The logger receiving request diagnostics, validation warnings, and failures.</param>
-        /// <returns>A new <see cref="JevRunner"/> instance.</returns>
-        public static JevRunner Init(string apiKey, ILogger<JevRunner>? logger)
-        {
-            return new JevRunner(new JevOptions(apiKey), SharedClient, logger ??  NullLogger<JevRunner>.Instance);
-        }
-
-        /// <summary>
-        /// Initializes a JevRunner based on an environment variable. Default to look for an environment variable with the key JEV_TOKEN
-        /// </summary>
-        /// <param name="environmentVariableName"></param>
-        /// <param name="loggerFactory"></param>
-        /// <returns></returns>
-        public static JevRunner InitFromEnvironmentVariable(string environmentVariableName = "JEV_TOKEN", ILoggerFactory? loggerFactory = null)
-        {
-            return InitFromEnvironmentVariable(environmentVariableName, key => JevRunner.Init(key, loggerFactory));
-        }
-
-        /// <summary>
-        /// Initializes a JevRunner based on an environment variable. Default to look for an environment variable with the key JEV_TOKEN
-        /// </summary>
-        /// <param name="environmentVariableName"></param>
-        /// <param name="logger"></param>
-        /// <returns></returns>
-        public static JevRunner InitFromEnvironmentVariable(string environmentVariableName = "JEV_TOKEN", ILogger<JevRunner>? logger = null)
-        {
-            return InitFromEnvironmentVariable(environmentVariableName, key => JevRunner.Init(key, logger));
+            return InitFromEnvironmentVariable(environmentVariableName, static key => JevRunner.Init(key));
         }
         
 
@@ -88,10 +53,6 @@ public static class JevRunnerExtensions
                     $"An environment variable with the key {environmentVariableName} was not found");
             return initializer(apiKey);
         }
-        
-        
-
-        
     }
     
     /// <summary>

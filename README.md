@@ -6,7 +6,8 @@ A .NET client for Jev and the TypeSafe System One API. Submit application state 
 
 ## Upcoming changes (unreleased)
 
-- Initialize runners with a logger factory, a typed logger, or an environment-variable API key.
+- **Breaking:** Runner initialization no longer accepts logging arguments. Configure logging
+  with `WithLogger` or `WithLoggerFactory` after initialization.
 - Implement `IJevQueryProcessRequestBeforeExecution` to customize generated requests
   immediately before execution; `[JevQuery]` is optional for these queries.
 - Inspect outgoing headers at debug level without exposing the Jev token in header diagnostics.
@@ -103,26 +104,25 @@ Console.WriteLine(response.GetRequiredNoulAnswer("dog_was_jumped_over"));
 
 ## Initialization and logging
 
-`JevRunner.Init(apiKey)` uses no-op logging. To receive diagnostics, pass an
-`ILoggerFactory` or `ILogger<JevRunner>`:
+`JevRunner.Init(apiKey)` uses no-op logging. To receive diagnostics, call
+`WithLoggerFactory` or `WithLogger` on the initialized runner:
 
 ```csharp
-var runner = JevRunner.Init(apiKey, loggerFactory);
-var runnerWithTypedLogger = JevRunner.Init(apiKey, logger);
+var runner = JevRunner.Init(apiKey).WithLoggerFactory(loggerFactory);
+var runnerWithTypedLogger = JevRunner.Init(apiKey).WithLogger(logger);
 ```
 
 `InitFromEnvironmentVariable` reads `JEV_TOKEN` by default, or a custom variable:
 
 ```csharp
-var runner = JevRunner.InitFromEnvironmentVariable(loggerFactory: loggerFactory);
-var customRunner = JevRunner.InitFromEnvironmentVariable(
-    "TYPESAFE_API_KEY", logger: logger);
+var runner = JevRunner.InitFromEnvironmentVariable().WithLoggerFactory(loggerFactory);
+var customRunner = JevRunner.InitFromEnvironmentVariable("TYPESAFE_API_KEY")
+    .WithLogger(logger);
 ```
 
 A missing variable throws `InvalidOperationException`; an empty or whitespace-only
-API key throws `ArgumentException`. Both logging overloads accept null and fall back
-to no-op logging. Use a named `loggerFactory` or `logger` argument for environment
-initialization, or a typed null for `Init`, to disambiguate the overloads.
+API key throws `ArgumentException`. For no-op logging, omit the `WithLogger`
+or `WithLoggerFactory` call.
 For dependency injection or a custom HTTP pipeline, use the public constructor
 with `JevOptions`, `HttpClient`, and `ILogger<JevRunner>`.
 
@@ -140,7 +140,7 @@ avoid placing secrets in request state or instructions.
 `ILoggerFactory` instead of a typed logger. To retain an existing typed logger:
 
 ```csharp
-var runner = JevRunner.Init(apiKey, logger);
+var runner = JevRunner.Init(apiKey).WithLogger(logger);
 var response = await runner.Execute(request, cancellationToken);
 ```
 

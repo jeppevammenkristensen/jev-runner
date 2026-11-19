@@ -15,5 +15,8 @@ public partial class Connector
     
     [TextPrompt(DefaultValueSource = nameof(DefaultApiKey))] public partial string ApiKey { get; set; } = string.Empty;
     
-    public IJevRunner GetRunner() => JevRunner.Init(ApiKey, new ConsoleLogger<JevRunner>());
+    /// <summary>
+    /// Creates a runner that authenticates with the configured API key and logs to the console.
+    /// </summary>
+    public IJevRunner GetRunner() => JevRunner.Init(ApiKey).WithLogger(new ConsoleLogger<JevRunner>());
 }
