@@ -9,9 +9,10 @@
 
     <ItemGroup>
       <PackageReference Include="FileBasedApp.Toolkit" Version="1.4.0" />
-      <PackageReference Include="FileBasedApp.Toolkit.Spectre" Version="1.4.0" />
-      <PackageReference Include="JRK.JevRunner" Version="0.8.0-dev-01" />
-      <PackageReference Include="JRK.JevRunner.Image" Version="0.8.0-dev-01" />
+        <PackageReference Include="FileBasedApp.Toolkit.Spectre" Version="1.4.0" />
+      <PackageReference Include="JRK.JevRunner" Version="0.9.0-dev-01" />
+      <PackageReference Include="JRK.JevRunner.Image" Version="0.9.0-dev-01" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
       <PackageReference Include="SixLabors.ImageSharp" Version="4.1.3" />
       <PackageReference Include="Spectre.Console.ImageSharp" Version="0.57.2" />
     </ItemGroup>

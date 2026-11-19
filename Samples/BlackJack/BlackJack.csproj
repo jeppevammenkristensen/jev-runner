@@ -9,7 +9,7 @@
 
     <ItemGroup>
       <PackageReference Include="AutoSpectre" Version="0.15.0" />
-      <PackageReference Include="JRK.JevRunner" Version="0.8.0-dev-01" />
+      <PackageReference Include="JRK.JevRunner" Version="0.9.0-dev-01" />
     </ItemGroup>
 
 </Project>
