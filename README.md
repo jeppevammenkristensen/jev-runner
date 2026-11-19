@@ -4,22 +4,6 @@
 
 A .NET client for Jev and the TypeSafe System One API. Submit application state and named questions, and consume typed responses.
 
-## Upcoming changes (unreleased)
-
-- **Breaking:** Runner initialization no longer accepts logging arguments. Configure logging
-  with `WithLogger` or `WithLoggerFactory` after initialization.
-- Implement `IJevQueryProcessRequestBeforeExecution` to customize generated requests
-  immediately before execution; `[JevQuery]` is optional for these queries.
-- Inspect outgoing headers at debug level without exposing the Jev token in header diagnostics.
-- Upload file-backed or byte-backed images as multipart data, or retain inline Base64.
-- Prepare images independently and let generated queries register prepared asset properties.
-- Send correctly serialized JSON with literal backtick references in payloads and debug logs.
-- **Breaking:** `request.Execute(apiKey, ...)` now accepts `ILoggerFactory` rather than
-  `ILogger<JevRunner>`. See [initialization and logging](#initialization-and-logging) for migration.
-
-See the [unreleased notes](RELEASE_NOTES.md#unreleased)
-for details. The client still requires .NET 11 and preview C# features.
-
 ## Requirements
 
 - .NET 11 or later
